@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BackgroundIllustrations from "@/components/layout/BackgroundIllustrations";
+import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MapPin, Phone, CircleDollarSign } from "lucide-react";
+import { MapPin, Phone, CircleDollarSign, Lightbulb, TrendingUp, Users, Upload } from "lucide-react";
 import {
   materialCategoryLabels,
   materialConditionLabels,
@@ -35,6 +36,13 @@ const DEFAULT_LOCATION = {
   longitude: 85.324,
   label: "Kathmandu",
 };
+
+const kathmandu_locations = [
+  { label: "Thamel", lat: 27.7164, lng: 85.3277 },
+  { label: "Koteshwor", lat: 27.7089, lng: 85.3574 },
+  { label: "Patan", lat: 27.6737, lng: 85.3199 },
+  { label: "Kalanki", lat: 27.7345, lng: 85.2708 },
+];
 
 const toRadians = (value: number) => (value * Math.PI) / 180;
 
@@ -58,12 +66,15 @@ const distanceInMiles = (
 };
 
 const MaterialsFind = () => {
+  const { toast } = useToast();
   const [radius, setRadius] = useState("10");
   const [category, setCategory] = useState("all");
   const [location, setLocation] = useState(DEFAULT_LOCATION);
   const [locationStatus, setLocationStatus] = useState<"idle" | "loading" | "error">("idle");
   const [selected, setSelected] = useState<MaterialListing | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedPickupLocation, setSelectedPickupLocation] = useState("Thamel");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "advance">("cod");
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -125,7 +136,23 @@ const MaterialsFind = () => {
 
   const handleOpenDialog = (listing: MaterialListing) => {
     setSelected(listing);
+    setSelectedPickupLocation("Thamel");
+    setPaymentMethod("cod");
     setDialogOpen(true);
+  };
+
+  const handlePurchase = () => {
+    if (!selected) return;
+    
+    const paymentLabel = paymentMethod === "cod" ? "Cash on Delivery" : "Advance Payment";
+    
+    toast({
+      title: "Purchase Confirmed! ✓",
+      description: `${selected.name} - Pickup at ${selectedPickupLocation}\nPayment: ${paymentLabel}\n\nCalling ${selected.contactName}...`,
+      duration: 5000,
+    });
+    
+    setDialogOpen(false);
   };
 
   return (
@@ -241,6 +268,91 @@ const MaterialsFind = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              <Card className="card-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <TrendingUp className="h-4 w-4 text-accent" />
+                    Search trends
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid gap-3">
+                    <div className="rounded-lg border border-border bg-muted/40 p-3">
+                      <p className="text-xs text-muted-foreground">Most searched</p>
+                      <p className="font-semibold text-foreground">TMT Steel Rods</p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-muted/40 p-3">
+                      <p className="text-xs text-muted-foreground">Best deals</p>
+                      <p className="font-semibold text-foreground">Free items</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Lightbulb className="h-4 w-4 text-yellow-500" />
+                    Quick tips
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex gap-2">
+                      <span className="text-primary">•</span>
+                      <span>Widen radius for more options</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-primary">•</span>
+                      <span>Filter by category to narrow down</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-primary">•</span>
+                      <span>Contact sellers during business hours</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="card-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Users className="h-4 w-4 text-blue-500" />
+                    Marketplace stats
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-3">
+                  <div className="rounded-lg border border-border bg-muted/40 p-3">
+                    <p className="text-xs text-muted-foreground">Total listings</p>
+                    <p className="text-2xl font-bold text-foreground">{listings.length}</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-muted/40 p-3">
+                    <p className="text-xs text-muted-foreground">Active locations</p>
+                    <p className="text-2xl font-bold text-foreground">{new Set(listings.map((l) => l.locationName)).size}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-shadow bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Upload className="h-4 w-4 text-primary" />
+                    List your materials
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Have surplus construction materials? Share them with local builders and earn money.
+                  </p>
+                  <Button asChild className="w-full">
+                    <Link to="/materials/list">
+                      <Upload className="mr-2 h-4 w-4" />
+                      Start selling
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
 
           <div className="space-y-4">
@@ -274,7 +386,7 @@ const MaterialsFind = () => {
                       <Badge variant="outline" className="gap-2">
                         <CircleDollarSign className="h-3 w-3" />
                         <span className="text-base font-semibold">NPR</span>
-                        <span>{listing.price}</span>
+                        <span className="text-base font-semibold">{listing.price}</span>
                       </Badge>
                     )}
                   </div>
@@ -316,7 +428,7 @@ const MaterialsFind = () => {
             </DialogDescription>
           </DialogHeader>
           {selected && (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="overflow-hidden rounded-lg border border-border bg-muted/40 p-3">
                 <img
                   src={selected.imageUrl}
@@ -337,6 +449,35 @@ const MaterialsFind = () => {
                 <Phone className="h-4 w-4" />
                 {selected.contactPhone}
               </div>
+              
+              <div className="border-t border-border pt-4">
+                <label className="text-sm text-muted-foreground">Pickup location</label>
+                <Select value={selectedPickupLocation} onValueChange={setSelectedPickupLocation}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kathmandu_locations.map((loc) => (
+                      <SelectItem key={loc.label} value={loc.label}>
+                        {loc.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm text-muted-foreground">Payment method</label>
+                <Select value={paymentMethod} onValueChange={(val) => setPaymentMethod(val as "cod" | "advance")}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cod">Cash on Delivery (COD)</SelectItem>
+                    <SelectItem value="advance">Advance Payment</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           )}
           <DialogFooter>
@@ -348,7 +489,7 @@ const MaterialsFind = () => {
                 </a>
               </Button>
             )}
-            <Button onClick={() => setDialogOpen(false)}>Purchase</Button>
+            <Button onClick={handlePurchase}>Purchase</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

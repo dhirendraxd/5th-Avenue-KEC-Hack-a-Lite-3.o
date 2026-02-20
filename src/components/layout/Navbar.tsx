@@ -14,7 +14,7 @@ const Navbar = () => {
   const publicNavLinks = [
     { href: "/", label: "Home", icon: Home },
     { href: "/browse", label: "Browse Equipment", icon: Search },
-    { href: "/materials/find", label: "Materials", icon: Hammer },
+    { href: "/materials/find", label: "Builder's Bazaar", icon: Hammer },
   ];
 
   const privateNavLinks = [
