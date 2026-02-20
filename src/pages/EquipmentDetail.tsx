@@ -293,12 +293,18 @@ const EquipmentDetail = () => {
                       <span className="font-semibold text-foreground text-lg">
                         {equipment.owner.name}
                       </span>
-                      {equipment.owner.verified && (
-                        <Badge variant="outline" className="gap-1 border-success/30 text-success">
-                          <CheckCircle className="h-3 w-3" />
-                          Verified Business
-                        </Badge>
-                      )}
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "gap-1",
+                          equipment.owner.verified
+                            ? "border-success/30 text-success"
+                            : "border-border text-muted-foreground"
+                        )}
+                      >
+                        <CheckCircle className="h-3 w-3" />
+                        {equipment.owner.verified ? "Verified Business" : "Unverified"}
+                      </Badge>
                       {equipment.owner.repeatRenter && (
                         <Badge variant="secondary" className="gap-1">
                           <Repeat className="h-3 w-3" />

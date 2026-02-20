@@ -111,11 +111,17 @@ const EquipmentCard = ({ equipment }: EquipmentCardProps) => {
                 <span className="text-xs">({equipment.owner.distance} mi)</span>
               )}
             </div>
-            {equipment.owner.verified && (
-              <Badge variant="outline" className="text-xs gap-1 border-success/30 text-success">
-                Verified
-              </Badge>
-            )}
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-xs gap-1",
+                equipment.owner.verified
+                  ? "border-success/30 text-success"
+                  : "border-border text-muted-foreground"
+              )}
+            >
+              {equipment.owner.verified ? "Verified" : "Unverified"}
+            </Badge>
           </div>
 
           {/* Ratings and rentals */}

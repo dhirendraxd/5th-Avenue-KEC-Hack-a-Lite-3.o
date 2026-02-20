@@ -38,6 +38,7 @@ import BusinessProfileSection from "@/components/dashboard/BusinessProfileSectio
 import { useAuth } from "@/contexts/AuthContext";
 import { subscribeFirebaseEquipment } from "@/lib/firebase/equipment";
 import { subscribeFirebaseRentals } from "@/lib/firebase/rentals";
+import { subscribeBusinessProfile } from "@/lib/firebase/businessProfile";
 import { RentalRequest, Equipment } from "@/lib/mockData";
 import { categoryLabels, statusColors } from "@/lib/constants";
 import {
@@ -71,6 +72,7 @@ const OwnerDashboard = () => {
     open: boolean;
     request: RentalRequest | null;
   }>({ open: false, request: null });
+  const [businessProfile, setBusinessProfile] = useState<{ isProfileComplete: boolean } | null>(null);
 
   const [myEquipment, setMyEquipment] = useState<Equipment[]>([]);
 
@@ -106,9 +108,20 @@ const OwnerDashboard = () => {
       }
     );
 
+    const unsubscribeBusinessProfile = subscribeBusinessProfile(
+      user.id,
+      (profile) => {
+        setBusinessProfile(profile ? { isProfileComplete: profile.isProfileComplete } : null);
+      },
+      (error) => {
+        console.error("Failed to load business profile from Firebase:", error);
+      }
+    );
+
     return () => {
       unsubscribeEquipment();
       unsubscribeRentals();
+      unsubscribeBusinessProfile();
     };
   }, [user]);
 
@@ -213,6 +226,13 @@ const OwnerDashboard = () => {
           className="mb-10"
           title="Dashboard"
           description={`Welcome, ${user?.name || "User"}. Monitor equipment, manage requests, and track performance`}
+          badge={
+            businessProfile ? (
+              <Badge variant={businessProfile.isProfileComplete ? "success" : "warning"}>
+                {businessProfile.isProfileComplete ? "Verified" : "Unverified"}
+              </Badge>
+            ) : null
+          }
           actions={
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
               <Button onClick={() => navigate("/dashboard/add-equipment")} size="default" className="w-full sm:w-auto">
@@ -276,55 +296,6 @@ const OwnerDashboard = () => {
             subtitle="This month"
           />
         </div>
-
-        <Card className="mb-8 border-border/60 bg-card/80">
-          <CardContent className="p-5 sm:p-6">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-3">
-                <h2 className="text-lg font-semibold text-foreground">How this dashboard works</h2>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="flex items-start gap-2">
-                    <div className="mt-0.5 rounded-md bg-primary/10 p-1.5">
-                      <Package className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">1. Add listings</p>
-                      <p className="text-xs text-muted-foreground">Create equipment listings with pricing and availability.</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="mt-0.5 rounded-md bg-warning/10 p-1.5">
-                      <ClipboardCheck className="h-4 w-4 text-warning" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">2. Review requests</p>
-                      <p className="text-xs text-muted-foreground">Approve or decline incoming rental requests quickly.</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="mt-0.5 rounded-md bg-success/10 p-1.5">
-                      <TrendingUp className="h-4 w-4 text-success" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">3. Track operations</p>
-                      <p className="text-xs text-muted-foreground">Monitor active rentals, timeline, and performance.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                <Button onClick={() => navigate("/dashboard/add-equipment")} className="w-full sm:w-auto">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Listing
-                </Button>
-                <Button variant="outline" onClick={() => setActiveTab("requests")} className="w-full sm:w-auto">
-                  <ListChecks className="mr-2 h-4 w-4" />
-                  Open Requests
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Priority Alerts - Cleaner design with better grouping */}
         {(urgentRequests.length > 0 || extensionRequests.length > 0) && (

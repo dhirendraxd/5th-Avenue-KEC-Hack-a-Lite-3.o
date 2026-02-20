@@ -1,4 +1,4 @@
-import { createDocument, getDocument } from "./firestore";
+import { createDocument, getDocument, subscribeDocument } from "./firestore";
 
 const BUSINESS_PROFILES_COLLECTION = "businessProfiles";
 
@@ -137,6 +137,24 @@ export const getBusinessProfileFromFirebase = async (
   }
 
   return remoteProfile;
+};
+
+export const subscribeBusinessProfile = (
+  userId: string,
+  onNext: (profile: BusinessProfile | null) => void,
+  onError?: (error: Error) => void,
+) => {
+  return subscribeDocument<BusinessProfile>(
+    BUSINESS_PROFILES_COLLECTION,
+    userId,
+    (profile) => {
+      if (profile) {
+        saveStoredBusinessProfile(userId, profile);
+      }
+      onNext(profile ? { ...profile, userId } : null);
+    },
+    onError,
+  );
 };
 
 export const saveBusinessProfile = async (
