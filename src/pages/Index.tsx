@@ -12,7 +12,7 @@ const Index = () => {
     <div className="min-h-screen bg-background relative">
       <BackgroundIllustrations variant="hero" />
       <Navbar />
-      <main className="relative z-10 space-y-4 lg:space-y-8">
+      <main className="relative z-10 space-y-2 lg:space-y-4">
         <HeroSection />
         <HowItWorks />
         <FeaturedEquipment />

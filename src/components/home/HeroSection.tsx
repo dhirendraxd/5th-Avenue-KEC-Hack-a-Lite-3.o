@@ -40,6 +40,19 @@ const buildMatchScore = (equipment: Equipment, query: string): number => {
 const HeroSection = () => {
   const [prompt, setPrompt] = useState("");
   const [allEquipment, setAllEquipment] = useState<Equipment[]>([]);
+  const [typedPlaceholder, setTypedPlaceholder] = useState("");
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const placeholderPhrases = useMemo(
+    () => [
+      "Need a concrete mixer in Kathmandu...",
+      "Looking for scaffolding for 3 days...",
+      "Find a camera crane near Lalitpur...",
+      "Need welding machine for site work...",
+    ],
+    [],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -61,6 +74,38 @@ const HeroSection = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const currentPhrase = placeholderPhrases[phraseIndex % placeholderPhrases.length];
+
+    const timeout = window.setTimeout(
+      () => {
+        if (!isDeleting) {
+          const next = currentPhrase.slice(0, typedPlaceholder.length + 1);
+          setTypedPlaceholder(next);
+
+          if (next === currentPhrase) {
+            setIsDeleting(true);
+          }
+        } else {
+          const next = currentPhrase.slice(0, Math.max(0, typedPlaceholder.length - 1));
+          setTypedPlaceholder(next);
+
+          if (next.length === 0) {
+            setIsDeleting(false);
+            setPhraseIndex((index) => (index + 1) % placeholderPhrases.length);
+          }
+        }
+      },
+      !isDeleting && typedPlaceholder === currentPhrase
+        ? 1200
+        : isDeleting
+          ? 35
+          : 55,
+    );
+
+    return () => window.clearTimeout(timeout);
+  }, [isDeleting, phraseIndex, placeholderPhrases, typedPlaceholder]);
+
   const suggestions = useMemo(() => {
     const query = prompt.trim();
     if (!query) return [];
@@ -74,10 +119,10 @@ const HeroSection = () => {
   }, [allEquipment, prompt]);
 
   return (
-    <section className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-background">
-      <div className="container relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] items-center px-4 py-24 sm:px-6 lg:px-8 lg:py-28">
+    <section className="relative min-h-[calc(100vh-3.5rem)] overflow-hidden bg-background">
+      <div className="container relative z-10 mx-auto flex min-h-[calc(100vh-3.5rem)] items-center px-4 py-24 sm:px-6 lg:px-8 lg:py-28">
         <div className="mx-auto w-full max-w-4xl text-center">
-          <h1 className="text-5xl font-bold leading-[1.05] tracking-tight text-foreground md:text-6xl lg:text-7xl">
+          <h1 className="text-5xl font-bold leading-[1.03] tracking-tight text-foreground md:text-6xl lg:text-7xl">
             A simple <span className="text-primary">equipment</span> rental platform.
           </h1>
           <p className="mx-auto mt-8 max-w-2xl text-base text-muted-foreground md:text-lg">
@@ -106,7 +151,7 @@ const HeroSection = () => {
               <Input
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
-                placeholder="Describe what you need and we will suggest matching equipment"
+                placeholder={typedPlaceholder}
                 className="h-12 rounded-none border-0 border-b border-border/70 bg-transparent px-0 pl-8 text-sm shadow-none focus-visible:border-primary focus-visible:ring-0"
               />
             </div>

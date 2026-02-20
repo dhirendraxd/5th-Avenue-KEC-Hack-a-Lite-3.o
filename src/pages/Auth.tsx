@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -78,6 +78,16 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="flex min-h-screen w-full overflow-hidden bg-background">
+        <div className="pointer-events-none absolute left-6 top-6 z-20 sm:left-8 sm:top-8">
+          <nav className="pointer-events-auto flex items-center gap-2 text-xs text-muted-foreground">
+            <Link to="/" className="hover:text-foreground">
+              Home
+            </Link>
+            <span>/</span>
+            <span className="text-foreground">Auth</span>
+          </nav>
+        </div>
+
         <div className="flex w-full items-center justify-center bg-background px-6 py-10 sm:px-10 lg:w-[44%] lg:px-16">
           <div className="w-full max-w-[360px] space-y-6">
             <h1 className="text-3xl font-medium tracking-tight text-foreground sm:text-4xl">

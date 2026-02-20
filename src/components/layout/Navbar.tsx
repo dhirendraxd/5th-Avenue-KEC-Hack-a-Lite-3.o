@@ -51,7 +51,7 @@ const Navbar = () => {
   return (
     <>
       <nav
-        className={`fixed left-0 right-0 top-0 z-50 border-b border-transparent bg-transparent shadow-none transition-transform duration-300 ${
+        className={`fixed left-0 right-0 top-0 z-50 bg-transparent shadow-none transition-transform duration-300 ${
           isVisible || mobileMenuOpen ? "translate-y-0" : "-translate-y-full"
         }`}
       >
@@ -59,10 +59,8 @@ const Navbar = () => {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Package className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground">5th Avenue</span>
+            <Package className="h-5 w-5 text-foreground/80" />
+            <span className="text-lg font-semibold text-foreground">5th Avenue</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -117,7 +115,7 @@ const Navbar = () => {
           <button
             type="button"
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            className="md:hidden"
+            className="text-muted-foreground transition-colors hover:text-foreground md:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -126,7 +124,7 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="border-t border-border py-4 md:hidden">
+          <div className="py-4 md:hidden">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <Link
@@ -151,13 +149,11 @@ const Navbar = () => {
                   </span>
                 </Link>
               ))}
-              <div className="mt-2 flex flex-col gap-2 border-t border-border pt-4">
+              <div className="mt-2 flex flex-col gap-2 pt-2">
                 {isAuthenticated && user ? (
                   <>
                     <div className="px-4 py-2 flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="h-4 w-4 text-primary" />
-                      </div>
+                      <User className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <p className="text-sm font-medium">{user.name}</p>
                         <p className="text-xs text-muted-foreground">{roleLabels[user.role].label}</p>

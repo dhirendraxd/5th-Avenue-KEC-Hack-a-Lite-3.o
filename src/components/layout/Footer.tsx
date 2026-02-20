@@ -50,14 +50,6 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 md:flex-row">
-          <p className="text-sm text-muted-foreground">
-            © 2024 5th Avenue. All rights reserved.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Built for modern business operations.
-          </p>
-        </div>
       </div>
     </footer>
   );
