@@ -35,6 +35,8 @@ export interface EquipmentCreateInput {
   ownerId: string;
   ownerName: string;
   ownerEmail: string;
+  ownerLocation: string;
+  ownerVerified: boolean;
 }
 
 interface FirestoreEquipmentDocument {
@@ -48,6 +50,8 @@ interface FirestoreEquipmentDocument {
   ownerId: string;
   ownerName: string;
   ownerEmail: string;
+  ownerLocation?: string;
+  ownerVerified?: boolean;
   locationId: string;
   locationName: string;
   minRentalDays: number;
@@ -87,14 +91,19 @@ const toEquipment = (
   );
 
   const owner = matchingBusiness
-    ? { ...matchingBusiness, name: doc.ownerName }
+    ? {
+        ...matchingBusiness,
+        name: doc.ownerName,
+        location: doc.ownerLocation || matchingBusiness.location,
+        verified: doc.ownerVerified ?? matchingBusiness.verified,
+      }
     : {
         id: doc.ownerId,
         name: doc.ownerName,
         rating: 5,
         totalRentals: doc.totalRentals,
-        verified: true,
-        location: "N/A",
+        verified: doc.ownerVerified ?? false,
+        location: doc.ownerLocation || "N/A",
         memberSince: new Date(),
         responseRate: 100,
         responseTime: "< 24 hours",
@@ -161,6 +170,8 @@ export const addFirebaseEquipment = async (
     ownerId: input.ownerId,
     ownerName: input.ownerName,
     ownerEmail: input.ownerEmail,
+    ownerLocation: input.ownerLocation,
+    ownerVerified: input.ownerVerified,
     locationId: input.locationId,
     locationName,
     minRentalDays: input.minRentalDays,

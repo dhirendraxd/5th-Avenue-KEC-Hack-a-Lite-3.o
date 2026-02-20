@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,7 @@ import {
   isBusinessProfileReadyForVerification,
   saveBusinessProfile,
 } from "@/lib/firebase/businessProfile";
-import { ShieldCheck } from "lucide-react";
+import { ImagePlus, ShieldCheck, Trash2 } from "lucide-react";
 
 interface BusinessProfileSectionProps {
   userId: string;
@@ -23,6 +23,8 @@ interface BusinessProfileSectionProps {
 
 const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessProfileSectionProps) => {
   const { toast } = useToast();
+  const citizenshipImageInputRef = useRef<HTMLInputElement>(null);
+  const nidImageInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<BusinessProfileInput>(
@@ -42,6 +44,10 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
         const {
           businessName,
           legalBusinessName,
+          citizenshipNumber,
+          citizenshipDocumentImage,
+          nidNumber,
+          nidDocumentImage,
           registrationNumber,
           panNumber,
           contactPhone,
@@ -55,6 +61,10 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
         setFormData({
           businessName,
           legalBusinessName,
+          citizenshipNumber,
+          citizenshipDocumentImage,
+          nidNumber,
+          nidDocumentImage,
           registrationNumber,
           panNumber,
           contactPhone,
@@ -86,17 +96,50 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleDocumentUpload = (
+    key: "citizenshipDocumentImage" | "nidDocumentImage",
+    file: File,
+  ) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (!result) return;
+      setFormData((prev) => ({ ...prev, [key]: result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const onDocumentInputChange = (
+    key: "citizenshipDocumentImage" | "nidDocumentImage",
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    handleDocumentUpload(key, file);
+    event.target.value = "";
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
-    const profile = await saveBusinessProfile(userId, formData);
-    setIsSaving(false);
+    try {
+      const profile = await saveBusinessProfile(userId, formData);
 
-    toast({
-      title: "Business profile saved",
-      description: profile.isProfileComplete
-        ? "Your profile is complete and ready for verification review by other users."
-        : "Profile saved. Complete all required fields so other users can verify your business.",
-    });
+      toast({
+        title: "Business profile saved",
+        description: profile.isProfileComplete
+          ? "Your profile is complete and saved in Firebase for verification review."
+          : "Profile saved in Firebase. Complete all required fields so other users can verify your business.",
+      });
+    } catch (error) {
+      console.error("Failed to save business profile in Firebase:", error);
+      toast({
+        title: "Save failed",
+        description: "Could not store KYC data in Firebase. Please check your connection and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (isLoading) {
@@ -117,7 +160,7 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
               Business Information
             </CardTitle>
             <CardDescription>
-              Fill these details so renters can verify your business before booking equipment.
+              Complete KYC details (Citizenship and NID) to become a trusted user and allow listing/renting.
             </CardDescription>
           </div>
           <Badge variant={isReady ? "success" : "warning"}>
@@ -142,6 +185,106 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
               onChange={(e) => handleChange("legalBusinessName", e.target.value)}
               placeholder="Registered legal entity name"
             />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Citizenship Number *</label>
+            <Input
+              value={formData.citizenshipNumber}
+              onChange={(e) => handleChange("citizenshipNumber", e.target.value)}
+              placeholder="Citizen certificate number"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">National ID (NID) Number *</label>
+            <Input
+              value={formData.nidNumber}
+              onChange={(e) => handleChange("nidNumber", e.target.value)}
+              placeholder="National ID number"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Citizenship Image *</label>
+            <input
+              ref={citizenshipImageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(event) => onDocumentInputChange("citizenshipDocumentImage", event)}
+            />
+            <div className="overflow-hidden rounded-lg border border-border bg-muted/40">
+              <button
+                type="button"
+                onClick={() => citizenshipImageInputRef.current?.click()}
+                className="flex h-36 w-full items-center justify-center bg-background text-sm text-muted-foreground transition-colors hover:bg-muted/50"
+              >
+                {formData.citizenshipDocumentImage ? (
+                  <img
+                    src={formData.citizenshipDocumentImage}
+                    alt="Citizenship document"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <ImagePlus className="h-4 w-4" />
+                    Upload citizenship image
+                  </span>
+                )}
+              </button>
+            </div>
+            {formData.citizenshipDocumentImage && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-1"
+                onClick={() => handleChange("citizenshipDocumentImage", "")}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Remove image
+              </Button>
+            )}
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">NID Image *</label>
+            <input
+              ref={nidImageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(event) => onDocumentInputChange("nidDocumentImage", event)}
+            />
+            <div className="overflow-hidden rounded-lg border border-border bg-muted/40">
+              <button
+                type="button"
+                onClick={() => nidImageInputRef.current?.click()}
+                className="flex h-36 w-full items-center justify-center bg-background text-sm text-muted-foreground transition-colors hover:bg-muted/50"
+              >
+                {formData.nidDocumentImage ? (
+                  <img
+                    src={formData.nidDocumentImage}
+                    alt="NID document"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <ImagePlus className="h-4 w-4" />
+                    Upload NID image
+                  </span>
+                )}
+              </button>
+            </div>
+            {formData.nidDocumentImage && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-1"
+                onClick={() => handleChange("nidDocumentImage", "")}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Remove image
+              </Button>
+            )}
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Registration Number *</label>

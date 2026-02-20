@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { addFirebaseEquipment } from "@/lib/firebase/equipment";
-import { getStoredBusinessProfile } from "@/lib/firebase/businessProfile";
+import {
+  getBusinessProfileFromFirebase,
+  isBusinessKycComplete,
+} from "@/lib/firebase/businessProfile";
 import { ArrowLeft } from "lucide-react";
 
 const AddEquipment = () => {
@@ -31,15 +34,32 @@ const AddEquipment = () => {
       return;
     }
 
-    const savedBusinessProfile = getStoredBusinessProfile(user.id);
+    const savedBusinessProfile = await getBusinessProfileFromFirebase(user.id);
+
+    if (!savedBusinessProfile || !isBusinessKycComplete(savedBusinessProfile)) {
+      toast({
+        title: "KYC required",
+        description: "Please complete and save Citizenship, NID, and document images in Firebase from Dashboard > Business Info before listing equipment.",
+        variant: "destructive",
+      });
+      navigate("/dashboard");
+      return;
+    }
+
     const ownerDisplayName =
       savedBusinessProfile?.businessName || user.businessName || user.name;
+    const ownerLocation =
+      savedBusinessProfile.city?.trim() ||
+      savedBusinessProfile.businessAddress?.trim() ||
+      data.locationName;
 
     await addFirebaseEquipment({
       ...data,
       ownerId: user.id,
       ownerName: ownerDisplayName,
       ownerEmail: user.email,
+      ownerLocation,
+      ownerVerified: savedBusinessProfile.isProfileComplete,
     });
 
     toast({

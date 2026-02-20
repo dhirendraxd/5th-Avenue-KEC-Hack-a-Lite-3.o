@@ -65,6 +65,8 @@ interface AddEquipmentDialogProps {
   onCancel?: () => void;
 }
 
+type ViewSlot = "front" | "left" | "right";
+
 const conditionOptions: { value: EquipmentCondition; label: string; description: string }[] = [
   { value: 'excellent', label: 'Excellent', description: 'Like new condition, minimal to no wear' },
   { value: 'good', label: 'Good', description: 'Normal wear, fully functional' },
@@ -88,7 +90,9 @@ const AddEquipmentDialog = ({
 }: AddEquipmentDialogProps) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const viewFileInputRef = useRef<HTMLInputElement>(null);
   const [currentTab, setCurrentTab] = useState("basic");
+  const [activeViewUpload, setActiveViewUpload] = useState<ViewSlot | null>(null);
   
   // Form state
   const [name, setName] = useState("");
@@ -147,6 +151,76 @@ const AddEquipmentDialog = ({
     }
   };
 
+  const setViewIndex = (view: ViewSlot, index: number | null) => {
+    if (view === "front") {
+      setFrontViewPhotoIndex(index);
+      return;
+    }
+
+    if (view === "left") {
+      setLeftViewPhotoIndex(index);
+      return;
+    }
+
+    setRightViewPhotoIndex(index);
+  };
+
+  const getViewIndex = (view: ViewSlot): number | null => {
+    if (view === "front") return frontViewPhotoIndex;
+    if (view === "left") return leftViewPhotoIndex;
+    return rightViewPhotoIndex;
+  };
+
+  const triggerViewUpload = (view: ViewSlot) => {
+    setActiveViewUpload(view);
+    viewFileInputRef.current?.click();
+  };
+
+  const handleViewPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeViewUpload) {
+      return;
+    }
+
+    const existingViewIndex = getViewIndex(activeViewUpload);
+    if (existingViewIndex === null && photos.length >= 6) {
+      toast({
+        title: "Photo limit reached",
+        description: "Remove one photo first, then upload a new image for this view.",
+        variant: "destructive",
+      });
+      if (viewFileInputRef.current) {
+        viewFileInputRef.current.value = "";
+      }
+      setActiveViewUpload(null);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (!result) return;
+
+      if (existingViewIndex !== null) {
+        setPhotos((previousPhotos) => {
+          const updatedPhotos = [...previousPhotos];
+          updatedPhotos[existingViewIndex] = result;
+          return updatedPhotos;
+        });
+      } else {
+        const newIndex = photos.length;
+        setPhotos((previousPhotos) => [...previousPhotos, result]);
+        setViewIndex(activeViewUpload, newIndex);
+      }
+    };
+    reader.readAsDataURL(file);
+
+    if (viewFileInputRef.current) {
+      viewFileInputRef.current.value = "";
+    }
+    setActiveViewUpload(null);
+  };
+
   const handleRemovePhoto = (index: number) => {
     setPhotos(photos.filter((_, i) => i !== index));
 
@@ -176,6 +250,24 @@ const AddEquipmentDialog = ({
       toast({
         title: "Missing Required Fields",
         description: "Please fill in all required fields before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (features.length === 0) {
+      toast({
+        title: "Add equipment features",
+        description: "Please add at least one feature/capability in the Details step.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!usageNotes.trim()) {
+      toast({
+        title: "Usage notes required",
+        description: "Please add usage notes or renter requirements in the Details step.",
         variant: "destructive",
       });
       return;
@@ -239,10 +331,11 @@ const AddEquipmentDialog = ({
     setLeftViewPhotoIndex(null);
     setRightViewPhotoIndex(null);
     setCurrentTab("basic");
+    setActiveViewUpload(null);
   };
 
   const suggestedFeatures = category ? featureSuggestions[category] : [];
-  const standaloneSteps = ["basic", "pricing", "photos"] as const;
+  const standaloneSteps = ["basic", "details", "pricing", "photos"] as const;
   const standaloneStepIndex = standaloneSteps.indexOf(
     currentTab as (typeof standaloneSteps)[number]
   );
@@ -270,17 +363,15 @@ const AddEquipmentDialog = ({
 
       <form onSubmit={handleSubmit}>
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="px-6">
-          <TabsList className={`grid w-full ${standalone ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-4"}`}>
+          <TabsList className={`grid w-full ${standalone ? "grid-cols-4" : "grid-cols-2 sm:grid-cols-4"}`}>
             <TabsTrigger value="basic" className="gap-1">
               <Info className="h-4 w-4" />
               <span className="hidden sm:inline">Basic</span>
             </TabsTrigger>
-            {!standalone && (
-              <TabsTrigger value="details" className="gap-1">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Details</span>
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="details" className="gap-1">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Details</span>
+            </TabsTrigger>
             <TabsTrigger value="pricing" className="gap-1">
               <DollarSign className="h-4 w-4" />
               <span className="hidden sm:inline">Pricing</span>
@@ -378,7 +469,6 @@ const AddEquipmentDialog = ({
             </TabsContent>
 
             {/* Details Tab */}
-            {!standalone && (
             <TabsContent value="details" className="space-y-4 pr-4">
               <div className="space-y-2">
                 <Label>Features & Capabilities</Label>
@@ -469,7 +559,6 @@ const AddEquipmentDialog = ({
                 </div>
               </div>
             </TabsContent>
-            )}
 
             {/* Pricing Tab */}
             <TabsContent value="pricing" className="space-y-4 pr-4">
@@ -558,11 +647,16 @@ const AddEquipmentDialog = ({
                 </p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {[
-                    { label: "Front View", index: frontViewPhotoIndex },
-                    { label: "Left View", index: leftViewPhotoIndex },
-                    { label: "Right View", index: rightViewPhotoIndex },
+                    { label: "Front View", index: frontViewPhotoIndex, key: "front" as ViewSlot },
+                    { label: "Left View", index: leftViewPhotoIndex, key: "left" as ViewSlot },
+                    { label: "Right View", index: rightViewPhotoIndex, key: "right" as ViewSlot },
                   ].map((slot) => (
-                    <div key={slot.label} className="rounded-lg border border-border bg-muted/40 p-2">
+                    <button
+                      key={slot.label}
+                      type="button"
+                      onClick={() => triggerViewUpload(slot.key)}
+                      className="w-full rounded-lg border border-border bg-muted/40 p-2 text-left transition-colors hover:bg-muted/60"
+                    >
                       <p className="mb-2 text-xs font-medium text-foreground">{slot.label}</p>
                       <div className="aspect-[4/3] overflow-hidden rounded-md border border-border bg-background">
                         {slot.index !== null && photos[slot.index] ? (
@@ -573,11 +667,11 @@ const AddEquipmentDialog = ({
                           />
                         ) : (
                           <div className="flex h-full items-center justify-center text-[11px] text-muted-foreground">
-                            Not selected
+                            Click to upload
                           </div>
                         )}
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -589,6 +683,14 @@ const AddEquipmentDialog = ({
                 multiple
                 className="hidden"
                 onChange={handlePhotoUpload}
+              />
+
+              <input
+                ref={viewFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleViewPhotoUpload}
               />
 
               {photos.length === 0 ? (

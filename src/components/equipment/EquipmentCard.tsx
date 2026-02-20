@@ -96,6 +96,10 @@ const EquipmentCard = ({ equipment }: EquipmentCardProps) => {
           <p className="mb-3 text-sm text-muted-foreground line-clamp-2">
             {equipment.description}
           </p>
+
+          <p className="mb-2 text-sm font-medium text-foreground">
+            Listed by {equipment.owner.name}
+          </p>
           
           {/* Owner info */}
           <div className="flex items-center justify-between mb-3">

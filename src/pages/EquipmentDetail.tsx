@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import ReviewHighlights from "@/components/equipment/ReviewHighlights";
 import CostBreakdown from "@/components/equipment/CostBreakdown";
@@ -16,7 +16,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { useFavoritesStore } from "@/lib/favoritesStore";
+import {
+  getBusinessProfileFromFirebase,
+  isBusinessKycComplete,
+} from "@/lib/firebase/businessProfile";
 import { mockEquipment, categoryLabels, conditionLabels } from "@/lib/mockData";
 import {
   ArrowLeft,
@@ -39,6 +44,8 @@ import { cn } from "@/lib/utils";
 
 const EquipmentDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -86,7 +93,28 @@ const EquipmentDetail = () => {
     return !inRange;
   };
 
-  const handleRentalRequest = () => {
+  const handleRentalRequest = async () => {
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to request a rental.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    const kycProfile = await getBusinessProfileFromFirebase(user.id);
+    if (!kycProfile || !isBusinessKycComplete(kycProfile)) {
+      toast({
+        title: "KYC required",
+        description: "Please complete and save Citizenship, NID, and document images in Firebase from Dashboard > Business Info before renting.",
+        variant: "destructive",
+      });
+      navigate("/dashboard");
+      return;
+    }
+
     if (!dateRange?.from || !dateRange?.to) {
       toast({
         title: "Select Dates",

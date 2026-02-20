@@ -6,6 +6,10 @@ export interface BusinessProfile {
   userId: string;
   businessName: string;
   legalBusinessName: string;
+  citizenshipNumber: string;
+  citizenshipDocumentImage: string;
+  nidNumber: string;
+  nidDocumentImage: string;
   registrationNumber: string;
   panNumber: string;
   contactPhone: string;
@@ -26,11 +30,22 @@ export type BusinessProfileInput = Omit<
 const REQUIRED_FIELDS: Array<keyof BusinessProfileInput> = [
   "businessName",
   "legalBusinessName",
+  "citizenshipNumber",
+  "citizenshipDocumentImage",
+  "nidNumber",
+  "nidDocumentImage",
   "registrationNumber",
   "panNumber",
   "contactPhone",
   "businessAddress",
   "city",
+];
+
+const KYC_REQUIRED_FIELDS: Array<keyof BusinessProfileInput> = [
+  "citizenshipNumber",
+  "citizenshipDocumentImage",
+  "nidNumber",
+  "nidDocumentImage",
 ];
 
 const getStorageKey = (userId: string) =>
@@ -39,6 +54,10 @@ const getStorageKey = (userId: string) =>
 const normalizeInput = (input: BusinessProfileInput): BusinessProfileInput => ({
   businessName: input.businessName.trim(),
   legalBusinessName: input.legalBusinessName.trim(),
+  citizenshipNumber: input.citizenshipNumber.trim(),
+  citizenshipDocumentImage: input.citizenshipDocumentImage.trim(),
+  nidNumber: input.nidNumber.trim(),
+  nidDocumentImage: input.nidDocumentImage.trim(),
   registrationNumber: input.registrationNumber.trim(),
   panNumber: input.panNumber.trim(),
   contactPhone: input.contactPhone.trim(),
@@ -96,20 +115,28 @@ export const getBusinessProfile = async (
   const localProfile = getStoredBusinessProfile(userId);
 
   try {
-    const remoteProfile = await getDocument<BusinessProfile>(
-      BUSINESS_PROFILES_COLLECTION,
-      userId,
-    );
-
-    if (remoteProfile) {
-      saveStoredBusinessProfile(userId, remoteProfile);
-      return remoteProfile;
-    }
+    const remoteProfile = await getBusinessProfileFromFirebase(userId);
+    if (remoteProfile) return remoteProfile;
   } catch (error) {
     console.error("Failed to load business profile from Firebase:", error);
   }
 
   return localProfile;
+};
+
+export const getBusinessProfileFromFirebase = async (
+  userId: string,
+): Promise<BusinessProfile | null> => {
+  const remoteProfile = await getDocument<BusinessProfile>(
+    BUSINESS_PROFILES_COLLECTION,
+    userId,
+  );
+
+  if (remoteProfile) {
+    saveStoredBusinessProfile(userId, remoteProfile);
+  }
+
+  return remoteProfile;
 };
 
 export const saveBusinessProfile = async (
@@ -118,11 +145,7 @@ export const saveBusinessProfile = async (
 ): Promise<BusinessProfile> => {
   const profile = toProfile(userId, input);
 
-  try {
-    await createDocument(BUSINESS_PROFILES_COLLECTION, userId, profile);
-  } catch (error) {
-    console.error("Failed to save business profile to Firebase:", error);
-  }
+  await createDocument(BUSINESS_PROFILES_COLLECTION, userId, profile);
 
   saveStoredBusinessProfile(userId, profile);
   return profile;
@@ -133,6 +156,10 @@ export const getDefaultBusinessProfileInput = (
 ): BusinessProfileInput => ({
   businessName: fallbackBusinessName,
   legalBusinessName: "",
+  citizenshipNumber: "",
+  citizenshipDocumentImage: "",
+  nidNumber: "",
+  nidDocumentImage: "",
   registrationNumber: "",
   panNumber: "",
   contactPhone: "",
@@ -155,3 +182,17 @@ export const getRequiredFieldsCount = () => REQUIRED_FIELDS.length;
 export const isBusinessProfileReadyForVerification = (
   input: BusinessProfileInput,
 ): boolean => isProfileInputComplete(input);
+
+export const isBusinessKycComplete = (
+  input: Pick<
+    BusinessProfileInput,
+    | "citizenshipNumber"
+    | "citizenshipDocumentImage"
+    | "nidNumber"
+    | "nidDocumentImage"
+  >,
+): boolean => {
+  return KYC_REQUIRED_FIELDS.every(
+    (field) => String(input[field] ?? "").trim().length > 0,
+  );
+};
