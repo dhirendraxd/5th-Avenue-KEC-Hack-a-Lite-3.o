@@ -42,10 +42,28 @@ import {
   ImagePlus,
 } from "lucide-react";
 
+export interface AddEquipmentFormData {
+  name: string;
+  category: EquipmentCategory;
+  description: string;
+  pricePerDay: number;
+  securityDeposit: number;
+  locationId: string;
+  locationName: string;
+  condition: EquipmentCondition;
+  features: string[];
+  usageNotes: string;
+  minRentalDays: number;
+  bufferDays: number;
+  insuranceProtected: boolean;
+  cancellationPolicy: '24hours' | '48hours' | '72hours' | '1week' | 'strict';
+  photos: string[];
+}
+
 interface AddEquipmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: () => void;
+  onSubmit: (data: AddEquipmentFormData) => Promise<void>;
 }
 
 const conditionOptions: { value: EquipmentCondition; label: string; description: string }[] = [
@@ -125,7 +143,7 @@ const AddEquipmentDialog = ({ open, onOpenChange, onSubmit }: AddEquipmentDialog
     setPhotos(photos.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name || !category || !description || !pricePerDay || !locationId) {
@@ -146,8 +164,34 @@ const AddEquipmentDialog = ({ open, onOpenChange, onSubmit }: AddEquipmentDialog
       return;
     }
 
-    onSubmit();
-    resetForm();
+    const selectedLocation = mockLocations.find((location) => location.id === locationId);
+
+    try {
+      await onSubmit({
+        name,
+        category,
+        description,
+        pricePerDay: Number(pricePerDay),
+        securityDeposit: Number(securityDeposit || 0),
+        locationId,
+        locationName: selectedLocation?.name || "Default Location",
+        condition,
+        features,
+        usageNotes,
+        minRentalDays: Number(minRentalDays || 1),
+        bufferDays: Number(bufferDays || 0),
+        insuranceProtected,
+        cancellationPolicy: cancellationPolicy as AddEquipmentFormData['cancellationPolicy'],
+        photos,
+      });
+      resetForm();
+    } catch {
+      toast({
+        title: "Failed to list equipment",
+        description: "Please try again. If the issue persists, check Firebase setup.",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetForm = () => {

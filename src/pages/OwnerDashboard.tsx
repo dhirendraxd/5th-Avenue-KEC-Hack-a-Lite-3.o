@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import BackgroundIllustrations from "@/components/layout/BackgroundIllustrations";
@@ -23,7 +23,9 @@ import RentalTimeline from "@/components/dashboard/RentalTimeline";
 import RenterProfileCard from "@/components/dashboard/RenterProfileCard";
 import AvailabilityControls from "@/components/dashboard/AvailabilityControls";
 import ApproveWithConditionsDialog from "@/components/dashboard/ApproveWithConditionsDialog";
-import AddEquipmentDialog from "@/components/dashboard/AddEquipmentDialog";
+import AddEquipmentDialog, { AddEquipmentFormData } from "@/components/dashboard/AddEquipmentDialog";
+import { useAuth } from "@/contexts/AuthContext";
+import { addFirebaseEquipment, getFirebaseEquipment } from "@/lib/firebase/equipment";
 import {
   mockEquipment,
   mockRentalRequests,
@@ -52,6 +54,7 @@ import { format, isToday, isTomorrow, differenceInDays } from "date-fns";
 const OwnerDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [requests, setRequests] = useState<RentalRequest[]>(mockRentalRequests);
   const [isAddingEquipment, setIsAddingEquipment] = useState(false);
   const [approveDialog, setApproveDialog] = useState<{
@@ -60,10 +63,40 @@ const OwnerDashboard = () => {
   }>({ open: false, request: null });
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
 
-  // Filter equipment owned by first business (simulating logged-in user)
-  const myEquipment = mockEquipment.filter(
-    (e) => e.owner.id === "b1" || e.owner.id === "b2"
+  const mockOwnedEquipment = useMemo(
+    () => mockEquipment.filter((equipment) => equipment.owner.id === "b1" || equipment.owner.id === "b2"),
+    []
   );
+  const [myEquipment, setMyEquipment] = useState<Equipment[]>(mockOwnedEquipment);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadFirebaseEquipment = async () => {
+      if (!user) return;
+      try {
+        const firebaseEquipment = await getFirebaseEquipment();
+        if (!isMounted) return;
+
+        const userOwnedFromFirebase = firebaseEquipment.filter(
+          (equipment) =>
+            equipment.owner.id === user.id ||
+            equipment.owner.name === user.name ||
+            equipment.owner.location === user.businessName
+        );
+
+        setMyEquipment([...mockOwnedEquipment, ...userOwnedFromFirebase]);
+      } catch (error) {
+        console.error("Failed to load equipment from Firebase:", error);
+      }
+    };
+
+    loadFirebaseEquipment();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [mockOwnedEquipment, user]);
 
   const pendingRequests = requests.filter((r) => r.status === "requested");
   const activeRentals = requests.filter(
@@ -142,11 +175,28 @@ const OwnerDashboard = () => {
     });
   };
 
-  const handleAddEquipment = () => {
+  const handleAddEquipment = async (data: AddEquipmentFormData) => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to list equipment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const createdEquipment = await addFirebaseEquipment({
+      ...data,
+      ownerId: user.id,
+      ownerName: user.name,
+      ownerEmail: user.email,
+    });
+
+    setMyEquipment((previous) => [createdEquipment, ...previous]);
     setIsAddingEquipment(false);
     toast({
       title: "Equipment listed",
-      description: "Your equipment is now visible to potential renters.",
+      description: "Your equipment is now saved in Firebase and visible in your dashboard.",
     });
   };
 
@@ -169,7 +219,7 @@ const OwnerDashboard = () => {
         <PageHeader
           className="mb-10"
           title="Dashboard"
-          description="Monitor equipment, manage requests, and track performance"
+          description={`Welcome, ${user?.name || "User"}. Monitor equipment, manage requests, and track performance`}
           actions={
             <Button onClick={() => setIsAddingEquipment(true)} size="default">
               <Plus className="h-4 w-4 mr-2" />

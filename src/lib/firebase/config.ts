@@ -4,12 +4,12 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC7xPmrzDZ7G6S92XM75OwQn_fwNpIJ1Cg",
-  authDomain: "kec-lite.firebaseapp.com",
-  projectId: "kec-lite",
-  storageBucket: "kec-lite.firebasestorage.app",
-  messagingSenderId: "741415385396",
-  appId: "1:741415385396:web:00be3fbbbc234302028d61",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase

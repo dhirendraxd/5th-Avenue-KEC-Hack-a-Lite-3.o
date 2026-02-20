@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import BackgroundIllustrations from "@/components/layout/BackgroundIllustrations";
 import EquipmentCard from "@/components/equipment/EquipmentCard";
@@ -15,8 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { mockEquipment, categoryLabels, sortOptions, EquipmentCategory, SortOption } from "@/lib/mockData";
+import { mockEquipment, categoryLabels, sortOptions, Equipment, EquipmentCategory, SortOption } from "@/lib/mockData";
 import { useFavoritesStore } from "@/lib/favoritesStore";
+import { getFirebaseEquipment } from "@/lib/firebase/equipment";
 import { Search, SlidersHorizontal, X, Heart, Grid3X3, LayoutList, Package } from "lucide-react";
 
 const BrowseEquipment = () => {
@@ -27,12 +28,34 @@ const BrowseEquipment = () => {
   const [sortBy, setSortBy] = useState<SortOption>("most_rented");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [allEquipment, setAllEquipment] = useState<Equipment[]>(mockEquipment);
 
   const { favorites } = useFavoritesStore();
   const categories = Object.keys(categoryLabels) as EquipmentCategory[];
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadFirebaseEquipment = async () => {
+      try {
+        const firebaseEquipment = await getFirebaseEquipment();
+        if (!isMounted) return;
+
+        setAllEquipment([...mockEquipment, ...firebaseEquipment]);
+      } catch (error) {
+        console.error("Failed to load Firebase equipment:", error);
+      }
+    };
+
+    loadFirebaseEquipment();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const filteredAndSortedEquipment = useMemo(() => {
-    let result = mockEquipment.filter((equipment) => {
+    let result = allEquipment.filter((equipment) => {
       const matchesSearch =
         equipment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         equipment.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -68,7 +91,7 @@ const BrowseEquipment = () => {
     }
 
     return result;
-  }, [searchQuery, selectedCategory, priceRange, sortBy, showFavoritesOnly, favorites]);
+  }, [allEquipment, searchQuery, selectedCategory, priceRange, sortBy, showFavoritesOnly, favorites]);
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -202,7 +225,7 @@ const BrowseEquipment = () => {
         {/* Results Header */}
         <div className="mb-8 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            {filteredAndSortedEquipment.length} of {mockEquipment.length} listings
+            {filteredAndSortedEquipment.length} of {allEquipment.length} listings
           </p>
           <div className="flex items-center gap-1 rounded-lg border border-border p-1">
             <Button
