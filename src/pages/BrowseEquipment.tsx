@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -15,11 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Equipment, EquipmentCategory, SortOption } from "@/lib/mockData";
+import { Equipment, EquipmentCategory, RentalRequest, SortOption } from "@/lib/mockData";
 import { categoryLabels, sortOptions } from "@/lib/constants";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { subscribeFirebaseEquipment } from "@/lib/firebase/equipment";
+import { subscribeFirebaseRentals } from "@/lib/firebase/rentals";
 import { Search, SlidersHorizontal, X, Heart, Grid3X3, LayoutList, Package } from "lucide-react";
+import { addDays } from "date-fns";
 
 const BrowseEquipment = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,20 +33,59 @@ const BrowseEquipment = () => {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [allEquipment, setAllEquipment] = useState<Equipment[]>([]);
+  const [allRentals, setAllRentals] = useState<RentalRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const { favorites } = useFavoritesStore();
   const categories = Object.keys(categoryLabels) as EquipmentCategory[];
 
   useEffect(() => {
     const unsubscribe = subscribeFirebaseEquipment(
-      (firebaseEquipment) => setAllEquipment(firebaseEquipment),
+      (firebaseEquipment) => {
+        setAllEquipment(firebaseEquipment);
+        setIsLoading(false);
+      },
       (error) => {
         console.error("Failed to load Firebase equipment:", error);
+        setIsLoading(false);
       }
     );
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeFirebaseRentals(
+      (rentals) => setAllRentals(rentals),
+      (error) => console.error("Failed to load rentals for availability:", error)
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  const nextAvailableByEquipment = useMemo(() => {
+    const now = new Date();
+    const equipmentById = new Map(allEquipment.map((equipment) => [equipment.id, equipment]));
+    const byEquipment = new Map<string, Date>();
+
+    allRentals.forEach((rental) => {
+      if (rental.status !== "approved" && rental.status !== "active") return;
+      const equipmentId = rental.equipment.id;
+      if (!equipmentId) return;
+      if (rental.startDate > now || rental.endDate < now) return;
+
+      const equipment = equipmentById.get(equipmentId);
+      const bufferDays = equipment?.availability.bufferDays ?? 0;
+      const freeDate = addDays(rental.endDate, bufferDays);
+      const current = byEquipment.get(equipmentId);
+
+      if (!current || freeDate > current) {
+        byEquipment.set(equipmentId, freeDate);
+      }
+    });
+
+    return byEquipment;
+  }, [allEquipment, allRentals]);
 
   const filteredAndSortedEquipment = useMemo(() => {
     let result = allEquipment.filter((equipment) => {
@@ -215,9 +257,13 @@ const BrowseEquipment = () => {
 
         {/* Results Header */}
         <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {filteredAndSortedEquipment.length} of {allEquipment.length} listings
-          </p>
+          {isLoading ? (
+            <Skeleton className="h-4 w-40" />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {filteredAndSortedEquipment.length} of {allEquipment.length} listings
+            </p>
+          )}
           <div className="flex items-center gap-1 rounded-lg border border-border p-1">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
@@ -237,7 +283,31 @@ const BrowseEquipment = () => {
         </div>
 
         {/* Equipment Grid/List */}
-        {filteredAndSortedEquipment.length > 0 ? (
+        {isLoading ? (
+          <div
+            className={
+              viewMode === "grid"
+                ? "grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
+                : "flex flex-col gap-6"
+            }
+          >
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={`skeleton-${index}`} className="rounded-xl border border-border bg-card p-4 space-y-4">
+                <Skeleton className="aspect-[4/3] w-full rounded-lg" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                </div>
+                <div className="flex items-center justify-between pt-2">
+                  <Skeleton className="h-6 w-28" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredAndSortedEquipment.length > 0 ? (
           <div className={viewMode === "grid" 
             ? "grid gap-8 sm:grid-cols-2 lg:grid-cols-3" 
             : "flex flex-col gap-6"
@@ -248,7 +318,10 @@ const BrowseEquipment = () => {
                 className="animate-fade-in"
                 style={{ animationDelay: `${index * 0.03}s` }}
               >
-                <EquipmentCard equipment={equipment} />
+                <EquipmentCard
+                  equipment={equipment}
+                  nextAvailableAt={nextAvailableByEquipment.get(equipment.id)}
+                />
               </div>
             ))}
           </div>

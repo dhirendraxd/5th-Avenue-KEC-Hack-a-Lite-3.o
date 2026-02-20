@@ -1,5 +1,12 @@
-import { getDocument, getDocuments, subscribeDocument, subscribeDocuments } from "./firestore";
-import { ChecklistItem, RentalRequest } from "@/lib/mockData";
+import {
+  createDocument,
+  getDocument,
+  getDocuments,
+  subscribeDocument,
+  subscribeDocuments,
+  updateDocument,
+} from "./firestore";
+import { ChecklistItem, Equipment, RentalRequest } from "@/lib/mockData";
 
 const RENTALS_COLLECTION = "rentals";
 
@@ -34,6 +41,19 @@ interface FirestoreRentalDocument {
   pickupChecklist?: ChecklistItem[];
   returnChecklist?: ChecklistItem[];
   extensionRequest?: RentalRequest["extensionRequest"];
+  createdAt?: string;
+}
+
+interface CreateRentalRequestInput {
+  equipment: Equipment;
+  renterId: string;
+  renterName: string;
+  renterLocation?: string;
+  startDate: Date;
+  endDate: Date;
+  purpose?: string;
+  destination?: string;
+  notes?: string;
 }
 
 const toDate = (value?: string) => {
@@ -118,12 +138,78 @@ const toRental = (id: string, doc: FirestoreRentalDocument): RentalRequest => {
     serviceFee: doc.serviceFee ?? 0,
     totalPrice: doc.totalPrice ?? 0,
     status: doc.status || "requested",
-    createdAt: new Date(),
+    createdAt: toDate(doc.createdAt),
     ownerNotes: doc.ownerNotes,
     pickupChecklist: doc.pickupChecklist,
     returnChecklist: doc.returnChecklist,
     extensionRequest: doc.extensionRequest,
   };
+};
+
+export const createFirebaseRentalRequest = async (
+  input: CreateRentalRequestInput,
+): Promise<RentalRequest> => {
+  const rentalId = `rental-${globalThis.crypto?.randomUUID?.() || Date.now()}`;
+  const totalDays =
+    Math.max(
+      1,
+      Math.ceil(
+        (input.endDate.getTime() - input.startDate.getTime()) /
+          (1000 * 60 * 60 * 24),
+      ) + 1,
+    );
+  const rentalFee = input.equipment.pricePerDay * totalDays;
+  const serviceFee = Math.round(
+    (rentalFee * input.equipment.serviceFeePercent) / 100,
+  );
+  const totalPrice = rentalFee + serviceFee;
+
+  const document: FirestoreRentalDocument = {
+    equipmentId: input.equipment.id,
+    equipmentName: input.equipment.name,
+    equipmentDescription: input.equipment.description,
+    equipmentCategory: input.equipment.category,
+    equipmentImages: input.equipment.images,
+    equipmentPricePerDay: input.equipment.pricePerDay,
+    equipmentSecurityDeposit: input.equipment.securityDeposit,
+    equipmentServiceFeePercent: input.equipment.serviceFeePercent,
+    equipmentCancellationPolicy: input.equipment.cancellationPolicy,
+    equipmentCondition: input.equipment.condition,
+    equipmentFeatures: input.equipment.features,
+    equipmentUsageNotes: input.equipment.usageNotes,
+    equipmentInsuranceProtected: input.equipment.insuranceProtected,
+    ownerId: input.equipment.owner.id,
+    ownerName: input.equipment.owner.name,
+    ownerLocation: input.equipment.owner.location,
+    renterId: input.renterId,
+    renterName: input.renterName,
+    renterLocation: input.renterLocation,
+    startDate: input.startDate.toISOString(),
+    endDate: input.endDate.toISOString(),
+    totalDays,
+    rentalFee,
+    serviceFee,
+    totalPrice,
+    status: "requested",
+    createdAt: new Date().toISOString(),
+    purpose: input.purpose,
+    destination: input.destination,
+    notes: input.notes,
+  };
+
+  await createDocument(RENTALS_COLLECTION, rentalId, document);
+  return toRental(rentalId, document);
+};
+
+export const updateFirebaseRentalStatus = async (
+  rentalId: string,
+  status: RentalRequest["status"],
+  ownerNotes?: string,
+) => {
+  await updateDocument<FirestoreRentalDocument>(RENTALS_COLLECTION, rentalId, {
+    status,
+    ownerNotes,
+  });
 };
 
 export const getFirebaseRentals = async (): Promise<RentalRequest[]> => {

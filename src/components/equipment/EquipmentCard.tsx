@@ -2,19 +2,22 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Shield, MapPin, Heart, Repeat, Award } from "lucide-react";
+import { Star, Shield, MapPin, Heart, Repeat, Award, Calendar } from "lucide-react";
 import { Equipment } from "@/lib/mockData";
 import { categoryLabels, conditionLabels } from "@/lib/constants";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface EquipmentCardProps {
   equipment: Equipment;
+  nextAvailableAt?: Date;
 }
 
-const EquipmentCard = ({ equipment }: EquipmentCardProps) => {
+const EquipmentCard = ({ equipment, nextAvailableAt }: EquipmentCardProps) => {
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const favorite = isFavorite(equipment.id);
+  const listingLocation = equipment.locationName?.trim() || equipment.owner.location || "Location not specified";
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -85,9 +88,20 @@ const EquipmentCard = ({ equipment }: EquipmentCardProps) => {
             <Badge variant="outline" className="text-xs">
               {categoryLabels[equipment.category]}
             </Badge>
+            {nextAvailableAt && (
+              <Badge variant="secondary" className="text-xs gap-1">
+                <Calendar className="h-3 w-3" />
+                Free on {format(nextAvailableAt, "MMM d")}
+              </Badge>
+            )}
             {equipment.availability.minRentalDays > 1 && (
               <span className="text-xs text-muted-foreground">
                 Min {equipment.availability.minRentalDays} days
+              </span>
+            )}
+            {equipment.availability.bufferDays > 0 && (
+              <span className="text-xs text-muted-foreground">
+                Buffer {equipment.availability.bufferDays}d
               </span>
             )}
           </div>
@@ -98,6 +112,11 @@ const EquipmentCard = ({ equipment }: EquipmentCardProps) => {
             {equipment.description}
           </p>
 
+          <div className="mb-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5" />
+            <span className="line-clamp-1">{listingLocation}</span>
+          </div>
+
           <p className="mb-2 text-sm font-medium text-foreground">
             Listed by {equipment.owner.name}
           </p>
@@ -106,7 +125,7 @@ const EquipmentCard = ({ equipment }: EquipmentCardProps) => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <MapPin className="h-3.5 w-3.5" />
-              <span>{equipment.owner.location}</span>
+              <span>Owner: {equipment.owner.location}</span>
               {equipment.owner.distance && (
                 <span className="text-xs">({equipment.owner.distance} mi)</span>
               )}

@@ -119,6 +119,9 @@ export interface RentalRequest {
     additionalCost: number;
     status: "pending" | "approved" | "declined";
   };
+  purpose?: string;
+  destination?: string;
+  notes?: string;
 }
 
 export interface ChecklistItem {

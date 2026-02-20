@@ -37,7 +37,7 @@ import ApproveWithConditionsDialog from "@/components/dashboard/ApproveWithCondi
 import BusinessProfileSection from "@/components/dashboard/BusinessProfileSection";
 import { useAuth } from "@/contexts/AuthContext";
 import { subscribeFirebaseEquipment } from "@/lib/firebase/equipment";
-import { subscribeFirebaseRentals } from "@/lib/firebase/rentals";
+import { subscribeFirebaseRentals, updateFirebaseRentalStatus } from "@/lib/firebase/rentals";
 import { subscribeBusinessProfile } from "@/lib/firebase/businessProfile";
 import { RentalRequest, Equipment } from "@/lib/mockData";
 import { categoryLabels, statusColors } from "@/lib/constants";
@@ -139,26 +139,52 @@ const OwnerDashboard = () => {
     return daysUntil <= 2;
   });
 
-  const handleApprove = (requestId: string, notes?: string) => {
-    setRequests((prev) =>
-      prev.map((r) =>
-        r.id === requestId ? { ...r, status: "approved", ownerNotes: notes } : r
-      )
-    );
-    toast({
-      title: "Request approved",
-      description: "The renter has been notified. Pickup details will be shared.",
-    });
+  const handleApprove = async (requestId: string, notes?: string) => {
+    try {
+      await updateFirebaseRentalStatus(requestId, "approved", notes);
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === requestId ? { ...r, status: "approved", ownerNotes: notes } : r
+        )
+      );
+      toast({
+        title: "Request approved",
+        description: "The renter has been notified. Pickup details will be shared.",
+      });
+    } catch (error) {
+      console.error("Failed to approve rental request:", error);
+      toast({
+        title: "Approval failed",
+        description:
+          error instanceof Error && error.message
+            ? error.message
+            : "Could not approve this request. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDecline = (requestId: string) => {
-    setRequests((prev) =>
-      prev.map((r) => (r.id === requestId ? { ...r, status: "declined" } : r))
-    );
-    toast({
-      title: "Request declined",
-      description: "The renter has been notified.",
-    });
+  const handleDecline = async (requestId: string) => {
+    try {
+      await updateFirebaseRentalStatus(requestId, "declined");
+      setRequests((prev) =>
+        prev.map((r) => (r.id === requestId ? { ...r, status: "declined" } : r))
+      );
+      toast({
+        title: "Request declined",
+        description: "The renter has been notified.",
+      });
+    } catch (error) {
+      console.error("Failed to decline rental request:", error);
+      toast({
+        title: "Decline failed",
+        description:
+          error instanceof Error && error.message
+            ? error.message
+            : "Could not decline this request. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleApproveExtension = (requestId: string) => {

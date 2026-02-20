@@ -23,7 +23,8 @@ import {
   isBusinessKycComplete,
 } from "@/lib/firebase/businessProfile";
 import { subscribeFirebaseEquipmentById } from "@/lib/firebase/equipment";
-import { Equipment } from "@/lib/mockData";
+import { createFirebaseRentalRequest, subscribeFirebaseRentals } from "@/lib/firebase/rentals";
+import { Equipment, RentalRequest } from "@/lib/mockData";
 import { categoryLabels, conditionLabels } from "@/lib/constants";
 import {
   ArrowLeft,
@@ -40,7 +41,7 @@ import {
   Repeat,
   XCircle,
 } from "lucide-react";
-import { differenceInDays, isWithinInterval, isSameDay } from "date-fns";
+import { addDays, differenceInDays, format, isWithinInterval, isSameDay } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +54,7 @@ const EquipmentDetail = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isRequesting, setIsRequesting] = useState(false);
   const [equipment, setEquipment] = useState<Equipment | null>(null);
+  const [allRentals, setAllRentals] = useState<RentalRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -75,6 +77,15 @@ const EquipmentDetail = () => {
 
     return () => unsubscribe();
   }, [id]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeFirebaseRentals(
+      (rentals) => setAllRentals(rentals),
+      (error) => console.error("Failed to load rentals for detail availability:", error)
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   const favorite = equipment ? isFavorite(equipment.id) : false;
 
@@ -110,6 +121,17 @@ const EquipmentDetail = () => {
 
   const isValidRentalDuration = totalDays >= equipment.availability.minRentalDays;
 
+  const bookedDateRanges = allRentals
+    .filter(
+      (rental) =>
+        rental.equipment.id === equipment.id &&
+        (rental.status === "approved" || rental.status === "active")
+    )
+    .map((rental) => ({
+      start: rental.startDate,
+      end: addDays(rental.endDate, equipment.availability.bufferDays || 0),
+    }));
+
   // Check if a date is blocked or unavailable
   const isDateDisabled = (date: Date) => {
     // Past dates
@@ -117,6 +139,10 @@ const EquipmentDetail = () => {
     
     // Blocked dates
     if (equipment.availability.blockedDates.some(blocked => isSameDay(blocked, date))) {
+      return true;
+    }
+
+    if (bookedDateRanges.some((range) => isWithinInterval(date, range))) {
       return true;
     }
     
@@ -127,6 +153,11 @@ const EquipmentDetail = () => {
     
     return !inRange;
   };
+
+  // New state for additional info
+  const [purpose, setPurpose] = useState("");
+  const [destination, setDestination] = useState("");
+  const [notes, setNotes] = useState("");
 
   const handleRentalRequest = async () => {
     if (!isAuthenticated || !user) {
@@ -169,19 +200,62 @@ const EquipmentDetail = () => {
     }
 
     setIsRequesting(true);
-    setTimeout(() => {
+    try {
+      await createFirebaseRentalRequest({
+        equipment,
+        renterId: user.id,
+        renterName: user.name,
+        renterLocation: user.businessName,
+        startDate: dateRange.from,
+        endDate: dateRange.to,
+        purpose,
+        destination,
+        notes,
+      });
+
       setIsRequesting(false);
       toast({
         title: "Request Submitted",
         description: `Your rental request for ${equipment.name} has been sent to ${equipment.owner.name}. You'll receive a response within 24 hours.`,
       });
-    }, 1500);
+    } catch (error) {
+      console.error("Failed to create rental request:", error);
+      setIsRequesting(false);
+      toast({
+        title: "Request failed",
+        description:
+          error instanceof Error && error.message
+            ? error.message
+            : "Could not submit request. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const averageRating =
     equipment.reviews.length > 0
       ? equipment.reviews.reduce((acc, r) => acc + r.rating, 0) / equipment.reviews.length
       : 0;
+  const rentalLocation = equipment.locationName?.trim() || equipment.owner.location;
+
+  const nextAvailableAt = (() => {
+    const now = new Date();
+    const relevant = allRentals.filter(
+      (rental) =>
+        rental.equipment.id === equipment.id &&
+        (rental.status === "approved" || rental.status === "active") &&
+        rental.startDate <= now &&
+        rental.endDate >= now
+    );
+
+    if (relevant.length === 0) return null;
+
+    const latestEnd = relevant.reduce((latest, rental) =>
+      rental.endDate > latest ? rental.endDate : latest,
+    relevant[0].endDate);
+
+    return addDays(latestEnd, equipment.availability.bufferDays || 0);
+  })();
 
   return (
     <div className="min-h-screen bg-background">
@@ -404,6 +478,32 @@ const EquipmentDetail = () => {
 
                 <Separator />
 
+                {/* Rental Location */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <MapPin className="h-4 w-4" />
+                    Rental Location
+                  </div>
+                  <p className="text-sm text-muted-foreground">{rentalLocation}</p>
+                  {nextAvailableAt && (
+                    <p className="text-xs text-warning">
+                      Currently booked • Available from {format(nextAvailableAt, "PPP")}
+                    </p>
+                  )}
+                  {equipment.locationMapUrl && (
+                    <a
+                      href={equipment.locationMapUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Open location in map
+                    </a>
+                  )}
+                </div>
+
+                <Separator />
+
                 {/* Calendar */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -429,11 +529,36 @@ const EquipmentDetail = () => {
                 {/* Cost Breakdown */}
                 <CostBreakdown equipment={equipment} totalDays={totalDays} />
 
+                {/* Additional Info Fields */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium">Purpose of Rental</label>
+                  <input
+                    className="input input-bordered w-full"
+                    value={purpose}
+                    onChange={e => setPurpose(e.target.value)}
+                    placeholder="e.g. Construction project, event, etc."
+                  />
+                  <label className="block text-sm font-medium">Where will you use/take it?</label>
+                  <input
+                    className="input input-bordered w-full"
+                    value={destination}
+                    onChange={e => setDestination(e.target.value)}
+                    placeholder="e.g. Project site, event location, etc."
+                  />
+                  <label className="block text-sm font-medium">Other Notes (optional)</label>
+                  <textarea
+                    className="input input-bordered w-full min-h-[60px]"
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    placeholder="Any special instructions or info for the owner"
+                  />
+                </div>
+
                 {/* Request Button */}
                 <Button
                   onClick={handleRentalRequest}
                   disabled={totalDays === 0 || !isValidRentalDuration || isRequesting}
-                  className="w-full"
+                  className="w-full mt-4"
                   size="lg"
                 >
                   {isRequesting ? "Submitting..." : "Request Rental"}
