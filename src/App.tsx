@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -12,22 +13,24 @@ import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
-  <AuthProvider>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/browse" element={<BrowseEquipment />} />
-        <Route path="/equipment/:id" element={<EquipmentDetail />} />
-        <Route path="/dashboard" element={<OwnerDashboard />} />
-        <Route path="/rental/:id" element={<RentalOperations />} />
-        <Route path="/finance" element={<FinanceDashboard />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <Toaster />
-    </BrowserRouter>
-  </AuthProvider>
+  <ErrorBoundary>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/browse" element={<BrowseEquipment />} />
+          <Route path="/equipment/:id" element={<EquipmentDetail />} />
+          <Route path="/dashboard" element={<OwnerDashboard />} />
+          <Route path="/rental/:id" element={<RentalOperations />} />
+          <Route path="/finance" element={<FinanceDashboard />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <Toaster />
+      </BrowserRouter>
+    </AuthProvider>
+  </ErrorBoundary>
 );
 
 export default App;
