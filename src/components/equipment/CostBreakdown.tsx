@@ -28,7 +28,7 @@ const CostBreakdown = ({ equipment, totalDays }: CostBreakdownProps) => {
           <span className="text-muted-foreground">
             Equipment rental ({totalDays} {totalDays === 1 ? 'day' : 'days'})
           </span>
-          <span className="text-foreground">${rentalFee.toLocaleString()}</span>
+          <span className="text-foreground">NPR {rentalFee.toLocaleString()}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground flex items-center gap-1">
@@ -37,7 +37,7 @@ const CostBreakdown = ({ equipment, totalDays }: CostBreakdownProps) => {
               (includes support)
             </span>
           </span>
-          <span className="text-foreground">${serviceFee.toLocaleString()}</span>
+          <span className="text-foreground">NPR {serviceFee.toLocaleString()}</span>
         </div>
       </div>
 
@@ -45,7 +45,7 @@ const CostBreakdown = ({ equipment, totalDays }: CostBreakdownProps) => {
 
       <div className="flex justify-between font-semibold">
         <span className="text-foreground">Rental Total</span>
-        <span className="text-foreground">${grandTotal.toLocaleString()}</span>
+        <span className="text-foreground">NPR {grandTotal.toLocaleString()}</span>
       </div>
 
       <Separator />
@@ -56,7 +56,7 @@ const CostBreakdown = ({ equipment, totalDays }: CostBreakdownProps) => {
             Security deposit
             <span className="text-xs ml-1">(refundable)</span>
           </span>
-          <span className="text-foreground">${equipment.securityDeposit.toLocaleString()}</span>
+          <span className="text-foreground">NPR {equipment.securityDeposit.toLocaleString()}</span>
         </div>
         <p className="text-xs text-muted-foreground">
           Deposit is held and returned within 3-5 business days after successful return.
@@ -67,7 +67,7 @@ const CostBreakdown = ({ equipment, totalDays }: CostBreakdownProps) => {
         <div className="flex justify-between items-center">
           <span className="font-medium text-foreground">Due at booking</span>
           <span className="text-lg font-bold text-primary">
-            ${(grandTotal + equipment.securityDeposit).toLocaleString()}
+            NPR {(grandTotal + equipment.securityDeposit).toLocaleString()}
           </span>
         </div>
       </div>

@@ -260,7 +260,7 @@ const RentalOperations = () => {
                       </div>
                       <p className="mt-2 text-sm text-muted-foreground">
                         New end date: {format(extensionRequest.newEndDate, "MMM d, yyyy")} (+
-                        {extensionRequest.additionalDays} days, ${extensionRequest.additionalCost})
+                        {extensionRequest.additionalDays} days, NPR {extensionRequest.additionalCost})
                       </p>
                     </div>
                   </>
@@ -374,24 +374,24 @@ const RentalOperations = () => {
               <CardContent className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
-                    Rental ({rental.totalDays} days × ${rental.equipment.pricePerDay})
+                    Rental ({rental.totalDays} days × NPR {rental.equipment.pricePerDay})
                   </span>
-                  <span className="font-medium">${rental.rentalFee}</span>
+                  <span className="font-medium">NPR {rental.rentalFee}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Service fee</span>
-                  <span className="font-medium">${rental.serviceFee}</span>
+                  <span className="font-medium">NPR {rental.serviceFee}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
                   <span className="font-medium text-foreground">Total Paid</span>
                   <span className="text-xl font-bold text-foreground">
-                    ${rental.totalPrice}
+                    NPR {rental.totalPrice}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Security deposit (hold)</span>
-                  <span className="font-medium">${rental.equipment.securityDeposit}</span>
+                  <span className="font-medium">NPR {rental.equipment.securityDeposit}</span>
                 </div>
               </CardContent>
             </Card>

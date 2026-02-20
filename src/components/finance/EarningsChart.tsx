@@ -57,11 +57,11 @@ const EarningsChart = ({ data, chartType = "bar" }: EarningsChartProps) => {
         <div className="flex gap-6 text-sm">
           <div>
             <span className="text-muted-foreground">Total Revenue: </span>
-            <span className="font-semibold text-foreground">${totalRevenue.toLocaleString()}</span>
+            <span className="font-semibold text-foreground">NPR {totalRevenue.toLocaleString()}</span>
           </div>
           <div>
             <span className="text-muted-foreground">Net Earnings: </span>
-            <span className="font-semibold text-accent">${totalNet.toLocaleString()}</span>
+            <span className="font-semibold text-accent">NPR {totalNet.toLocaleString()}</span>
           </div>
         </div>
       </CardHeader>
@@ -79,13 +79,13 @@ const EarningsChart = ({ data, chartType = "bar" }: EarningsChartProps) => {
               <YAxis 
                 tickLine={false} 
                 axisLine={false}
-                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                tickFormatter={(value) => `NPR ${(value / 1000).toFixed(0)}k`}
                 className="text-muted-foreground text-xs"
               />
               <ChartTooltip
                 content={
                   <ChartTooltipContent
-                    formatter={(value) => `$${Number(value).toLocaleString()}`}
+                    formatter={(value) => `NPR ${Number(value).toLocaleString()}`}
                   />
                 }
               />
@@ -104,13 +104,13 @@ const EarningsChart = ({ data, chartType = "bar" }: EarningsChartProps) => {
               <YAxis 
                 tickLine={false} 
                 axisLine={false}
-                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                tickFormatter={(value) => `NPR ${(value / 1000).toFixed(0)}k`}
                 className="text-muted-foreground text-xs"
               />
               <ChartTooltip
                 content={
                   <ChartTooltipContent
-                    formatter={(value) => `$${Number(value).toLocaleString()}`}
+                    formatter={(value) => `NPR ${Number(value).toLocaleString()}`}
                   />
                 }
               />

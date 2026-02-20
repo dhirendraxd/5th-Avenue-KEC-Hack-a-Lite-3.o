@@ -498,7 +498,7 @@ const AddEquipmentDialog = ({ open, onOpenChange, onSubmit }: AddEquipmentDialog
                       Platform Insurance Protection
                     </Label>
                     <p className="text-sm text-muted-foreground">
-                      Coverage up to $50,000 for equipment damage during rentals
+                      Coverage up to NPR 50,000 for equipment damage during rentals
                     </p>
                   </div>
                 </div>

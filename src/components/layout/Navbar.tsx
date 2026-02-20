@@ -1,23 +1,15 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { roleLabels } from "@/lib/mockData";
-import { Package, Home, LayoutDashboard, Search, Menu, X, User, LogOut, Settings, Building2, DollarSign } from "lucide-react";
+import { Package, Home, LayoutDashboard, Search, Menu, X, User, DollarSign } from "lucide-react";
 import { useState } from "react";
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const publicNavLinks = [
@@ -35,11 +27,6 @@ const Navbar = () => {
     : publicNavLinks;
 
   const isActive = (path: string) => location.pathname === path;
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
@@ -71,47 +58,16 @@ const Navbar = () => {
           {/* Desktop CTA / User Menu */}
           <div className="hidden items-center gap-3 md:flex">
             {isAuthenticated && user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <span className="max-w-[120px] truncate">{user.name}</span>
-                    <Badge variant="outline" className={`${roleLabels[user.role].color} text-xs`}>
-                      {roleLabels[user.role].label.split(' ')[0]}
-                    </Badge>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col">
-                      <span>{user.name}</span>
-                      <span className="text-xs font-normal text-muted-foreground">
-                        {user.email}
-                      </span>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/dashboard")}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/dashboard?tab=locations")}>
-                    <Building2 className="mr-2 h-4 w-4" />
-                    Manage Locations
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/dashboard?tab=settings")}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Go to dashboard"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  <User className="h-4 w-4" />
+                </Button>
+              </>
             ) : (
               <>
                 <Link to="/dashboard">
@@ -166,17 +122,6 @@ const Navbar = () => {
                         <p className="text-xs text-muted-foreground">{roleLabels[user.role].label}</p>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => {
-                        handleLogout();
-                        setMobileMenuOpen(false);
-                      }}
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
-                    </Button>
                   </>
                 ) : (
                   <>

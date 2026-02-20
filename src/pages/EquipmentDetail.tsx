@@ -322,7 +322,7 @@ const EquipmentDetail = () => {
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-baseline justify-between">
                   <span>
-                    ${equipment.pricePerDay}
+                    NPR {equipment.pricePerDay}
                     <span className="text-base font-normal text-muted-foreground">
                       /day
                     </span>

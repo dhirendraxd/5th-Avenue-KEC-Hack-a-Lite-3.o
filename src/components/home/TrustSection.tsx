@@ -15,7 +15,7 @@ const stats = [
   },
   {
     icon: Shield,
-    value: "$5M+",
+    value: "NPR 5M+",
     label: "Insurance Coverage",
     description: "Comprehensive protection on all rentals",
   },

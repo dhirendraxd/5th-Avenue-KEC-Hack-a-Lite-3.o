@@ -31,7 +31,7 @@ const EquipmentMiniCard = ({ equipmentId }: EquipmentMiniCardProps) => {
           {equipment.name}
         </p>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs font-medium text-primary">${equipment.pricePerDay}/day</span>
+          <span className="text-xs font-medium text-primary">NPR {equipment.pricePerDay}/day</span>
           {avgRating && (
             <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
               <Star className="h-3 w-3 fill-warning text-warning" />

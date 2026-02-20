@@ -42,21 +42,21 @@ const FinanceDashboard = () => {
   const stats = [
     {
       label: "Total Earnings",
-      value: `$${financeSummary.totalEarnings.toLocaleString()}`,
+      value: `NPR ${financeSummary.totalEarnings.toLocaleString()}`,
       icon: DollarSign,
       color: "text-success",
       change: "+12.5%",
     },
     {
       label: "This Month",
-      value: `$${financeSummary.thisMonthEarnings.toLocaleString()}`,
+      value: `NPR ${financeSummary.thisMonthEarnings.toLocaleString()}`,
       icon: TrendingUp,
       color: "text-primary",
       change: "+8.2%",
     },
     {
       label: "Pending Payouts",
-      value: `$${financeSummary.pendingPayouts.toLocaleString()}`,
+      value: `NPR ${financeSummary.pendingPayouts.toLocaleString()}`,
       icon: CreditCard,
       color: "text-accent",
     },
@@ -178,7 +178,7 @@ const FinanceDashboard = () => {
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Total Fees Paid</span>
                         <span className="font-semibold text-foreground">
-                          ${(financeSummary.totalEarnings * financeSummary.platformFeeRate).toLocaleString()}
+                          NPR {(financeSummary.totalEarnings * financeSummary.platformFeeRate).toLocaleString()}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground pt-2 border-t border-border">

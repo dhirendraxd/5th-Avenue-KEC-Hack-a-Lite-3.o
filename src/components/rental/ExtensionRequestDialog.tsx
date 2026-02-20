@@ -93,15 +93,15 @@ const ExtensionRequestDialog = ({
                   <div className="flex justify-between">
                     <span className="text-muted-foreground flex items-center gap-2">
                       <Clock className="h-4 w-4" />
-                      {additionalDays} additional days × ${pricePerDay}/day
+                      {additionalDays} additional days × NPR {pricePerDay}/day
                     </span>
-                    <span className="font-medium">${additionalRental}</span>
+                    <span className="font-medium">NPR {additionalRental}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
                       Service fee ({serviceFeePercent}%)
                     </span>
-                    <span className="font-medium">${additionalServiceFee}</span>
+                    <span className="font-medium">NPR {additionalServiceFee}</span>
                   </div>
                 </div>
 
@@ -113,7 +113,7 @@ const ExtensionRequestDialog = ({
                     Additional Total
                   </span>
                   <span className="text-xl font-bold text-foreground">
-                    ${totalAdditional}
+                    NPR {totalAdditional}
                   </span>
                 </div>
 

@@ -41,7 +41,7 @@ const PayoutSummary = ({
               Ready
             </Badge>
           </div>
-          <p className="text-3xl font-bold text-foreground">${pendingPayouts.toLocaleString()}</p>
+          <p className="text-3xl font-bold text-foreground">NPR {pendingPayouts.toLocaleString()}</p>
           <Button className="w-full mt-3 gap-2" size="sm">
             <ArrowUpRight className="h-4 w-4" />
             Request Payout
@@ -58,7 +58,7 @@ const PayoutSummary = ({
               <span className="text-xs text-muted-foreground">Total Earnings</span>
             </div>
             <p className="text-lg font-semibold text-foreground">
-              ${totalEarnings.toLocaleString()}
+              NPR {totalEarnings.toLocaleString()}
             </p>
           </div>
           <div className="p-3 rounded-lg bg-muted">
@@ -67,7 +67,7 @@ const PayoutSummary = ({
               <span className="text-xs text-muted-foreground">This Month</span>
             </div>
             <p className="text-lg font-semibold text-foreground">
-              ${thisMonthEarnings.toLocaleString()}
+              NPR {thisMonthEarnings.toLocaleString()}
             </p>
           </div>
         </div>
@@ -78,7 +78,7 @@ const PayoutSummary = ({
             <span className="text-xs text-muted-foreground">Avg. Rental Value</span>
           </div>
           <p className="text-lg font-semibold text-foreground">
-            ${averageRentalValue.toLocaleString()}
+            NPR {averageRentalValue.toLocaleString()}
           </p>
         </div>
 

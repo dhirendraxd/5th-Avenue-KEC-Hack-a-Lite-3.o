@@ -326,7 +326,7 @@ const UsageAnalytics = ({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Revenue</span>
-                      <span className="text-foreground">${location.totalRevenue.toLocaleString()}</span>
+                      <span className="text-foreground">NPR {location.totalRevenue.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Top Asset</span>

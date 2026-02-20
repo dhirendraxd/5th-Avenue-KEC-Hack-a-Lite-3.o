@@ -80,7 +80,7 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <p className={`font-semibold ${isPositive ? 'text-success' : 'text-foreground'}`}>
-                        {isPositive ? '+' : ''}{transaction.type === 'service_fee' ? '-' : ''}${Math.abs(transaction.amount).toLocaleString()}
+                        {isPositive ? '+' : ''}{transaction.type === 'service_fee' ? '-' : ''}NPR {Math.abs(transaction.amount).toLocaleString()}
                       </p>
                     </div>
                     <Badge variant="outline" className={`text-xs ${statusColors[transaction.status]}`}>

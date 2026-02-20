@@ -206,7 +206,7 @@ const HeroSection = () => {
                 transform: `translateY(${offsetY(0.12)}px) translateX(${offsetY(0.02)}px)`,
               }}
             >
-              <div className="text-2xl sm:text-3xl xl:text-4xl font-bold text-success tabular-nums leading-none">$2.4M</div>
+              <div className="text-2xl sm:text-3xl xl:text-4xl font-bold text-success tabular-nums leading-none">NPR 2.4M</div>
               <div className="mt-1 text-xs sm:text-sm xl:text-base font-medium text-muted-foreground">Saved by Businesses</div>
             </div>
           </div>

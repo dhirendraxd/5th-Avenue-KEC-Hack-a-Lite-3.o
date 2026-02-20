@@ -134,12 +134,12 @@ const EquipmentCard = ({ equipment }: EquipmentCardProps) => {
           <div className="flex items-baseline justify-between border-t border-border pt-3">
             <div>
               <span className="text-lg font-bold text-foreground">
-                ${equipment.pricePerDay}
+                NPR {equipment.pricePerDay}
               </span>
               <span className="text-sm text-muted-foreground">/day</span>
             </div>
             <span className="text-xs text-muted-foreground">
-              + ${equipment.securityDeposit} deposit
+              + NPR {equipment.securityDeposit} deposit
             </span>
           </div>
         </CardContent>

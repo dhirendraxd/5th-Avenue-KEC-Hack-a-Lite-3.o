@@ -197,8 +197,8 @@ const BrowseEquipment = () => {
                   step={25}
                 />
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>${priceRange[0]}/day</span>
-                  <span>${priceRange[1]}/day</span>
+                  <span>NPR {priceRange[0]}/day</span>
+                  <span>NPR {priceRange[1]}/day</span>
                 </div>
               </div>
 

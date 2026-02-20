@@ -7,6 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -48,13 +59,14 @@ import {
   CalendarPlus,
   AlertTriangle,
   Inbox,
+  LogOut,
 } from "lucide-react";
 import { format, isToday, isTomorrow, differenceInDays } from "date-fns";
 
 const OwnerDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [requests, setRequests] = useState<RentalRequest[]>(mockRentalRequests);
   const [isAddingEquipment, setIsAddingEquipment] = useState(false);
   const [approveDialog, setApproveDialog] = useState<{
@@ -204,6 +216,11 @@ const OwnerDashboard = () => {
     navigate(`/rental/${rental.id}`);
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
   const getDateLabel = (date: Date) => {
     if (isToday(date)) return "Today";
     if (isTomorrow(date)) return "Tomorrow";
@@ -221,10 +238,32 @@ const OwnerDashboard = () => {
           title="Dashboard"
           description={`Welcome, ${user?.name || "User"}. Monitor equipment, manage requests, and track performance`}
           actions={
-            <Button onClick={() => setIsAddingEquipment(true)} size="default" className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Equipment
-            </Button>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <Button onClick={() => setIsAddingEquipment(true)} size="default" className="w-full sm:w-auto">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Equipment
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-auto">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Sign out?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      You are about to sign out of your account. This helps prevent accidental logouts.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLogout}>Sign Out</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           }
         />
         <AddEquipmentDialog
@@ -259,7 +298,7 @@ const OwnerDashboard = () => {
           />
           <StatCard
             label="Total Earnings"
-            value="$12,450"
+            value="NPR 12,450"
             icon={DollarSign}
             iconColor="text-accent"
             trend={{ value: 12, isPositive: true }}
@@ -326,7 +365,7 @@ const OwnerDashboard = () => {
                           {request.renter.name} · Until{" "}
                           {format(request.extensionRequest!.newEndDate, "MMM d")} 
                           <span className="text-primary font-medium ml-1">
-                            (+{request.extensionRequest!.additionalDays}d, ${request.extensionRequest!.additionalCost})
+                            (+{request.extensionRequest!.additionalDays}d, NPR {request.extensionRequest!.additionalCost})
                           </span>
                         </p>
                       </div>
@@ -461,7 +500,7 @@ const OwnerDashboard = () => {
 
                       <div className="flex flex-col gap-3 lg:items-end">
                         <p className="text-xl font-bold text-foreground tabular-nums">
-                          ${request.totalPrice}
+                          NPR {request.totalPrice}
                         </p>
                         <div className="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
                           <Button
@@ -570,7 +609,7 @@ const OwnerDashboard = () => {
                       <div className="flex items-center justify-between pt-2 border-t border-border/50">
                         <div>
                           <span className="text-lg font-bold text-foreground tabular-nums">
-                            ${equipment.pricePerDay}
+                            NPR {equipment.pricePerDay}
                           </span>
                           <span className="text-sm text-muted-foreground">/day</span>
                         </div>
