@@ -56,6 +56,10 @@ const EquipmentDetail = () => {
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [allRentals, setAllRentals] = useState<RentalRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // New state for additional info (must be declared unconditionally)
+  const [purpose, setPurpose] = useState("");
+  const [destination, setDestination] = useState("");
+  const [notes, setNotes] = useState("");
 
   useEffect(() => {
     if (!id) {
@@ -114,50 +118,68 @@ const EquipmentDetail = () => {
     );
   }
 
-  const totalDays =
-    dateRange?.from && dateRange?.to
-      ? differenceInDays(dateRange.to, dateRange.from) + 1
-      : 0;
+    // Defensive defaults to avoid render-time exceptions when backend data is incomplete
+    const reviews = Array.isArray(equipment.reviews) ? equipment.reviews : [];
+    const availability = equipment.availability || {
+      minRentalDays: 1,
+      blockedDates: [],
+      availableRanges: [{ start: new Date(), end: addDays(new Date(), 365) }],
+      bufferDays: 0,
+    };
+    const owner = equipment.owner || {
+      name: "Unknown",
+      location: "",
+      rating: 0,
+      totalRentals: 0,
+      verified: false,
+      repeatRenter: false,
+      responseRate: 0,
+      responseTime: "",
+      memberSince: new Date().toISOString(),
+    };
 
-  const isValidRentalDuration = totalDays >= equipment.availability.minRentalDays;
+    const totalDays =
+      dateRange?.from && dateRange?.to
+        ? differenceInDays(dateRange.to, dateRange.from) + 1
+        : 0;
 
-  const bookedDateRanges = allRentals
-    .filter(
-      (rental) =>
-        rental.equipment.id === equipment.id &&
-        (rental.status === "approved" || rental.status === "active")
-    )
-    .map((rental) => ({
-      start: rental.startDate,
-      end: addDays(rental.endDate, equipment.availability.bufferDays || 0),
-    }));
+    const isValidRentalDuration = totalDays >= (availability.minRentalDays || 1);
 
-  // Check if a date is blocked or unavailable
-  const isDateDisabled = (date: Date) => {
-    // Past dates
-    if (date < new Date()) return true;
+    const bookedDateRanges = allRentals
+      .filter(
+        (rental) =>
+          rental.equipment.id === equipment.id &&
+          (rental.status === "approved" || rental.status === "active")
+      )
+      .map((rental) => ({
+        start: rental.startDate,
+        end: addDays(rental.endDate, availability.bufferDays || 0),
+      }));
+
+    // Check if a date is blocked or unavailable
+    const isDateDisabled = (date: Date) => {
+      // Past dates
+      if (date < new Date()) return true;
     
-    // Blocked dates
-    if (equipment.availability.blockedDates.some(blocked => isSameDay(blocked, date))) {
-      return true;
-    }
+      // Blocked dates
+      if ((availability.blockedDates || []).some((blocked: Date) => isSameDay(blocked, date))) {
+        return true;
+      }
 
-    if (bookedDateRanges.some((range) => isWithinInterval(date, range))) {
-      return true;
-    }
+      if (bookedDateRanges.some((range) => isWithinInterval(date, range))) {
+        return true;
+      }
     
-    // Check if within available ranges
-    const inRange = equipment.availability.availableRanges.some(range =>
-      isWithinInterval(date, { start: range.start, end: range.end })
-    );
+      // Check if within available ranges
+      const inRange = (availability.availableRanges || []).some((range: { start: Date; end: Date }) =>
+        isWithinInterval(date, { start: range.start, end: range.end })
+      );
     
-    return !inRange;
-  };
+      return !inRange;
+    };
 
   // New state for additional info
-  const [purpose, setPurpose] = useState("");
-  const [destination, setDestination] = useState("");
-  const [notes, setNotes] = useState("");
+  
 
   const handleRentalRequest = async () => {
     if (!isAuthenticated || !user) {
@@ -193,7 +215,7 @@ const EquipmentDetail = () => {
     if (!isValidRentalDuration) {
       toast({
         title: "Minimum Duration Required",
-        description: `This equipment requires a minimum of ${equipment.availability.minRentalDays} days rental.`,
+        description: `This equipment requires a minimum of ${availability.minRentalDays} days rental.`,
         variant: "destructive",
       });
       return;
@@ -216,7 +238,7 @@ const EquipmentDetail = () => {
       setIsRequesting(false);
       toast({
         title: "Request Submitted",
-        description: `Your rental request for ${equipment.name} has been sent to ${equipment.owner.name}. You'll receive a response within 24 hours.`,
+        description: `Your rental request for ${equipment.name} has been sent to ${owner.name}. You'll receive a response within 24 hours.`,
       });
     } catch (error) {
       console.error("Failed to create rental request:", error);
@@ -232,11 +254,8 @@ const EquipmentDetail = () => {
     }
   };
 
-  const averageRating =
-    equipment.reviews.length > 0
-      ? equipment.reviews.reduce((acc, r) => acc + r.rating, 0) / equipment.reviews.length
-      : 0;
-  const rentalLocation = equipment.locationName?.trim() || equipment.owner.location;
+  const averageRating = reviews.length > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length : 0;
+  const rentalLocation = equipment.locationName?.trim() || owner.location;
 
   const nextAvailableAt = (() => {
     const now = new Date();
@@ -254,7 +273,7 @@ const EquipmentDetail = () => {
       rental.endDate > latest ? rental.endDate : latest,
     relevant[0].endDate);
 
-    return addDays(latestEnd, equipment.availability.bufferDays || 0);
+    return addDays(latestEnd, availability.bufferDays || 0);
   })();
 
   return (
@@ -291,11 +310,15 @@ const EquipmentDetail = () => {
           <div className="lg:col-span-2 space-y-8">
             {/* Image */}
             <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
-              <img
-                src={equipment.images[0]}
-                alt={equipment.name}
-                className="h-full w-full object-cover"
-              />
+              {equipment.images && equipment.images.length > 0 ? (
+                <img
+                  src={equipment.images[0]}
+                  alt={equipment.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center text-muted-foreground">No image available</div>
+              )}
               {/* Badges */}
               <div className="absolute left-4 right-4 top-4 flex items-start justify-between">
                 <div className="flex flex-col gap-2">
@@ -329,9 +352,9 @@ const EquipmentDetail = () => {
                 <Badge variant="outline">
                   {categoryLabels[equipment.category]}
                 </Badge>
-                {equipment.availability.minRentalDays > 1 && (
+                {availability.minRentalDays > 1 && (
                   <Badge variant="secondary">
-                    Min {equipment.availability.minRentalDays} days
+                    Min {availability.minRentalDays} days
                   </Badge>
                 )}
               </div>
@@ -341,11 +364,11 @@ const EquipmentDetail = () => {
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Star className="h-4 w-4 fill-warning text-warning" />
-                  <span className="font-medium text-foreground">
+                    <span className="font-medium text-foreground">
                     {averageRating > 0 ? averageRating.toFixed(1) : 'New'}
                   </span>
-                  {equipment.reviews.length > 0 && (
-                    <span>({equipment.reviews.length} reviews)</span>
+                  {reviews.length > 0 && (
+                    <span>({reviews.length} reviews)</span>
                   )}
                 </span>
                 <span className="flex items-center gap-1">
@@ -365,21 +388,21 @@ const EquipmentDetail = () => {
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-foreground text-lg">
-                        {equipment.owner.name}
+                        {owner.name}
                       </span>
                       <Badge
                         variant="outline"
                         className={cn(
                           "gap-1",
-                          equipment.owner.verified
+                          owner.verified
                             ? "border-success/30 text-success"
                             : "border-border text-muted-foreground"
                         )}
                       >
                         <CheckCircle className="h-3 w-3" />
-                        {equipment.owner.verified ? "Verified Business" : "Unverified"}
+                        {owner.verified ? "Verified Business" : "Unverified"}
                       </Badge>
-                      {equipment.owner.repeatRenter && (
+                      {owner.repeatRenter && (
                         <Badge variant="secondary" className="gap-1">
                           <Repeat className="h-3 w-3" />
                           Repeat Partner
@@ -389,18 +412,18 @@ const EquipmentDetail = () => {
                     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5" />
-                        {equipment.owner.location}
-                        {equipment.owner.distance && ` (${equipment.owner.distance} mi)`}
+                        {owner.location}
+                        {owner.distance && ` (${owner.distance} mi)`}
                       </span>
                       <span className="flex items-center gap-1">
                         <Star className="h-3.5 w-3.5 fill-warning text-warning" />
-                        {equipment.owner.rating} ({equipment.owner.totalRentals} rentals)
+                        {owner.rating} ({owner.totalRentals} rentals)
                       </span>
                     </div>
                     <div className="flex flex-col gap-1 pt-1 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-4">
-                      <span>Response rate: {equipment.owner.responseRate}%</span>
-                      <span>Responds {equipment.owner.responseTime}</span>
-                      <span>Member since {equipment.owner.memberSince.getFullYear()}</span>
+                      <span>Response rate: {owner.responseRate}%</span>
+                      <span>Responds {owner.responseTime}</span>
+                      <span>Member since {new Date(owner.memberSince).getFullYear()}</span>
                     </div>
                   </div>
                 </div>
@@ -417,7 +440,7 @@ const EquipmentDetail = () => {
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-foreground">Features</h2>
               <div className="flex flex-wrap gap-2">
-                {equipment.features.map((feature) => (
+                {(equipment.features || []).map((feature) => (
                   <Badge key={feature} variant="secondary">
                     {feature}
                   </Badge>
@@ -439,7 +462,7 @@ const EquipmentDetail = () => {
             {/* Reviews Section */}
             <Card>
               <CardContent className="p-6">
-                <ReviewHighlights reviews={equipment.reviews} />
+                <ReviewHighlights reviews={reviews} />
               </CardContent>
             </Card>
 
@@ -474,7 +497,7 @@ const EquipmentDetail = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Availability Info */}
-                <AvailabilityInfo availability={equipment.availability} />
+                <AvailabilityInfo availability={availability} />
 
                 <Separator />
 
@@ -521,7 +544,7 @@ const EquipmentDetail = () => {
                   {totalDays > 0 && !isValidRentalDuration && (
                     <p className="text-xs text-destructive flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      Minimum {equipment.availability.minRentalDays} days required
+                      Minimum {availability.minRentalDays} days required
                     </p>
                   )}
                 </div>
