@@ -38,6 +38,8 @@ import BusinessProfileSection from "@/components/dashboard/BusinessProfileSectio
 import { useAuth } from "@/contexts/AuthContext";
 import { subscribeFirebaseEquipment } from "@/lib/firebase/equipment";
 import { subscribeFirebaseRentals, updateFirebaseRentalStatus } from "@/lib/firebase/rentals";
+import { subscribeDocuments, updateDocument } from "@/lib/firebase/firestore";
+import { where, orderBy } from "firebase/firestore";
 import { subscribeBusinessProfile } from "@/lib/firebase/businessProfile";
 import { RentalRequest, Equipment } from "@/lib/mockData";
 import { categoryLabels, statusColors } from "@/lib/constants";
@@ -75,6 +77,7 @@ const OwnerDashboard = () => {
   const [businessProfile, setBusinessProfile] = useState<{ isProfileComplete: boolean } | null>(null);
 
   const [myEquipment, setMyEquipment] = useState<Equipment[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -118,10 +121,24 @@ const OwnerDashboard = () => {
       }
     );
 
+    // Subscribe to owner notifications (latest first)
+    const unsubscribeNotifications = subscribeDocuments(
+      "notifications",
+      (docs) => {
+        // docs are already objects with id and fields
+        setNotifications(docs as any[]);
+      },
+      [where("recipientId", "==", user.id), orderBy("createdAt", "desc")],
+      (error) => {
+        console.error("Failed to load notifications:", error);
+      }
+    );
+
     return () => {
       unsubscribeEquipment();
       unsubscribeRentals();
       unsubscribeBusinessProfile();
+      unsubscribeNotifications();
     };
   }, [user]);
 
@@ -321,6 +338,66 @@ const OwnerDashboard = () => {
             trend={{ value: 12, isPositive: true }}
             subtitle="This month"
           />
+        </div>
+
+        {/* Notifications - small list for owner */}
+        <div className="mb-8">
+            <Card>
+              <CardHeader className="pb-2 flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                  <Inbox className="h-4 w-4 text-primary" />
+                  Notifications
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={async () => {
+                      const unread = notifications.filter((n) => !n.read);
+                      if (unread.length === 0) {
+                        toast({ title: "No unread notifications", description: "You're all caught up." });
+                        return;
+                      }
+
+                      // Optimistic update
+                      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+
+                      try {
+                        await Promise.all(
+                          unread.map((n) => updateDocument("notifications", n.id, { read: true }))
+                        );
+                        toast({ title: "Marked read", description: `Marked ${unread.length} notifications as read.` });
+                      } catch (err) {
+                        console.error("Failed to mark notifications read:", err);
+                        toast({ title: "Action failed", description: "Could not mark all notifications as read.", variant: "destructive" });
+                        // Revert optimistic update on failure: refetching will arrive via subscription; as fallback, mark unread back
+                        setNotifications((prev) => prev.map((n) => ({ ...n, read: n.read || false })));
+                      }
+                    }}
+                  >
+                    Mark all read
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {notifications.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No notifications</p>
+                ) : (
+                  <div className="space-y-2">
+                    {notifications.slice(0, 6).map((n: any) => (
+                      <div key={n.id} className={`flex items-start justify-between gap-3 p-3 rounded-lg ${n.read ? 'bg-card/50' : 'bg-primary/5'}`}>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{n.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">{n.message}</p>
+                          <p className="text-xs text-muted-foreground/60 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                        </div>
+                        {!n.read && <Badge variant="secondary">New</Badge>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
         </div>
 
         {/* Priority Alerts - Cleaner design with better grouping */}

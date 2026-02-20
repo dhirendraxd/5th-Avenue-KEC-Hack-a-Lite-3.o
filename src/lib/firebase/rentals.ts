@@ -24,6 +24,9 @@ interface FirestoreRentalDocument {
   equipmentFeatures?: string[];
   equipmentUsageNotes?: string;
   equipmentInsuranceProtected?: boolean;
+  purpose?: string;
+  destination?: string;
+  notes?: string;
   ownerId?: string;
   ownerName?: string;
   ownerLocation?: string;
@@ -143,6 +146,9 @@ const toRental = (id: string, doc: FirestoreRentalDocument): RentalRequest => {
     pickupChecklist: doc.pickupChecklist,
     returnChecklist: doc.returnChecklist,
     extensionRequest: doc.extensionRequest,
+    purpose: doc.purpose,
+    destination: doc.destination,
+    notes: doc.notes,
   };
 };
 
