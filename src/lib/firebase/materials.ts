@@ -1,7 +1,4 @@
-import {
-  createDocument,
-  subscribeDocuments,
-} from "./firestore";
+import { createDocument, subscribeDocuments } from "./firestore";
 import {
   MaterialCategory,
   MaterialCondition,
