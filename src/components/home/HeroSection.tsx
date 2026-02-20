@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Leaf, Building2, ChevronDown, Sparkles } from "lucide-react";
 import AnimatedHeroVisual from "./AnimatedHeroVisual";
 import { useParallax } from "@/hooks/useParallax";
@@ -129,49 +128,47 @@ const HeroSection = () => {
             </div>
 
             <div className="space-y-4 pt-4">
-              <div className="rounded-xl border border-border/70 bg-card p-3">
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <div className="relative flex-1">
-                    <Sparkles className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
-                    <Input
-                      value={prompt}
-                      onChange={(event) => setPrompt(event.target.value)}
-                      placeholder="Describe what you need (e.g., road work, concrete drilling, event lighting setup)"
-                      className="h-12 pl-10"
-                    />
-                  </div>
-                  <Link to="/dashboard" className="sm:w-auto">
-                    <Button size="lg" variant="outline" className="w-full px-7">
-                      List Equipment
-                    </Button>
-                  </Link>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="relative flex-1">
+                  <Sparkles className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+                  <Input
+                    value={prompt}
+                    onChange={(event) => setPrompt(event.target.value)}
+                    placeholder="Describe what you need (e.g., road work, concrete drilling, event lighting setup)"
+                    className="h-12 pl-10"
+                  />
                 </div>
-                {prompt.trim() && (
-                  <div className="mt-3">
-                    {suggestions.length > 0 ? (
-                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {suggestions.map((equipment) => (
-                          <Link key={equipment.id} to={`/equipment/${equipment.id}`}>
-                            <Card className="transition-colors hover:border-border">
-                              <CardContent className="p-3">
-                                <p className="line-clamp-1 text-sm font-semibold text-foreground">{equipment.name}</p>
-                                <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                                  {equipment.locationName || equipment.owner.location}
-                                </p>
-                                <p className="mt-2 text-sm font-medium text-primary">NPR {equipment.pricePerDay}/day</p>
-                              </CardContent>
-                            </Card>
-                          </Link>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No close match yet. Try adding equipment type, task, location, or capacity keywords.
-                      </p>
-                    )}
-                  </div>
-                )}
+                <Link to="/dashboard" className="sm:w-auto">
+                  <Button size="lg" variant="outline" className="w-full px-7">
+                    List Equipment
+                  </Button>
+                </Link>
               </div>
+              {prompt.trim() && (
+                <div>
+                  {suggestions.length > 0 ? (
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {suggestions.map((equipment) => (
+                        <Link
+                          key={equipment.id}
+                          to={`/equipment/${equipment.id}`}
+                          className="border-b border-border/70 pb-2 text-sm"
+                        >
+                          <p className="line-clamp-1 font-semibold text-foreground">{equipment.name}</p>
+                          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                            {equipment.locationName || equipment.owner.location}
+                          </p>
+                          <p className="mt-1 text-sm font-medium text-primary">NPR {equipment.pricePerDay}/day</p>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No close match yet. Try adding equipment type, task, location, or capacity keywords.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-wrap gap-6 pt-4">
@@ -206,7 +203,7 @@ const HeroSection = () => {
         <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center">
           <Link
             to="/browse"
-            className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-2 text-sm font-medium text-muted-foreground backdrop-blur-sm hover-scale"
+            className="pointer-events-auto inline-flex items-center gap-2 px-2 py-1 text-sm font-medium text-muted-foreground"
             aria-label="Explore equipment"
           >
             <span>Explore equipment</span>

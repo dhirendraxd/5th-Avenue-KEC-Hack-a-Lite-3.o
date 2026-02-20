@@ -76,8 +76,8 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 p-2 sm:p-4">
-      <div className="mx-auto flex min-h-[calc(100vh-1rem)] w-full max-w-[1500px] overflow-hidden rounded-[28px] border border-border/60 bg-card shadow-xl sm:min-h-[calc(100vh-2rem)]">
+    <div className="min-h-screen bg-background">
+      <div className="flex min-h-screen w-full overflow-hidden bg-background">
         <div className="flex w-full items-center justify-center bg-background px-6 py-10 sm:px-10 lg:w-[44%] lg:px-16">
           <div className="w-full max-w-[360px] space-y-6">
             <h1 className="text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
@@ -144,7 +144,7 @@ const Auth = () => {
           </div>
         </div>
 
-        <div className="relative hidden overflow-hidden lg:block lg:w-[56%]">
+        <div className="relative hidden overflow-hidden bg-muted/20 lg:block lg:w-[56%]">
           <img src={heroEquipment} alt="Creative equipment visual" className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-slate-900/35 via-emerald-900/10 to-slate-950/45" />
 

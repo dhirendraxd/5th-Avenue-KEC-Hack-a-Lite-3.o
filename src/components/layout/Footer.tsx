@@ -3,7 +3,7 @@ import { Package } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="border-t border-border bg-card">
+    <footer className="border-t border-border/60 bg-background">
       <div className="container mx-auto px-4 py-12">
         <div className="grid gap-8 md:grid-cols-4">
           {/* Brand */}

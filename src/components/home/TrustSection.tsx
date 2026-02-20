@@ -29,7 +29,7 @@ const stats = [
 
 const TrustSection = () => {
   return (
-    <section className="py-24 lg:py-32 bg-card border-y border-border">
+    <section className="py-24 lg:py-32 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-16 lg:mb-20 text-center">
           <h2 className="text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
@@ -44,7 +44,7 @@ const TrustSection = () => {
           {stats.map((stat, index) => (
             <div
               key={index}
-              className="flex flex-col items-center rounded-xl bg-background p-8 text-center card-shadow animate-fade-in"
+              className="flex flex-col items-center p-8 text-center animate-fade-in"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
