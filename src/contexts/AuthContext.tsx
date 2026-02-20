@@ -76,6 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
     try {
       const unsubscribe = onAuthChange((authUser) => {
         if (authUser) {
@@ -94,59 +95,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Auth state listener error:', error);
       setIsLoading(false);
     }
-    return unsubscribe;
   }, []);
 
-<<<<<<< HEAD
-=======
   const login = async (email: string, password: string, role?: UserRole): Promise<boolean> => {
     setIsLoading(true);
     try {
       const firebaseUser = await firebaseSignIn(email, password);
-      
-      // Find user in mock data to get role and business info
-      const teamMember = mockTeamMembers.find(tm => tm.email === firebaseUser.email);
-      const userRole = role || teamMember?.role || 'owner';
-      
-      const newUser: CurrentUser = {
-        id: firebaseUser.uid,
-        name: firebaseUser.displayName || email.split('@')[0],
-        email: firebaseUser.email || email,
-        role: userRole,
-        businessId: 'b1',
-        businessName: mockBusinesses[0].name,
-        locationAccess: teamMember?.locationAccess || mockLocations.map(l => l.id),
-      };
-      
-      setUser(newUser);
-      localStorage.setItem('gearshift_user', JSON.stringify(newUser));
-      setIsLoading(false);
-      return true;
-  const login = async (email: string, password: string, role?: UserRole): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const firebaseUser = await firebaseSignIn(email, password);
-      
-      // Find user in mock data to get role and business info
-      const teamMember = mockTeamMembers.find(tm => tm.email === firebaseUser.email);
-      const userRole = role || teamMember?.role || 'owner';
-      
-      const newUser: CurrentUser = {
-        id: firebaseUser.uid,
-        name: firebaseUser.displayName || email.split('@')[0],
       const mappedUser = mapAuthUserToCurrentUser(firebaseUser);
       setUser(mappedUser);
       localStorage.setItem('gearshift_user', JSON.stringify(mappedUser));
+      return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-<<<<<<< HEAD
+  const loginWithGoogle = async (): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const firebaseUser = await firebaseSignInWithGoogle();
+      const mappedUser = mapAuthUserToCurrentUser(firebaseUser);
+      setUser(mappedUser);
+      localStorage.setItem('gearshift_user', JSON.stringify(mappedUser));
+      return true;
+    } catch (error) {
+      console.error('Google login error:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async (): Promise<void> => {
-=======
-  const logout = async () => {
->>>>>>> b50a011 (feat: update AuthContext to enhance Firebase authentication flow and user data handling)
     try {
       await firebaseLogout();
     } catch (error) {
@@ -169,8 +152,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return rolePermissions[user.role].includes(permission);
   };
 
+  return (
+    <AuthContext.Provider
+      value={{
         user,
         isAuthenticated: !!user,
+        login,
         loginWithGoogle,
         logout,
         switchRole,
@@ -190,5 +177,3 @@ export const useAuth = () => {
   }
   return context;
 };
-,
-        login
