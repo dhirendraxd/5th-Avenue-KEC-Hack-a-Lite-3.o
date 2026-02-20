@@ -11,6 +11,8 @@ import RentalOperations from "./pages/RentalOperations";
 import FinanceDashboard from "./pages/FinanceDashboard";
 import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
+import MaterialsList from "./pages/MaterialsList";
+import MaterialsFind from "./pages/MaterialsFind";
 
 const App = () => (
   <AuthProvider>
@@ -25,6 +27,8 @@ const App = () => (
         <Route path="/rental/:id" element={<RentalOperations />} />
         <Route path="/finance" element={<FinanceDashboard />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/materials/list" element={<MaterialsList />} />
+        <Route path="/materials/find" element={<MaterialsFind />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
