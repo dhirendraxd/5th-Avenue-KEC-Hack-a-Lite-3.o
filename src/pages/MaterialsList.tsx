@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { Camera, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -27,6 +28,7 @@ const MaterialsList = () => {
   const [isFree, setIsFree] = useState(false);
   const [location, setLocation] = useState("");
   const [isLocating, setIsLocating] = useState(false);
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
 
   const handleUseLocation = () => {
     if (!navigator.geolocation) {
@@ -55,6 +57,45 @@ const MaterialsList = () => {
       },
       { enableHighAccuracy: true, timeout: 8000 },
     );
+  };
+
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Invalid file",
+          description: "Please upload image files only.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        if (uploadedPhotos.length < 4) {
+          setUploadedPhotos([...uploadedPhotos, result]);
+          toast({
+            title: "Photo added",
+            description: `${uploadedPhotos.length + 1}/4 photos uploaded.`,
+          });
+        } else {
+          toast({
+            title: "Photo limit reached",
+            description: "Maximum 4 photos allowed.",
+            variant: "destructive",
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removePhoto = (index: number) => {
+    setUploadedPhotos(uploadedPhotos.filter((_, i) => i !== index));
   };
 
   const handleSubmit = (event: FormEvent) => {
@@ -89,6 +130,7 @@ const MaterialsList = () => {
     setPrice("");
     setIsFree(false);
     setLocation("");
+    setUploadedPhotos([]);
   };
 
   return (
@@ -200,40 +242,82 @@ const MaterialsList = () => {
               </form>
 
               <div className="order-1 space-y-3 lg:order-2">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                  <div className="overflow-hidden rounded-lg border border-border bg-muted/40 p-2 shadow-sm fade-up">
-                    <img
-                      src={materialImages.cement}
-                      alt="Cement bags"
-                      className="block max-h-28 w-full object-contain"
-                      loading="lazy"
+                <div className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-4">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
                     />
-                  </div>
-                  <div className="overflow-hidden rounded-lg border border-border bg-muted/40 shadow-sm fade-up">
-                    <img
-                      src={materialImages.rod}
-                      alt="TMT steel rods"
-                      className="block max-h-28 w-full object-contain"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="overflow-hidden rounded-lg border border-border bg-muted/40 shadow-sm fade-up">
-                    <img
-                      src={materialImages.plywood}
-                      alt="Plywood sheets"
-                      className="block max-h-28 w-full object-contain"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="overflow-hidden rounded-lg border border-border bg-muted/40 shadow-sm fade-up">
-                    <img
-                      src={materialImages.redOxide}
-                      alt="Red oxide floor coat"
-                      className="block max-h-28 w-full object-contain"
-                      loading="lazy"
-                    />
-                  </div>
+                    <div className="flex flex-col items-center justify-center gap-2 py-6">
+                      <Camera className="h-8 w-8 text-muted-foreground" />
+                      <div className="text-center">
+                        <p className="font-medium text-foreground">Add photos</p>
+                        <p className="text-xs text-muted-foreground">Click to upload ({uploadedPhotos.length}/4)</p>
+                      </div>
+                    </div>
+                  </label>
                 </div>
+
+                {uploadedPhotos.length > 0 && (
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-2">
+                    {uploadedPhotos.map((photo, idx) => (
+                      <div key={idx} className="relative overflow-hidden rounded-lg border border-border bg-muted/40">
+                        <img
+                          src={photo}
+                          alt={`Uploaded photo ${idx + 1}`}
+                          className="block max-h-28 w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(idx)}
+                          className="absolute right-1 top-1 rounded bg-red-500/80 p-1 hover:bg-red-600"
+                        >
+                          <X className="h-4 w-4 text-white" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {uploadedPhotos.length === 0 && (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                    <div className="overflow-hidden rounded-lg border border-border bg-muted/40 p-2 shadow-sm fade-up">
+                      <img
+                        src={materialImages.cement}
+                        alt="Cement bags"
+                        className="block max-h-28 w-full object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="overflow-hidden rounded-lg border border-border bg-muted/40 shadow-sm fade-up">
+                      <img
+                        src={materialImages.rod}
+                        alt="TMT steel rods"
+                        className="block max-h-28 w-full object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="overflow-hidden rounded-lg border border-border bg-muted/40 shadow-sm fade-up">
+                      <img
+                        src={materialImages.plywood}
+                        alt="Plywood sheets"
+                        className="block max-h-28 w-full object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="overflow-hidden rounded-lg border border-border bg-muted/40 shadow-sm fade-up">
+                      <img
+                        src={materialImages.redOxide}
+                        alt="Red oxide floor coat"
+                        className="block max-h-28 w-full object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
