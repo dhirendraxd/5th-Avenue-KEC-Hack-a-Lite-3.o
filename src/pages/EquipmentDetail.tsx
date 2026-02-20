@@ -189,7 +189,17 @@ const EquipmentDetail = () => {
   // New state for additional info
   
 
+  const isOwner = isAuthenticated && user && equipment && equipment.owner && (user.id === equipment.owner.id || user.businessName === equipment.owner.name);
+
   const handleRentalRequest = async () => {
+    if (isOwner) {
+      toast({
+        title: "Cannot rent your own equipment",
+        description: "You cannot request to rent equipment you own.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!isAuthenticated || !user) {
       toast({
         title: "Sign in required",
@@ -597,14 +607,18 @@ const EquipmentDetail = () => {
                 </div>
 
                 {/* Request Button */}
+
                 <Button
                   onClick={handleRentalRequest}
-                  disabled={totalDays === 0 || !isValidRentalDuration || isRequesting}
+                  disabled={isOwner || totalDays === 0 || !isValidRentalDuration || isRequesting}
                   className="w-full mt-4"
                   size="lg"
                 >
-                  {isRequesting ? "Submitting..." : "Request Rental"}
+                  {isOwner ? "You own this equipment" : (isRequesting ? "Submitting..." : "Request Rental")}
                 </Button>
+                {isOwner && (
+                  <p className="text-center text-xs text-destructive mt-2">You cannot rent your own equipment.</p>
+                )}
 
                 <p className="text-center text-xs text-muted-foreground">
                   You won't be charged until the owner approves your request
