@@ -94,6 +94,19 @@ const OwnerDashboard = () => {
         );
 
         setMyEquipment(userOwnedFromFirebase);
+        // Optimistic: check for recently added equipment stored locally and prepend it
+        try {
+          const optimistic = localStorage.getItem('gearshift_recently_added_equipment');
+          if (optimistic) {
+            const parsed = JSON.parse(optimistic) as Equipment;
+            if (parsed && (parsed.owner.id === user.id || parsed.owner.name === user.name)) {
+              setMyEquipment((prev) => [parsed, ...prev]);
+              localStorage.removeItem('gearshift_recently_added_equipment');
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to apply optimistic equipment from localStorage', e);
+        }
       } catch (error) {
         console.error("Failed to load equipment from Firebase:", error);
       }

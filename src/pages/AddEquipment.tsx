@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { addFirebaseEquipment } from "@/lib/firebase/equipment";
+import { uploadMultipleFiles } from "@/lib/firebase/storage";
 import {
   getBusinessProfileFromFirebase,
   isBusinessKycComplete,
@@ -53,14 +54,51 @@ const AddEquipment = () => {
       savedBusinessProfile.businessAddress?.trim() ||
       data.locationName;
 
-    await addFirebaseEquipment({
+    // Upload photos to Firebase Storage if they are base64 data URLs
+    let photoUrls: string[] = [];
+    try {
+      if (data.photos && data.photos.length > 0) {
+        // convert base64 data URLs to File objects
+        const files: File[] = data.photos.map((dataUrl, idx) => {
+          const arr = dataUrl.split(',');
+          const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+          const bstr = atob(arr[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+          }
+          return new File([u8arr], `photo_${Date.now()}_${idx}.jpg`, { type: mime });
+        });
+
+        photoUrls = await uploadMultipleFiles(`equipment/${user.id}`, files);
+      }
+    } catch (error) {
+      console.error('Failed to upload photos:', error);
+      toast({
+        title: 'Upload failed',
+        description: 'Failed to upload photos. Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const created = await addFirebaseEquipment({
       ...data,
+      photos: photoUrls.length > 0 ? photoUrls : data.photos,
       ownerId: user.id,
       ownerName: ownerDisplayName,
       ownerEmail: user.email,
       ownerLocation,
       ownerVerified: savedBusinessProfile.isProfileComplete,
     });
+
+    // Optimistic: store the newly created equipment locally so the dashboard can pick it up immediately
+    try {
+      localStorage.setItem('gearshift_recently_added_equipment', JSON.stringify(created));
+    } catch (e) {
+      console.warn('Failed to write optimistic equipment to localStorage', e);
+    }
 
     toast({
       title: "Equipment listed",

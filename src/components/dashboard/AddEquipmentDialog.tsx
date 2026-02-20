@@ -390,13 +390,14 @@ const AddEquipmentDialog = ({
             {/* Basic Info Tab */}
             <TabsContent value="basic" className="space-y-4 pr-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Equipment Name *</Label>
+                <Label htmlFor="name">Equipment Name <span className="text-destructive ml-1">*</span></Label>
                 <Input
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g., CAT 320 Excavator"
                   required
+                  aria-required="true"
                 />
                 <p className="text-xs text-muted-foreground">
                   Use a clear, descriptive name including brand and model
@@ -405,8 +406,8 @@ const AddEquipmentDialog = ({
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category *</Label>
-                  <Select value={category} onValueChange={(v) => setCategory(v as EquipmentCategory)}>
+                  <Label htmlFor="category">Category <span className="text-destructive ml-1">*</span></Label>
+                  <Select value={category} onValueChange={(v) => setCategory(v as EquipmentCategory)} aria-required="true">
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -420,7 +421,7 @@ const AddEquipmentDialog = ({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="location">Location *</Label>
+                  <Label htmlFor="location">Location <span className="text-destructive ml-1">*</span></Label>
                   <div className="space-y-2">
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -429,6 +430,7 @@ const AddEquipmentDialog = ({
                         onChange={(e) => setCustomLocationName(e.target.value)}
                         placeholder="Enter place name (e.g. Baneshwor, Kathmandu)"
                         className="pl-9"
+                        aria-required="true"
                       />
                     </div>
                     <Input
@@ -441,7 +443,7 @@ const AddEquipmentDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
+                <Label htmlFor="description">Description <span className="text-destructive ml-1">*</span></Label>
                 <Textarea
                   id="description"
                   value={description}
@@ -449,6 +451,7 @@ const AddEquipmentDialog = ({
                   placeholder="Describe your equipment in detail: specifications, capabilities, ideal use cases..."
                   className="h-28"
                   required
+                  aria-required="true"
                 />
                 <p className="text-xs text-muted-foreground">
                   Include specifications, year, hours/mileage if applicable
@@ -478,7 +481,7 @@ const AddEquipmentDialog = ({
             {/* Details Tab */}
             <TabsContent value="details" className="space-y-4 pr-4">
               <div className="space-y-2">
-                <Label>Features & Capabilities</Label>
+                <Label>Features & Capabilities <span className="text-destructive ml-1">*</span></Label>
                 {suggestedFeatures.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-2">
                     {suggestedFeatures.map((feature) => (
@@ -504,6 +507,7 @@ const AddEquipmentDialog = ({
                     value={customFeature}
                     onChange={(e) => setCustomFeature(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomFeature())}
+                    aria-required={features.length === 0}
                   />
                   <Button type="button" variant="outline" onClick={handleAddCustomFeature}>
                     <Plus className="h-4 w-4" />
@@ -527,13 +531,14 @@ const AddEquipmentDialog = ({
               <Separator />
 
               <div className="space-y-2">
-                <Label htmlFor="usageNotes">Usage Notes & Requirements</Label>
+                <Label htmlFor="usageNotes">Usage Notes & Requirements <span className="text-destructive ml-1">*</span></Label>
                 <Textarea
                   id="usageNotes"
                   value={usageNotes}
                   onChange={(e) => setUsageNotes(e.target.value)}
                   placeholder="e.g., Operator certification required, fuel not included, training available..."
                   className="h-24"
+                  aria-required="true"
                 />
                 <p className="text-xs text-muted-foreground">
                   Include any certifications, training, or special requirements
@@ -571,7 +576,7 @@ const AddEquipmentDialog = ({
             <TabsContent value="pricing" className="space-y-4 pr-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="price">Daily Rental Rate *</Label>
+                  <Label htmlFor="price">Daily Rental Rate <span className="text-destructive ml-1">*</span></Label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -583,6 +588,7 @@ const AddEquipmentDialog = ({
                       placeholder="250"
                       className="pl-9"
                       required
+                      aria-required="true"
                     />
                   </div>
                 </div>
@@ -648,7 +654,7 @@ const AddEquipmentDialog = ({
             {/* Photos Tab */}
             <TabsContent value="photos" className="space-y-4 pr-4">
               <div className="space-y-2">
-                <Label>Equipment Photos *</Label>
+                <Label>Equipment Photos <span className="text-destructive ml-1">*</span></Label>
                 <p className="text-sm text-muted-foreground">
                   Add up to 6 high-quality photos showing different angles and condition
                 </p>
@@ -690,6 +696,7 @@ const AddEquipmentDialog = ({
                 multiple
                 className="hidden"
                 onChange={handlePhotoUpload}
+                aria-required={photos.length === 0}
               />
 
               <input
