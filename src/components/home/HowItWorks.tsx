@@ -4,22 +4,22 @@ const steps = [
   {
     icon: Search,
     title: "Discover Equipment",
-    description: "Browse available equipment from verified businesses in your area. Filter by category, price, and availability.",
+    description: "Browse verified equipment by category, availability, and price.",
   },
   {
     icon: Calendar,
     title: "Select Dates",
-    description: "Choose your rental period using our availability calendar. See transparent pricing with no hidden fees.",
+    description: "Choose your rental window and confirm clear pricing.",
   },
   {
     icon: Handshake,
     title: "Request & Confirm",
-    description: "Submit your rental request. Equipment owners review and approve within 24 hours.",
+    description: "Submit your request and receive owner approval.",
   },
   {
     icon: CheckCircle,
     title: "Pickup & Use",
-    description: "Coordinate pickup, use the equipment for your project, and return it when complete.",
+    description: "Complete pickup, operate safely, and return on schedule.",
   },
 ];
 
@@ -32,7 +32,7 @@ const HowItWorks = () => {
             How It Works
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
-            Renting equipment from local businesses is simple, secure, and sustainable.
+            A clear workflow built for professional rental operations.
           </p>
         </div>
 

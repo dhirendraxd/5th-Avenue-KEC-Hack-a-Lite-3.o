@@ -47,6 +47,7 @@ export interface AddEquipmentFormData {
   securityDeposit: number;
   locationId: string;
   locationName: string;
+  locationMapUrl?: string;
   condition: EquipmentCondition;
   features: string[];
   usageNotes: string;
@@ -101,6 +102,8 @@ const AddEquipmentDialog = ({
   const [pricePerDay, setPricePerDay] = useState("");
   const [securityDeposit, setSecurityDeposit] = useState("");
   const [locationId, setLocationId] = useState("");
+  const [customLocationName, setCustomLocationName] = useState("");
+  const [locationMapUrl, setLocationMapUrl] = useState("");
   const [condition, setCondition] = useState<EquipmentCondition>("good");
   const [features, setFeatures] = useState<string[]>([]);
   const [customFeature, setCustomFeature] = useState("");
@@ -255,6 +258,15 @@ const AddEquipmentDialog = ({
       return;
     }
 
+    if (locationId === "custom" && !customLocationName.trim()) {
+      toast({
+        title: "Custom location required",
+        description: "Please enter a place name when using custom location.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (features.length === 0) {
       toast({
         title: "Add equipment features",
@@ -283,6 +295,8 @@ const AddEquipmentDialog = ({
     }
 
     const selectedLocation = mockLocations.find((location) => location.id === locationId);
+    const finalLocationId = selectedLocation ? selectedLocation.id : `custom-${Date.now()}`;
+    const finalLocationName = selectedLocation?.name || customLocationName.trim();
 
     try {
       await onSubmit({
@@ -291,8 +305,9 @@ const AddEquipmentDialog = ({
         description,
         pricePerDay: Number(pricePerDay),
         securityDeposit: Number(securityDeposit || 0),
-        locationId,
-        locationName: selectedLocation?.name || "Default Location",
+        locationId: finalLocationId,
+        locationName: finalLocationName || "Custom Location",
+        locationMapUrl: locationMapUrl.trim(),
         condition,
         features,
         usageNotes,
@@ -319,6 +334,8 @@ const AddEquipmentDialog = ({
     setPricePerDay("");
     setSecurityDeposit("");
     setLocationId("");
+    setCustomLocationName("");
+    setLocationMapUrl("");
     setCondition("good");
     setFeatures([]);
     setUsageNotes("");
@@ -428,8 +445,24 @@ const AddEquipmentDialog = ({
                           {loc.name}
                         </SelectItem>
                       ))}
+                      <SelectItem value="custom">Custom location</SelectItem>
                     </SelectContent>
                   </Select>
+
+                  {locationId === "custom" && (
+                    <div className="space-y-2">
+                      <Input
+                        value={customLocationName}
+                        onChange={(e) => setCustomLocationName(e.target.value)}
+                        placeholder="Enter place name (e.g. Baneshwor, Kathmandu)"
+                      />
+                      <Input
+                        value={locationMapUrl}
+                        onChange={(e) => setLocationMapUrl(e.target.value)}
+                        placeholder="Paste Google Maps location link (optional)"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

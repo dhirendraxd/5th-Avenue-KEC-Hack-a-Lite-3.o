@@ -24,6 +24,7 @@ export interface EquipmentCreateInput {
   securityDeposit: number;
   locationId: string;
   locationName: string;
+  locationMapUrl?: string;
   condition: EquipmentCondition;
   features: string[];
   usageNotes: string;
@@ -54,6 +55,7 @@ interface FirestoreEquipmentDocument {
   ownerVerified?: boolean;
   locationId: string;
   locationName: string;
+  locationMapUrl?: string;
   minRentalDays: number;
   bufferDays: number;
   condition: EquipmentCondition;
@@ -174,6 +176,7 @@ export const addFirebaseEquipment = async (
     ownerVerified: input.ownerVerified,
     locationId: input.locationId,
     locationName,
+    locationMapUrl: input.locationMapUrl,
     minRentalDays: input.minRentalDays,
     bufferDays: input.bufferDays,
     condition: input.condition,

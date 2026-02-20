@@ -11,16 +11,15 @@ const CTASection = () => {
             <Package className="h-8 w-8 text-primary-foreground" />
           </div>
           <h2 className="mb-5 text-3xl font-bold text-primary-foreground md:text-4xl lg:text-5xl">
-            Ready to Put Your Equipment to Work?
+            Start Listing on 5th Avenue
           </h2>
           <p className="mb-10 text-lg text-primary-foreground/80 leading-relaxed max-w-2xl mx-auto">
-            List your equipment today and start earning from assets that would otherwise sit unused. 
-            Join hundreds of businesses already benefiting from the sharing economy.
+            Publish professional listings, manage requests, and monetize idle assets with confidence.
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <Link to="/dashboard">
               <Button size="lg" variant="secondary" className="w-full gap-2 px-8 sm:w-auto">
-                Start Listing Equipment
+                Start Listing
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>

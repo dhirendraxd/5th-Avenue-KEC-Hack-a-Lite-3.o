@@ -33,10 +33,10 @@ const TrustSection = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-16 lg:mb-20 text-center">
           <h2 className="text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
-            Trusted by Growing Businesses
+            Trusted by Business Operators
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
-            Join a community of forward-thinking companies reducing costs and environmental impact.
+            Verified users, protected rentals, and proven platform reliability.
           </p>
         </div>
 

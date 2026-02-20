@@ -87,7 +87,7 @@ const RentalOperations = () => {
     setReturnChecklist(items);
     toast({
       title: "Rental Completed",
-      description: "Thank you for using GearShift! Please leave a review.",
+      description: "Thank you for using 5th Avenue. Please leave a review.",
     });
   };
 

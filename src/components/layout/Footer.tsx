@@ -12,10 +12,10 @@ const Footer = () => {
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
                 <Package className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-foreground">GearShift</span>
+              <span className="text-xl font-bold text-foreground">5th Avenue</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              Empowering businesses to share resources, reduce waste, and grow together.
+              Professional equipment sharing for businesses that value efficiency, reliability, and sustainable growth.
             </p>
           </div>
 
@@ -52,10 +52,10 @@ const Footer = () => {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 md:flex-row">
           <p className="text-sm text-muted-foreground">
-            © 2024 GearShift. All rights reserved.
+            © 2024 5th Avenue. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground">
-            Built for sustainable business growth.
+            Built for modern business operations.
           </p>
         </div>
       </div>

@@ -12,7 +12,7 @@ import EquipmentMiniCard from "./EquipmentMiniCard";
 const WELCOME_MESSAGE: ChatMessage = {
   role: "assistant",
   content:
-    "👋 Hi! I'm GearShift's equipment advisor. Tell me about your project or task, and I'll recommend the right equipment for you.\n\nFor example:\n- *\"I need to dig a foundation for a 2-story house\"*\n- *\"We're organizing a 500-person outdoor concert\"*\n- *\"My warehouse floor needs deep cleaning\"*",
+    "Welcome to 5th Avenue. I'm your equipment advisor. Share your project requirements and I will recommend suitable equipment options.\n\nExamples:\n- *\"I need to dig a foundation for a 2-story house\"*\n- *\"We are organizing a 500-person outdoor event\"*\n- *\"My warehouse floor needs deep cleaning\"*",
 };
 
 const EQUIP_TAG_REGEX = /\[EQUIP:(e\d+)\]/g;

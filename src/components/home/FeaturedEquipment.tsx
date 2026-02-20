@@ -16,7 +16,7 @@ const FeaturedEquipment = () => {
               Featured Equipment
             </h2>
             <p className="text-lg text-muted-foreground max-w-xl">
-              Popular rentals from verified businesses in your area
+              High-demand equipment from verified businesses
             </p>
           </div>
           <Link to="/browse">

@@ -132,8 +132,8 @@ const AnimatedHeroVisual = () => {
                 <Zap className="h-10 w-10" />
               </div>
               <div>
-                <p className="text-xl font-bold text-foreground">GearShift</p>
-                <p className="text-base text-muted-foreground">Connect & Rent</p>
+                <p className="text-xl font-bold text-foreground">5th Avenue</p>
+                <p className="text-base text-muted-foreground">Professional Rentals</p>
               </div>
             </div>
           </div>

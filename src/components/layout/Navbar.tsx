@@ -38,7 +38,7 @@ const Navbar = () => {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
               <Package className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">GearShift</span>
+            <span className="text-xl font-bold text-foreground">5th Avenue</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -72,7 +72,7 @@ const Navbar = () => {
             ) : (
               <>
                 <Link to="/dashboard">
-                  <Button variant="outline">List Your Equipment</Button>
+                  <Button variant="outline">List Equipment</Button>
                 </Link>
                 <Link to="/auth">
                   <Button>Sign In</Button>
@@ -128,7 +128,7 @@ const Navbar = () => {
                   <>
                     <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="outline" className="w-full">
-                        List Your Equipment
+                        List Equipment
                       </Button>
                     </Link>
                     <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>

@@ -56,12 +56,12 @@ const Auth = () => {
           <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
             <Building2 className="h-6 w-6 text-primary-foreground" />
           </div>
-          <span className="text-2xl font-bold text-foreground">GearShift</span>
+          <span className="text-2xl font-bold text-foreground">5th Avenue</span>
         </Link>
 
         <Card>
           <CardHeader className="space-y-2 text-center">
-            <CardTitle className="text-2xl">Sign in to GearShift</CardTitle>
+            <CardTitle className="text-2xl">Sign in to 5th Avenue</CardTitle>
             <CardDescription>
               Google is the default and only login method.
             </CardDescription>

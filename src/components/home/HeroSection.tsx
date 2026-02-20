@@ -135,7 +135,7 @@ const HeroSection = () => {
                   transform: `translateY(${offsetY(-0.05)}px)`,
                 }}
               >
-                Put Idle Equipment to Work
+                Professional Equipment Rentals for Business Teams
               </h1>
               <p 
                 className="max-w-2xl text-xl text-muted-foreground md:text-2xl leading-relaxed"
@@ -143,8 +143,7 @@ const HeroSection = () => {
                   transform: `translateY(${offsetY(-0.02)}px)`,
                 }}
               >
-                Rent specialized equipment from nearby businesses. 
-                Reduce costs, share resources, and build sustainable partnerships.
+                Access verified listings, transparent pricing, and dependable partners across your local network.
               </p>
             </div>
 
@@ -157,7 +156,7 @@ const HeroSection = () => {
               </Link>
               <Link to="/dashboard">
                 <Button size="lg" variant="outline" className="w-full px-10 py-6 text-lg sm:w-auto">
-                  List Your Equipment
+                  List Equipment
                 </Button>
               </Link>
             </div>
@@ -169,7 +168,7 @@ const HeroSection = () => {
               </div>
               <div className="flex items-center gap-3 text-base text-muted-foreground">
                 <Building2 className="h-5 w-5 text-primary" />
-                Verified Businesses
+                Verified Partners
               </div>
               <div className="flex items-center gap-3 text-base text-muted-foreground">
                 <Leaf className="h-5 w-5 text-accent" />
