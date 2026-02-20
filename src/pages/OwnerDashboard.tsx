@@ -36,13 +36,10 @@ import AvailabilityControls from "@/components/dashboard/AvailabilityControls";
 import ApproveWithConditionsDialog from "@/components/dashboard/ApproveWithConditionsDialog";
 import BusinessProfileSection from "@/components/dashboard/BusinessProfileSection";
 import { useAuth } from "@/contexts/AuthContext";
-import { getFirebaseEquipment } from "@/lib/firebase/equipment";
-import {
-  categoryLabels,
-  statusColors,
-  RentalRequest,
-  Equipment,
-} from "@/lib/mockData";
+import { subscribeFirebaseEquipment } from "@/lib/firebase/equipment";
+import { subscribeFirebaseRentals } from "@/lib/firebase/rentals";
+import { RentalRequest, Equipment } from "@/lib/mockData";
+import { categoryLabels, statusColors } from "@/lib/constants";
 import {
   Plus,
   Package,
@@ -78,44 +75,40 @@ const OwnerDashboard = () => {
   const [myEquipment, setMyEquipment] = useState<Equipment[]>([]);
 
   useEffect(() => {
-    let isMounted = true;
+    if (!user) return;
 
-    const loadFirebaseEquipment = async () => {
-      if (!user) return;
-      try {
-        const firebaseEquipment = await getFirebaseEquipment();
-        if (!isMounted) return;
-
+    const unsubscribeEquipment = subscribeFirebaseEquipment(
+      (firebaseEquipment) => {
         const userOwnedFromFirebase = firebaseEquipment.filter(
           (equipment) =>
             equipment.owner.id === user.id ||
             equipment.owner.name === user.name ||
             equipment.owner.location === user.businessName
         );
-
         setMyEquipment(userOwnedFromFirebase);
-        // Optimistic: check for recently added equipment stored locally and prepend it
-        try {
-          const optimistic = localStorage.getItem('gearshift_recently_added_equipment');
-          if (optimistic) {
-            const parsed = JSON.parse(optimistic) as Equipment;
-            if (parsed && (parsed.owner.id === user.id || parsed.owner.name === user.name)) {
-              setMyEquipment((prev) => [parsed, ...prev]);
-              localStorage.removeItem('gearshift_recently_added_equipment');
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to apply optimistic equipment from localStorage', e);
-        }
-      } catch (error) {
+      },
+      (error) => {
         console.error("Failed to load equipment from Firebase:", error);
       }
-    };
+    );
 
-    loadFirebaseEquipment();
+    const unsubscribeRentals = subscribeFirebaseRentals(
+      (firebaseRentals) => {
+        const ownerRentals = firebaseRentals.filter(
+          (rental) =>
+            rental.equipment.owner.id === user.id ||
+            rental.equipment.owner.name === user.name
+        );
+        setRequests(ownerRentals);
+      },
+      (error) => {
+        console.error("Failed to load rentals from Firebase:", error);
+      }
+    );
 
     return () => {
-      isMounted = false;
+      unsubscribeEquipment();
+      unsubscribeRentals();
     };
   }, [user]);
 

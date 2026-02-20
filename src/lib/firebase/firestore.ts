@@ -3,6 +3,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -12,6 +13,8 @@ import {
   QueryConstraint,
   orderBy,
   limit,
+  DocumentData,
+  DocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from './config';
 
@@ -152,5 +155,69 @@ export const getOrderedDocuments = async <T>(
   } catch (error) {
     console.error(`Error getting ordered documents from ${collectionName}:`, error);
     throw error;
+  }
+};
+
+/**
+ * Realtime subscription to documents in a collection
+ */
+export const subscribeDocuments = <T>(
+  collectionName: string,
+  onNext: (docs: T[]) => void,
+  constraints: QueryConstraint[] = [],
+  onError?: (error: Error) => void
+) => {
+  try {
+    const q: Query = query(collection(db, collectionName), ...constraints);
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as T[];
+        onNext(data);
+      },
+      (error) => {
+        console.error(`Error subscribing to ${collectionName}:`, error);
+        onError?.(error as Error);
+      }
+    );
+  } catch (error) {
+    console.error(`Error setting up subscription for ${collectionName}:`, error);
+    onError?.(error as Error);
+    return () => undefined;
+  }
+};
+
+/**
+ * Realtime subscription to a single document
+ */
+export const subscribeDocument = <T>(
+  collectionName: string,
+  docId: string,
+  onNext: (doc: (T & { id: string }) | null) => void,
+  onError?: (error: Error) => void
+) => {
+  try {
+    const docRef = doc(db, collectionName, docId);
+    return onSnapshot(
+      docRef,
+      (snapshot: DocumentSnapshot<DocumentData>) => {
+        if (!snapshot.exists()) {
+          onNext(null);
+          return;
+        }
+        onNext({ id: snapshot.id, ...snapshot.data() } as T & { id: string });
+      },
+      (error) => {
+        console.error(`Error subscribing to ${collectionName}/${docId}:`, error);
+        onError?.(error as Error);
+      }
+    );
+  } catch (error) {
+    console.error(`Error setting up document subscription for ${collectionName}/${docId}:`, error);
+    onError?.(error as Error);
+    return () => undefined;
   }
 };

@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { UserRole, roleLabels } from '@/lib/mockData';
+import { UserRole } from '@/lib/mockData';
+import { roleLabels } from '@/lib/constants';
 import {
   Select,
   SelectContent,

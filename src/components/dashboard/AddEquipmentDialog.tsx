@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -81,6 +81,54 @@ const featureSuggestions: Record<EquipmentCategory, string[]> = {
   logistics: ['Side Shift', 'Fork Positioning', 'Pneumatic Tires', 'Height Indicator', 'Load Sensor'],
 };
 
+const kathmanduLocations = [
+  'Baneshwor, Kathmandu',
+  'Thamel, Kathmandu',
+  'Koteshwor, Kathmandu',
+  'Balaju, Kathmandu',
+  'Kalanki, Kathmandu',
+  'New Baneshwor, Kathmandu',
+  'Tripureshwor, Kathmandu',
+  'Putalisadak, Kathmandu',
+  'Maharajgunj, Kathmandu',
+  'Dillibazar, Kathmandu',
+  'Battisputali, Kathmandu',
+  'Chabahil, Kathmandu',
+  'Gaushala, Kathmandu',
+  'Bouddha, Kathmandu',
+  'Jorpati, Kathmandu',
+  'Sinamangal, Kathmandu',
+  'Satdobato, Lalitpur',
+  'Jawalakhel, Lalitpur',
+  'Pulchowk, Lalitpur',
+  'Kupondole, Lalitpur',
+  'Patan Dhoka, Lalitpur',
+  'Sanepa, Lalitpur',
+  'Ekantakuna, Lalitpur',
+  'Gwarko, Lalitpur',
+  'Imadol, Lalitpur',
+  'Balkumari, Lalitpur',
+  'Tinkune, Kathmandu',
+  'Maitidevi, Kathmandu',
+  'Naxal, Kathmandu',
+  'Lainchaur, Kathmandu',
+  'Lazimpat, Kathmandu',
+  'Kamalpokhari, Kathmandu',
+  'Bhaktapur Durbar Square, Bhaktapur',
+  'Suryabinayak, Bhaktapur',
+  'Thimi, Bhaktapur',
+  'Madhyapur, Bhaktapur',
+  'Katunje, Bhaktapur',
+  'Koteshwor Industrial Area, Kathmandu',
+  'Kalimati, Kathmandu',
+  'Soalteemode, Kathmandu',
+  'Baluwatar, Kathmandu',
+  'Bhatbhateni, Kathmandu',
+  'Chabahil Industrial Area, Kathmandu',
+];
+
+const ADD_EQUIPMENT_DRAFT_KEY = "gearshift_add_equipment_draft";
+
 const AddEquipmentDialog = ({
   open,
   onOpenChange,
@@ -102,6 +150,7 @@ const AddEquipmentDialog = ({
   const [securityDeposit, setSecurityDeposit] = useState("");
   const [customLocationName, setCustomLocationName] = useState("");
   const [locationMapUrl, setLocationMapUrl] = useState("");
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [condition, setCondition] = useState<EquipmentCondition>("good");
   const [features, setFeatures] = useState<string[]>([]);
   const [customFeature, setCustomFeature] = useState("");
@@ -114,6 +163,100 @@ const AddEquipmentDialog = ({
   const [frontViewPhotoIndex, setFrontViewPhotoIndex] = useState<number | null>(null);
   const [leftViewPhotoIndex, setLeftViewPhotoIndex] = useState<number | null>(null);
   const [rightViewPhotoIndex, setRightViewPhotoIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem(ADD_EQUIPMENT_DRAFT_KEY);
+      if (!savedDraft) return;
+
+      const draft = JSON.parse(savedDraft) as Partial<AddEquipmentFormData> & {
+        customFeature?: string;
+        photos?: string[];
+        currentTab?: string;
+        frontViewPhotoIndex?: number | null;
+        leftViewPhotoIndex?: number | null;
+        rightViewPhotoIndex?: number | null;
+      };
+
+      setName(draft.name ?? "");
+      setCategory((draft.category as EquipmentCategory) ?? "");
+      setDescription(draft.description ?? "");
+      setPricePerDay(draft.pricePerDay ? String(draft.pricePerDay) : "");
+      setSecurityDeposit(draft.securityDeposit ? String(draft.securityDeposit) : "");
+      setCustomLocationName(draft.locationName ?? "");
+      setLocationMapUrl(draft.locationMapUrl ?? "");
+      setCondition((draft.condition as EquipmentCondition) ?? "good");
+      setFeatures(Array.isArray(draft.features) ? draft.features : []);
+      setCustomFeature(draft.customFeature ?? "");
+      setUsageNotes(draft.usageNotes ?? "");
+      setMinRentalDays(draft.minRentalDays ? String(draft.minRentalDays) : "1");
+      setBufferDays(draft.bufferDays ? String(draft.bufferDays) : "0");
+      setInsuranceProtected(draft.insuranceProtected ?? true);
+      setCancellationPolicy(draft.cancellationPolicy ?? "48hours");
+      setPhotos(Array.isArray(draft.photos) ? draft.photos : []);
+      setFrontViewPhotoIndex(draft.frontViewPhotoIndex ?? null);
+      setLeftViewPhotoIndex(draft.leftViewPhotoIndex ?? null);
+      setRightViewPhotoIndex(draft.rightViewPhotoIndex ?? null);
+      setCurrentTab(draft.currentTab ?? "basic");
+    } catch (error) {
+      console.warn("Failed to load add-equipment draft", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      try {
+        const draft = {
+          name,
+          category,
+          description,
+          pricePerDay: pricePerDay ? Number(pricePerDay) : undefined,
+          securityDeposit: securityDeposit ? Number(securityDeposit) : undefined,
+          locationName: customLocationName,
+          locationMapUrl,
+          condition,
+          features,
+          customFeature,
+          usageNotes,
+          minRentalDays: minRentalDays ? Number(minRentalDays) : undefined,
+          bufferDays: bufferDays ? Number(bufferDays) : undefined,
+          insuranceProtected,
+          cancellationPolicy,
+          photos,
+          frontViewPhotoIndex,
+          leftViewPhotoIndex,
+          rightViewPhotoIndex,
+          currentTab,
+        };
+        localStorage.setItem(ADD_EQUIPMENT_DRAFT_KEY, JSON.stringify(draft));
+      } catch (error) {
+        console.warn("Failed to save add-equipment draft", error);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [
+    name,
+    category,
+    description,
+    pricePerDay,
+    securityDeposit,
+    customLocationName,
+    locationMapUrl,
+    condition,
+    features,
+    customFeature,
+    usageNotes,
+    minRentalDays,
+    bufferDays,
+    insuranceProtected,
+    cancellationPolicy,
+    photos,
+    frontViewPhotoIndex,
+    leftViewPhotoIndex,
+    rightViewPhotoIndex,
+    currentTab,
+  ]);
 
   const handleAddFeature = (feature: string) => {
     if (!features.includes(feature)) {
@@ -130,6 +273,23 @@ const AddEquipmentDialog = ({
       setFeatures([...features, customFeature.trim()]);
       setCustomFeature("");
     }
+  };
+
+  // Filter locations based on user input
+  const filteredLocations = customLocationName.trim()
+    ? kathmanduLocations.filter(location =>
+        location.toLowerCase().includes(customLocationName.toLowerCase())
+      ).slice(0, 8)
+    : [];
+
+  const handleLocationSelect = (location: string) => {
+    setCustomLocationName(location);
+    setShowLocationSuggestions(false);
+  };
+
+  const handleLocationChange = (value: string) => {
+    setCustomLocationName(value);
+    setShowLocationSuggestions(value.trim().length > 0);
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -301,16 +461,28 @@ const AddEquipmentDialog = ({
         photos,
       });
       resetForm();
-    } catch {
+    } catch (error) {
       toast({
         title: "Failed to list equipment",
-        description: "Please try again. If the issue persists, check Firebase setup.",
+        description:
+          error instanceof Error && error.message
+            ? error.message
+            : "Please try again. If the issue persists, check Firebase setup.",
         variant: "destructive",
       });
     }
   };
 
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(ADD_EQUIPMENT_DRAFT_KEY);
+    } catch (error) {
+      console.warn("Failed to clear add-equipment draft", error);
+    }
+  };
+
   const resetForm = () => {
+    clearDraft();
     setName("");
     setCategory("");
     setDescription("");
@@ -320,6 +492,7 @@ const AddEquipmentDialog = ({
     setLocationMapUrl("");
     setCondition("good");
     setFeatures([]);
+    setCustomFeature("");
     setUsageNotes("");
     setMinRentalDays("1");
     setBufferDays("0");
@@ -419,14 +592,30 @@ const AddEquipmentDialog = ({
                   <Label htmlFor="location">Location <span className="text-destructive ml-1">*</span></Label>
                   <div className="space-y-2">
                     <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground z-10" />
                       <Input
                         value={customLocationName}
-                        onChange={(e) => setCustomLocationName(e.target.value)}
+                        onChange={(e) => handleLocationChange(e.target.value)}
+                        onFocus={() => customLocationName.trim() && setShowLocationSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 200)}
                         placeholder="Enter place name (e.g. Baneshwor, Kathmandu)"
                         className="pl-9"
                         aria-required="true"
                       />
+                      {showLocationSuggestions && filteredLocations.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {filteredLocations.map((location, index) => (
+                            <div
+                              key={index}
+                              onClick={() => handleLocationSelect(location)}
+                              className="px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors flex items-center gap-2"
+                            >
+                              <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span>{location}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <Input
                       value={locationMapUrl}

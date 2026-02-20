@@ -15,9 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { categoryLabels, sortOptions, Equipment, EquipmentCategory, SortOption } from "@/lib/mockData";
+import { Equipment, EquipmentCategory, SortOption } from "@/lib/mockData";
+import { categoryLabels, sortOptions } from "@/lib/constants";
 import { useFavoritesStore } from "@/lib/favoritesStore";
-import { getFirebaseEquipment } from "@/lib/firebase/equipment";
+import { subscribeFirebaseEquipment } from "@/lib/firebase/equipment";
 import { Search, SlidersHorizontal, X, Heart, Grid3X3, LayoutList, Package } from "lucide-react";
 
 const BrowseEquipment = () => {
@@ -34,24 +35,14 @@ const BrowseEquipment = () => {
   const categories = Object.keys(categoryLabels) as EquipmentCategory[];
 
   useEffect(() => {
-    let isMounted = true;
-
-    const loadFirebaseEquipment = async () => {
-      try {
-        const firebaseEquipment = await getFirebaseEquipment();
-        if (!isMounted) return;
-
-        setAllEquipment(firebaseEquipment);
-      } catch (error) {
+    const unsubscribe = subscribeFirebaseEquipment(
+      (firebaseEquipment) => setAllEquipment(firebaseEquipment),
+      (error) => {
         console.error("Failed to load Firebase equipment:", error);
       }
-    };
+    );
 
-    loadFirebaseEquipment();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => unsubscribe();
   }, []);
 
   const filteredAndSortedEquipment = useMemo(() => {

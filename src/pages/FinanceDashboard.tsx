@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,12 +11,14 @@ import TransactionHistory from "@/components/finance/TransactionHistory";
 import PayoutSummary from "@/components/finance/PayoutSummary";
 import UsageAnalytics from "@/components/analytics/UsageAnalytics";
 import {
-  mockTransactions,
-  mockMonthlyEarnings,
-  mockEquipmentAnalytics,
-  mockLocationAnalytics,
-  financeSummary,
+  EquipmentAnalytics,
+  LocationAnalytics,
+  MonthlyEarnings,
+  Transaction,
 } from "@/lib/financeData";
+import { subscribeFirebaseEquipment } from "@/lib/firebase/equipment";
+import { subscribeFirebaseRentals } from "@/lib/firebase/rentals";
+import { Equipment, RentalRequest } from "@/lib/mockData";
 import {
   DollarSign,
   TrendingUp,
@@ -25,10 +27,13 @@ import {
   CreditCard,
   Activity,
 } from "lucide-react";
+import { format, startOfMonth, subMonths } from "date-fns";
 
 const FinanceDashboard = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, hasPermission } = useAuth();
+  const [rentals, setRentals] = useState<RentalRequest[]>([]);
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -39,20 +44,275 @@ const FinanceDashboard = () => {
   const canViewFinance = hasPermission("view_finance");
   const canViewOperations = hasPermission("view_operations");
 
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
+    const unsubscribeRentals = subscribeFirebaseRentals(
+      (data) => {
+        setRentals(data);
+      },
+      () => undefined
+    );
+
+    const unsubscribeEquipment = subscribeFirebaseEquipment(
+      (data) => {
+        setEquipment(data);
+      },
+      () => undefined
+    );
+
+    return () => {
+      unsubscribeRentals();
+      unsubscribeEquipment();
+    };
+  }, [isAuthenticated, user]);
+
+  const ownerRentals = useMemo(() => {
+    if (!user) return [];
+    return rentals.filter(
+      (rental) =>
+        rental.equipment.owner.id === user.id ||
+        rental.equipment.owner.name === user.name
+    );
+  }, [rentals, user]);
+
+  const ownerEquipment = useMemo(() => {
+    if (!user) return [];
+    return equipment.filter(
+      (item) => item.owner.id === user.id || item.owner.name === user.name
+    );
+  }, [equipment, user]);
+
+  const getRentalRevenue = (rental: RentalRequest) => {
+    if (typeof rental.rentalFee === "number") return rental.rentalFee;
+    if (typeof rental.totalPrice === "number" && typeof rental.serviceFee === "number") {
+      return Math.max(0, rental.totalPrice - rental.serviceFee);
+    }
+    return typeof rental.totalPrice === "number" ? rental.totalPrice : 0;
+  };
+
+  const getRentalServiceFee = (rental: RentalRequest) =>
+    typeof rental.serviceFee === "number" ? rental.serviceFee : 0;
+
+  const financeSummary = useMemo(() => {
+    const totalEarnings = ownerRentals.reduce(
+      (sum, rental) => sum + getRentalRevenue(rental),
+      0
+    );
+    const thisMonthEarnings = ownerRentals
+      .filter((rental) => {
+        const monthStart = startOfMonth(new Date());
+        return rental.startDate >= monthStart;
+      })
+      .reduce((sum, rental) => sum + getRentalRevenue(rental), 0);
+
+    const averageRentalValue = ownerRentals.length
+      ? ownerRentals.reduce(
+          (sum, rental) => sum + (rental.totalPrice ?? getRentalRevenue(rental)),
+          0
+        ) / ownerRentals.length
+      : 0;
+
+    return {
+      totalEarnings,
+      thisMonthEarnings,
+      pendingPayouts: totalEarnings,
+      averageRentalValue,
+      platformFeeRate: 0.1,
+      totalRentals: ownerRentals.length,
+    };
+  }, [ownerRentals]);
+
+  const monthlyEarnings: MonthlyEarnings[] = useMemo(() => {
+    const months = Array.from({ length: 6 }, (_, index) =>
+      startOfMonth(subMonths(new Date(), 5 - index))
+    );
+
+    return months.map((monthStart) => {
+      const monthRentals = ownerRentals.filter((rental) =>
+        format(rental.startDate, "yyyy-MM") === format(monthStart, "yyyy-MM")
+      );
+      const revenue = monthRentals.reduce(
+        (sum, rental) => sum + (rental.totalPrice ?? getRentalRevenue(rental)),
+        0
+      );
+      const fees = monthRentals.reduce(
+        (sum, rental) => sum + getRentalServiceFee(rental),
+        0
+      );
+      const net = monthRentals.reduce(
+        (sum, rental) => sum + getRentalRevenue(rental),
+        0
+      );
+
+      return {
+        month: format(monthStart, "MMM"),
+        revenue,
+        payouts: net,
+        fees,
+        net,
+      };
+    });
+  }, [ownerRentals]);
+
+  const revenueGrowth = useMemo(() => {
+    if (monthlyEarnings.length < 2) return null;
+    const last = monthlyEarnings[monthlyEarnings.length - 1];
+    const prev = monthlyEarnings[monthlyEarnings.length - 2];
+    if (prev.revenue === 0) return null;
+    return ((last.revenue - prev.revenue) / prev.revenue) * 100;
+  }, [monthlyEarnings]);
+
+  const transactions: Transaction[] = useMemo(() => {
+    const items: Transaction[] = [];
+    ownerRentals.forEach((rental) => {
+      const revenue = getRentalRevenue(rental);
+      const fees = getRentalServiceFee(rental);
+      if (revenue > 0) {
+        items.push({
+          id: `${rental.id}-income`,
+          type: "rental_income",
+          amount: revenue,
+          description: `${rental.equipment.name} - ${rental.totalDays} day rental`,
+          date: rental.startDate,
+          status: rental.status === "requested" ? "pending" : "completed",
+          rentalId: rental.id,
+          equipmentName: rental.equipment.name,
+        });
+      }
+      if (fees > 0) {
+        items.push({
+          id: `${rental.id}-fee`,
+          type: "service_fee",
+          amount: fees,
+          description: "Platform service fee",
+          date: rental.startDate,
+          status: rental.status === "requested" ? "pending" : "completed",
+          rentalId: rental.id,
+        });
+      }
+    });
+
+    return items
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .slice(0, 30);
+  }, [ownerRentals]);
+
+  const equipmentAnalytics: EquipmentAnalytics[] = useMemo(() => {
+    const rentalsByEquipment = ownerRentals.reduce(
+      (map, rental) => {
+        const key = rental.equipment.id;
+        const current = map.get(key) ?? [];
+        current.push(rental);
+        map.set(key, current);
+        return map;
+      },
+      new Map<string, RentalRequest[]>()
+    );
+
+    return ownerEquipment.map((item) => {
+      const itemRentals = rentalsByEquipment.get(item.id) ?? [];
+      const totalRentals = itemRentals.length;
+      const totalRevenue = itemRentals.reduce(
+        (sum, rental) => sum + getRentalRevenue(rental),
+        0
+      );
+      const daysRented = itemRentals.reduce(
+        (sum, rental) => sum + rental.totalDays,
+        0
+      );
+      const daysIdle = Math.max(0, 30 - daysRented);
+      const utilizationRate = daysRented + daysIdle > 0
+        ? (daysRented / (daysRented + daysIdle)) * 100
+        : 0;
+      const averageRentalDuration = totalRentals > 0
+        ? daysRented / totalRentals
+        : 0;
+      const lastRented = itemRentals.length
+        ? itemRentals.reduce(
+            (latest, rental) =>
+              rental.endDate > latest ? rental.endDate : latest,
+            itemRentals[0].endDate
+          )
+        : null;
+
+      return {
+        equipmentId: item.id,
+        equipmentName: item.name,
+        locationId: item.locationId || item.owner.id,
+        locationName: item.locationName || item.owner.location,
+        totalRentals,
+        totalRevenue,
+        daysRented,
+        daysIdle,
+        utilizationRate,
+        averageRentalDuration,
+        lastRented,
+      };
+    });
+  }, [ownerEquipment, ownerRentals]);
+
+  const locationAnalytics: LocationAnalytics[] = useMemo(() => {
+    const equipmentByLocation = ownerEquipment.reduce(
+      (map, item) => {
+        const key = item.locationId || item.owner.id;
+        const current = map.get(key) ?? [];
+        current.push(item);
+        map.set(key, current);
+        return map;
+      },
+      new Map<string, Equipment[]>()
+    );
+
+    return Array.from(equipmentByLocation.entries()).map(([locationId, items]) => {
+      const totalRentals = equipmentAnalytics
+        .filter((e) => e.locationId === locationId)
+        .reduce((sum, e) => sum + e.totalRentals, 0);
+      const totalRevenue = equipmentAnalytics
+        .filter((e) => e.locationId === locationId)
+        .reduce((sum, e) => sum + e.totalRevenue, 0);
+      const averageUtilization = items.length
+        ? equipmentAnalytics
+            .filter((e) => e.locationId === locationId)
+            .reduce((sum, e) => sum + e.utilizationRate, 0) / items.length
+        : 0;
+      const topEquipment = equipmentAnalytics
+        .filter((e) => e.locationId === locationId)
+        .sort((a, b) => b.totalRentals - a.totalRentals)[0]?.equipmentName ||
+        "N/A";
+
+      return {
+        locationId,
+        locationName: items[0]?.locationName || items[0]?.owner.location || "Location",
+        equipmentCount: items.length,
+        totalRentals,
+        totalRevenue,
+        averageUtilization,
+        topEquipment,
+      };
+    });
+  }, [ownerEquipment, equipmentAnalytics]);
+
   const stats = [
     {
       label: "Total Earnings",
       value: `NPR ${financeSummary.totalEarnings.toLocaleString()}`,
       icon: DollarSign,
       color: "text-success",
-      change: "+12.5%",
+      change:
+        revenueGrowth !== null
+          ? `${revenueGrowth >= 0 ? "+" : ""}${revenueGrowth.toFixed(1)}%`
+          : undefined,
     },
     {
       label: "This Month",
       value: `NPR ${financeSummary.thisMonthEarnings.toLocaleString()}`,
       icon: TrendingUp,
       color: "text-primary",
-      change: "+8.2%",
+      change:
+        revenueGrowth !== null
+          ? `${revenueGrowth >= 0 ? "+" : ""}${revenueGrowth.toFixed(1)}%`
+          : undefined,
     },
     {
       label: "Pending Payouts",
@@ -137,7 +397,7 @@ const FinanceDashboard = () => {
           <TabsContent value="earnings">
             <div className="grid gap-8 lg:grid-cols-3">
               <div className="lg:col-span-2">
-                <EarningsChart data={mockMonthlyEarnings} chartType="bar" />
+                <EarningsChart data={monthlyEarnings} chartType="bar" />
               </div>
               <div>
                 <PayoutSummary
@@ -154,7 +414,7 @@ const FinanceDashboard = () => {
           <TabsContent value="transactions">
             <div className="grid gap-8 lg:grid-cols-3">
               <div className="lg:col-span-2">
-                <TransactionHistory transactions={mockTransactions} />
+                <TransactionHistory transactions={transactions} />
               </div>
               <div className="space-y-6">
                 <PayoutSummary
@@ -194,8 +454,8 @@ const FinanceDashboard = () => {
           {/* Analytics Tab */}
           <TabsContent value="analytics">
             <UsageAnalytics
-              equipmentAnalytics={mockEquipmentAnalytics}
-              locationAnalytics={mockLocationAnalytics}
+              equipmentAnalytics={equipmentAnalytics}
+              locationAnalytics={locationAnalytics}
             />
           </TabsContent>
         </Tabs>

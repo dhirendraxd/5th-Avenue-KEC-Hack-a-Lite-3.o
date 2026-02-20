@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, Search } from "lucide-react";
-import { getFirebaseEquipment } from "@/lib/firebase/equipment";
+import { subscribeFirebaseEquipment } from "@/lib/firebase/equipment";
 import { Equipment } from "@/lib/mockData";
 
 const buildMatchScore = (equipment: Equipment, query: string): number => {
@@ -55,23 +55,14 @@ const HeroSection = () => {
   );
 
   useEffect(() => {
-    let isMounted = true;
-
-    const loadEquipment = async () => {
-      try {
-        const data = await getFirebaseEquipment();
-        if (!isMounted) return;
-        setAllEquipment(data);
-      } catch (error) {
+    const unsubscribe = subscribeFirebaseEquipment(
+      (data) => setAllEquipment(data),
+      (error) => {
         console.error("Failed to load equipment for hero suggestions:", error);
       }
-    };
+    );
 
-    loadEquipment();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {

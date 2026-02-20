@@ -27,25 +27,17 @@ const AddEquipment = () => {
 
   const handleAddEquipment = async (data: AddEquipmentFormData) => {
     if (!user) {
-      toast({
-        title: "Sign in required",
-        description: "Please sign in to list equipment.",
-        variant: "destructive",
-      });
-      return;
+      throw new Error("Please sign in to list equipment.");
     }
 
     try {
       const savedBusinessProfile = await getBusinessProfileFromFirebase(user.id);
 
       if (!savedBusinessProfile || !isBusinessKycComplete(savedBusinessProfile)) {
-        toast({
-          title: "KYC required",
-          description: "Please complete and save Citizenship, NID, and document images in Firebase from Dashboard > Business Info before listing equipment.",
-          variant: "destructive",
-        });
         navigate("/dashboard");
-        return;
+        throw new Error(
+          "Please complete and save Citizenship, NID, and document images in Firebase from Dashboard > Business Info before listing equipment."
+        );
       }
 
       const ownerDisplayName =
@@ -76,12 +68,7 @@ const AddEquipment = () => {
         }
       } catch (error) {
         console.error('Failed to upload photos:', error);
-        toast({
-          title: 'Upload failed',
-          description: 'Failed to upload photos. Please try again.',
-          variant: 'destructive',
-        });
-        return;
+        throw new Error('Failed to upload photos. Please try again.');
       }
 
       const created = await addFirebaseEquipment({
@@ -107,16 +94,13 @@ const AddEquipment = () => {
       });
 
       navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to list equipment:', error);
       // Clean up optimistic storage if any
       try { localStorage.removeItem('gearshift_recently_added_equipment'); } catch {}
-
-      toast({
-        title: 'Failed to list equipment',
-        description: (error && error.message) ? String(error.message) : 'Please try again. If the issue persists, check Firebase setup.',
-        variant: 'destructive',
-      });
+      throw error instanceof Error
+        ? error
+        : new Error('Please try again. If the issue persists, check Firebase setup.');
     }
   };
 

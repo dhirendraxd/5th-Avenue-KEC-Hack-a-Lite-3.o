@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Shield, MapPin, Heart, Repeat, Award } from "lucide-react";
-import { Equipment, categoryLabels, conditionLabels } from "@/lib/mockData";
+import { Equipment } from "@/lib/mockData";
+import { categoryLabels, conditionLabels } from "@/lib/constants";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { cn } from "@/lib/utils";
 

@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { roleLabels } from "@/lib/mockData";
+import { roleLabels } from "@/lib/constants";
 import { Package, Home, LayoutDashboard, Search, Menu, X, User, DollarSign, Hammer } from "lucide-react";
 import { useEffect, useState } from "react";
 

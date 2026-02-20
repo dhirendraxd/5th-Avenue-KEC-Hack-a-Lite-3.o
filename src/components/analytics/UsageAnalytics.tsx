@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell } from "recharts";
 import { EquipmentAnalytics, LocationAnalytics } from "@/lib/financeData";
-import { mockLocations } from "@/lib/mockData";
 import { useState } from "react";
 import {
   Activity,
@@ -60,8 +59,10 @@ const UsageAnalytics = ({
   }));
 
   const averageUtilization =
-    filteredEquipment.reduce((sum, e) => sum + e.utilizationRate, 0) /
-    filteredEquipment.length;
+    filteredEquipment.length > 0
+      ? filteredEquipment.reduce((sum, e) => sum + e.utilizationRate, 0) /
+        filteredEquipment.length
+      : 0;
 
   const totalIdleDays = filteredEquipment.reduce((sum, e) => sum + e.daysIdle, 0);
   const totalRentals = filteredEquipment.reduce((sum, e) => sum + e.totalRentals, 0);
@@ -77,6 +78,20 @@ const UsageAnalytics = ({
     if (rate >= 50) return { label: "Medium", variant: "outline" as const, className: "bg-warning/10 text-warning" };
     return { label: "Low", variant: "outline" as const, className: "bg-destructive/10 text-destructive" };
   };
+
+  const locationOptions = locationAnalytics.length
+    ? locationAnalytics.map((location) => ({
+        id: location.locationId,
+        name: location.locationName,
+      }))
+    : Array.from(
+        new Map(
+          equipmentAnalytics.map((equipment) => [
+            equipment.locationId,
+            equipment.locationName,
+          ])
+        ).entries()
+      ).map(([id, name]) => ({ id, name }));
 
   return (
     <div className="space-y-6">
@@ -95,7 +110,7 @@ const UsageAnalytics = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Locations</SelectItem>
-            {mockLocations.map((location) => (
+            {locationOptions.map((location) => (
               <SelectItem key={location.id} value={location.id}>
                 {location.name}
               </SelectItem>

@@ -12,8 +12,9 @@ import ExtensionRequestDialog from "@/components/rental/ExtensionRequestDialog";
 import ConditionLogForm from "@/components/rental/ConditionLogForm";
 import { TaskFlagDialog } from "@/components/rental/TaskFlagging";
 import { useLogsForRental } from "@/lib/conditionLogStore";
-import { statusColors, ChecklistItem, RentalRequest } from "@/lib/mockData";
-import { getFirebaseRentalById } from "@/lib/firebase/rentals";
+import { ChecklistItem, RentalRequest } from "@/lib/mockData";
+import { statusColors } from "@/lib/constants";
+import { subscribeFirebaseRentalById } from "@/lib/firebase/rentals";
 import {
   ArrowLeft,
   Calendar,
@@ -37,30 +38,24 @@ const RentalOperations = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
+    if (!id) {
+      setIsLoading(false);
+      return;
+    }
 
-    const loadRental = async () => {
-      if (!id) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await getFirebaseRentalById(id);
-        if (!isMounted) return;
+    const unsubscribe = subscribeFirebaseRentalById(
+      id,
+      (data) => {
         setRental(data);
-      } catch (error) {
+        setIsLoading(false);
+      },
+      (error) => {
         console.error("Failed to load rental:", error);
-      } finally {
-        if (isMounted) setIsLoading(false);
+        setIsLoading(false);
       }
-    };
+    );
 
-    loadRental();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => unsubscribe();
   }, [id]);
   
   const [extensionDialogOpen, setExtensionDialogOpen] = useState(false);
@@ -75,6 +70,19 @@ const RentalOperations = () => {
   const [returnLogCompleted, setReturnLogCompleted] = useState(false);
   
   const conditionLogs = useLogsForRental(id || '');
+
+  useEffect(() => {
+    if (!rental) return;
+    if (pickupChecklist.length === 0 && rental.pickupChecklist?.length) {
+      setPickupChecklist(rental.pickupChecklist);
+    }
+    if (returnChecklist.length === 0 && rental.returnChecklist?.length) {
+      setReturnChecklist(rental.returnChecklist);
+    }
+    if (!extensionRequest && rental.extensionRequest) {
+      setExtensionRequest(rental.extensionRequest);
+    }
+  }, [rental, pickupChecklist.length, returnChecklist.length, extensionRequest]);
 
   if (isLoading) {
     return (

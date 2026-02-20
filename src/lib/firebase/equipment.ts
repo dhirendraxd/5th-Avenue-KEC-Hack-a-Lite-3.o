@@ -1,4 +1,4 @@
-import { createDocument, getDocuments } from "./firestore";
+import { createDocument, getDocuments, subscribeDocument, subscribeDocuments } from "./firestore";
 import {
   Equipment,
   EquipmentCategory,
@@ -128,6 +128,8 @@ const toEquipment = (
     cancellationPolicy: doc.cancellationPolicy,
     locationId: doc.locationId,
     locationName: doc.locationName,
+    locationMapUrl: doc.locationMapUrl,
+    createdAt: doc.createdAt,
   };
 };
 
@@ -136,6 +138,39 @@ export const getFirebaseEquipment = async (): Promise<Equipment[]> => {
     FirestoreEquipmentDocument & { id: string }
   >(EQUIPMENT_COLLECTION);
   return documents.map((document) => toEquipment(document.id, document));
+};
+
+export const subscribeFirebaseEquipment = (
+  onNext: (equipment: Equipment[]) => void,
+  onError?: (error: Error) => void
+) => {
+  return subscribeDocuments<FirestoreEquipmentDocument & { id: string }>(
+    EQUIPMENT_COLLECTION,
+    (documents) => {
+      onNext(documents.map((document) => toEquipment(document.id, document)));
+    },
+    [],
+    onError
+  );
+};
+
+export const subscribeFirebaseEquipmentById = (
+  equipmentId: string,
+  onNext: (equipment: Equipment | null) => void,
+  onError?: (error: Error) => void
+) => {
+  return subscribeDocument<FirestoreEquipmentDocument>(
+    EQUIPMENT_COLLECTION,
+    equipmentId,
+    (document) => {
+      if (!document) {
+        onNext(null);
+        return;
+      }
+      onNext(toEquipment(document.id, document));
+    },
+    onError
+  );
 };
 
 export const addFirebaseEquipment = async (

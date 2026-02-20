@@ -1,4 +1,5 @@
-import { RentalRequest, statusColors } from "@/lib/mockData";
+import { RentalRequest } from "@/lib/mockData";
+import { statusColors } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { format, differenceInDays, addDays, startOfDay, isWithinInterval } from "date-fns";
 import { Calendar, ArrowRight, Clock } from "lucide-react";

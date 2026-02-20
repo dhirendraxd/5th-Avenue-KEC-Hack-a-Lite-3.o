@@ -1,4 +1,4 @@
-import { getDocument, getDocuments } from "./firestore";
+import { getDocument, getDocuments, subscribeDocument, subscribeDocuments } from "./firestore";
 import { ChecklistItem, RentalRequest } from "@/lib/mockData";
 
 const RENTALS_COLLECTION = "rentals";
@@ -142,4 +142,37 @@ export const getFirebaseRentalById = async (
   );
   if (!document) return null;
   return toRental(rentalId, document);
+};
+
+export const subscribeFirebaseRentals = (
+  onNext: (rentals: RentalRequest[]) => void,
+  onError?: (error: Error) => void
+) => {
+  return subscribeDocuments<FirestoreRentalDocument & { id: string }>(
+    RENTALS_COLLECTION,
+    (documents) => {
+      onNext(documents.map((document) => toRental(document.id, document)));
+    },
+    [],
+    onError
+  );
+};
+
+export const subscribeFirebaseRentalById = (
+  rentalId: string,
+  onNext: (rental: RentalRequest | null) => void,
+  onError?: (error: Error) => void
+) => {
+  return subscribeDocument<FirestoreRentalDocument>(
+    RENTALS_COLLECTION,
+    rentalId,
+    (document) => {
+      if (!document) {
+        onNext(null);
+        return;
+      }
+      onNext(toRental(document.id, document));
+    },
+    onError
+  );
 };

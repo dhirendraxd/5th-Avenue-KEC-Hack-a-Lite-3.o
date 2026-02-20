@@ -22,8 +22,9 @@ import {
   getBusinessProfileFromFirebase,
   isBusinessKycComplete,
 } from "@/lib/firebase/businessProfile";
-import { getFirebaseEquipment } from "@/lib/firebase/equipment";
-import { categoryLabels, conditionLabels, Equipment } from "@/lib/mockData";
+import { subscribeFirebaseEquipmentById } from "@/lib/firebase/equipment";
+import { Equipment } from "@/lib/mockData";
+import { categoryLabels, conditionLabels } from "@/lib/constants";
 import {
   ArrowLeft,
   Shield,
@@ -55,34 +56,24 @@ const EquipmentDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
+    if (!id) {
+      setIsLoading(false);
+      return;
+    }
 
-    const loadEquipment = async () => {
-      if (!id) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const equipmentList = await getFirebaseEquipment();
-        if (!isMounted) return;
-
-        const selectedEquipment = equipmentList.find((item) => item.id === id) || null;
+    const unsubscribe = subscribeFirebaseEquipmentById(
+      id,
+      (selectedEquipment) => {
         setEquipment(selectedEquipment);
-      } catch (error) {
+        setIsLoading(false);
+      },
+      (error) => {
         console.error("Failed to load equipment details:", error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
-    };
+    );
 
-    loadEquipment();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => unsubscribe();
   }, [id]);
 
   const favorite = equipment ? isFavorite(equipment.id) : false;
