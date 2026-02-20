@@ -25,40 +25,47 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section className="py-24 lg:py-28 bg-background">
+    <section className="py-24 lg:py-28 bg-background border-t border-border/40">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-16 lg:mb-20 text-center">
           <h2 className="text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
             How It Works
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
-            A clear workflow built for professional rental operations.
+            Simple, transparent rental process from search to return.
           </p>
         </div>
 
-        <div className="grid gap-10 md:gap-8 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           {steps.map((step, index) => (
             <div
               key={index}
-              className="relative animate-fade-in"
+              className="relative group animate-fade-in"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              {/* Connector Line */}
+              {/* Connector Line - only on large screens */}
               {index < steps.length - 1 && (
-                <div className="absolute left-1/2 top-12 hidden h-0.5 w-full bg-border lg:block" />
+                <div className="absolute left-[calc(50%+3rem)] top-12 hidden h-px w-[calc(100%+2rem)] bg-gradient-to-r from-border/60 to-border/20 lg:block" />
               )}
               
               <div className="relative flex flex-col items-center text-center">
-                <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary/10">
-                  <step.icon className="h-10 w-10 text-primary" />
+                {/* Step Number */}
+                <div className="mb-4 text-sm font-semibold text-muted-foreground/60">
+                  STEP {index + 1}
                 </div>
-                <div className="absolute right-1/3 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground lg:right-auto lg:left-1/2 lg:-translate-x-1/2">
-                  {index + 1}
+                
+                {/* Icon Circle */}
+                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/5 border border-primary/10 transition-all duration-300 group-hover:bg-primary/10 group-hover:border-primary/20 group-hover:scale-105">
+                  <step.icon className="h-9 w-9 text-primary" strokeWidth={1.5} />
                 </div>
-                <h3 className="mb-2 text-xl font-semibold text-foreground">
+                
+                {/* Title */}
+                <h3 className="mb-3 text-lg font-semibold text-foreground">
                   {step.title}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                
+                {/* Description */}
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
                   {step.description}
                 </p>
               </div>

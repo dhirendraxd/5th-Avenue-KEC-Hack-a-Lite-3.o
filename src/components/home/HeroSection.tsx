@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
 import { getFirebaseEquipment } from "@/lib/firebase/equipment";
 import { Equipment } from "@/lib/mockData";
 
@@ -129,7 +129,7 @@ const HeroSection = () => {
       <div className="container relative z-10 mx-auto flex min-h-[calc(100vh-3.5rem)] items-center px-4 py-28 sm:px-6 lg:px-8 lg:py-32">
         <div className="mx-auto w-full max-w-5xl text-center">
           <h1 className="animate-fade-in text-6xl font-bold leading-[1.1] tracking-tight text-foreground md:text-7xl lg:text-8xl xl:text-[6.5rem]">
-            <span className="whitespace-nowrap">A simple <span className="text-primary">equipment</span></span><br />rental platform.
+            <span className="whitespace-nowrap">A simple <span className="text-primary handwritten-underline">equipment</span></span><br />rental platform.
           </h1>
           <p className="mx-auto mt-10 max-w-3xl animate-fade-in text-lg text-muted-foreground [animation-delay:150ms] md:text-xl lg:text-2xl lg:line-clamp-2">
             Find the right equipment for your task in seconds with clear pricing and trusted business listings.
@@ -153,7 +153,7 @@ const HeroSection = () => {
 
           <div className="mx-auto mt-14 w-full max-w-3xl animate-fade-in [animation-delay:450ms]">
             <div className="relative mx-auto w-full max-w-2xl">
-              <Sparkles className="pointer-events-none absolute left-1 top-1/2 h-5 w-5 -translate-y-1/2 animate-pulse-gentle text-primary/90" />
+              <Search className="pointer-events-none absolute left-1 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground/60" />
               <Input
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
