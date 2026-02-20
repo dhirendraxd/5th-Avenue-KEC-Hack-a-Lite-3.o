@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { roleLabels } from "@/lib/mockData";
-import { Package, Home, LayoutDashboard, Search, Menu, X, User, DollarSign } from "lucide-react";
+import { Package, Home, LayoutDashboard, Search, Menu, X, User, DollarSign, Hammer } from "lucide-react";
 import { useState } from "react";
 
 const Navbar = () => {
@@ -15,6 +15,7 @@ const Navbar = () => {
   const publicNavLinks = [
     { href: "/", label: "Home", icon: Home },
     { href: "/browse", label: "Browse Equipment", icon: Search },
+    { href: "/materials/find", label: "Materials", icon: Hammer },
   ];
 
   const privateNavLinks = [
