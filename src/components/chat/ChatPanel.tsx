@@ -110,7 +110,7 @@ const ChatPanel = ({ onClose, fullPage = false }: ChatPanelProps) => {
 
   const containerClass = fullPage
     ? "flex flex-col h-[calc(100vh-5rem)] max-w-3xl mx-auto"
-    : "flex flex-col h-[500px] w-[380px]";
+    : "flex flex-col h-[500px] w-full max-w-[380px]";
 
   return (
     <Card className={`${containerClass} overflow-hidden border border-border shadow-xl`}>

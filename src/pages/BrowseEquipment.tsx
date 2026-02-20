@@ -175,8 +175,8 @@ const BrowseEquipment = () => {
 
           {/* Expanded Filters */}
           {showFilters && (
-            <div className="rounded-lg border border-border bg-card p-6 space-y-6">
-              <div className="flex items-center justify-between">
+            <div className="space-y-6 rounded-lg border border-border bg-card p-6">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="font-semibold text-foreground">Filters</h3>
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearFilters}>
@@ -203,7 +203,7 @@ const BrowseEquipment = () => {
               </div>
 
               {/* Favorites Toggle */}
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h4 className="text-sm font-medium text-foreground">Saved Only</h4>
                   <p className="text-xs text-muted-foreground">Show only your saved equipment</p>
@@ -223,7 +223,7 @@ const BrowseEquipment = () => {
         </div>
 
         {/* Results Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             {filteredAndSortedEquipment.length} of {allEquipment.length} listings
           </p>

@@ -41,7 +41,7 @@ const RenterProfileCard = ({ renter }: RenterProfileCardProps) => {
               )}
             </div>
             
-            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+            <div className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-sm sm:grid-cols-2">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <MapPin className="h-3.5 w-3.5" />
                 <span>{renter.location}</span>
@@ -62,7 +62,7 @@ const RenterProfileCard = ({ renter }: RenterProfileCardProps) => {
           </div>
         </div>
         
-        <div className="mt-3 pt-3 border-t border-border flex items-center gap-4 text-sm">
+        <div className="mt-3 flex flex-col gap-1 border-t border-border pt-3 text-sm sm:flex-row sm:items-center sm:gap-4">
           <div>
             <span className="text-muted-foreground">Response rate: </span>
             <span className="font-medium text-foreground">{renter.responseRate}%</span>

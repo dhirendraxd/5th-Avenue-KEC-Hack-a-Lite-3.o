@@ -26,7 +26,7 @@ const LocationSelector = ({
 
   return (
     <Select value={selectedLocationId} onValueChange={onLocationChange}>
-      <SelectTrigger className="w-[280px]">
+      <SelectTrigger className="w-full sm:w-[280px]">
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-muted-foreground" />
           <SelectValue placeholder="Select location" />

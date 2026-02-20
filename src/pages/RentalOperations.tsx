@@ -164,7 +164,7 @@ const RentalOperations = () => {
 
           {/* Quick actions */}
           {(isActive || isApproved) && (
-            <div className="flex gap-2">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
               <TaskFlagDialog rentalId={rental.id} />
               <Button
                 variant="outline"
@@ -190,7 +190,7 @@ const RentalOperations = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-4">
+                <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center">
                   <div className="flex-1 space-y-1">
                     <p className="text-sm text-muted-foreground">Pickup</p>
                     <p className="font-medium text-foreground">
@@ -207,14 +207,14 @@ const RentalOperations = () => {
                       </Badge>
                     )}
                   </div>
-                  <div className="h-16 w-px bg-border" />
+                  <div className="hidden h-16 w-px bg-border sm:block" />
                   <div className="flex-1 text-center">
                     <Clock className="h-6 w-6 mx-auto text-muted-foreground" />
                     <p className="mt-1 text-lg font-bold text-foreground">
                       {rental.totalDays} days
                     </p>
                   </div>
-                  <div className="h-16 w-px bg-border" />
+                  <div className="hidden h-16 w-px bg-border sm:block" />
                   <div className="flex-1 text-right space-y-1">
                     <p className="text-sm text-muted-foreground">Return</p>
                     <p className="font-medium text-foreground">

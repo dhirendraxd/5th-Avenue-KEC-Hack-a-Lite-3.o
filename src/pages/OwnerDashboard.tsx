@@ -221,7 +221,7 @@ const OwnerDashboard = () => {
           title="Dashboard"
           description={`Welcome, ${user?.name || "User"}. Monitor equipment, manage requests, and track performance`}
           actions={
-            <Button onClick={() => setIsAddingEquipment(true)} size="default">
+            <Button onClick={() => setIsAddingEquipment(true)} size="default" className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Add Equipment
             </Button>
@@ -234,7 +234,7 @@ const OwnerDashboard = () => {
         />
 
         {/* Stats Grid - Modern cards with better visual weight */}
-        <div className="grid gap-5 lg:gap-6 grid-cols-2 lg:grid-cols-4 mb-10">
+        <div className="mb-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
           <StatCard
             label="Active Listings"
             value={myEquipment.length}
@@ -271,7 +271,7 @@ const OwnerDashboard = () => {
         {(urgentRequests.length > 0 || extensionRequests.length > 0) && (
           <div className="mb-10 space-y-4">
             {urgentRequests.length > 0 && (
-              <div className="flex items-center gap-4 p-4 rounded-xl border border-warning/30 bg-warning/5">
+              <div className="flex flex-col gap-4 rounded-xl border border-warning/30 bg-warning/5 p-4 sm:flex-row sm:items-center">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-warning/15">
                   <AlertTriangle className="h-5 w-5 text-warning" />
                 </div>
@@ -286,7 +286,7 @@ const OwnerDashboard = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="shrink-0 border-warning/30 hover:bg-warning/10"
+                  className="w-full shrink-0 border-warning/30 hover:bg-warning/10 sm:w-auto"
                   onClick={() => {
                     const element = document.querySelector('[data-state="inactive"][value="requests"]');
                     if (element) (element as HTMLElement).click();
@@ -299,7 +299,7 @@ const OwnerDashboard = () => {
 
             {extensionRequests.length > 0 && (
               <div className="rounded-xl border border-primary/20 bg-primary/5 overflow-hidden">
-                <div className="flex items-center gap-4 p-4">
+                <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15">
                     <CalendarPlus className="h-5 w-5 text-primary" />
                   </div>
@@ -316,7 +316,7 @@ const OwnerDashboard = () => {
                   {extensionRequests.map((request) => (
                     <div
                       key={request.id}
-                      className="flex items-center justify-between p-4 bg-card/50 hover:bg-card transition-colors"
+                      className="flex flex-col gap-3 bg-card/50 p-4 transition-colors hover:bg-card sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-foreground truncate">
@@ -330,7 +330,7 @@ const OwnerDashboard = () => {
                           </span>
                         </p>
                       </div>
-                      <div className="flex gap-2 ml-4">
+                      <div className="ml-0 flex w-full gap-2 sm:ml-4 sm:w-auto">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -352,7 +352,7 @@ const OwnerDashboard = () => {
 
         {/* Main Content Tabs - Improved visual hierarchy */}
         <Tabs defaultValue="timeline" className="space-y-8">
-          <TabsList className="h-11 p-1 bg-muted/50">
+          <TabsList className="h-11 w-full justify-start overflow-x-auto bg-muted/50 p-1">
             <TabsTrigger value="timeline" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
               <CalendarRange className="h-4 w-4" />
               <span className="hidden sm:inline">Timeline</span>
@@ -459,11 +459,11 @@ const OwnerDashboard = () => {
                         </div>
                       </div>
 
-                      <div className="flex flex-col items-end gap-3">
+                      <div className="flex flex-col gap-3 lg:items-end">
                         <p className="text-xl font-bold text-foreground tabular-nums">
                           ${request.totalPrice}
                         </p>
-                        <div className="flex gap-2">
+                        <div className="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
                           <Button
                             variant="ghost"
                             size="sm"

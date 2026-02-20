@@ -125,7 +125,7 @@ const EquipmentDetail = () => {
       <Navbar />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
         {/* Back Link */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
             to="/browse"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -254,7 +254,7 @@ const EquipmentDetail = () => {
                         {equipment.owner.rating} ({equipment.owner.totalRentals} rentals)
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-1">
+                    <div className="flex flex-col gap-1 pt-1 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-4">
                       <span>Response rate: {equipment.owner.responseRate}%</span>
                       <span>Responds {equipment.owner.responseTime}</span>
                       <span>Member since {equipment.owner.memberSince.getFullYear()}</span>

@@ -89,7 +89,9 @@ const FinanceDashboard = () => {
               Track earnings, payouts, and equipment performance analytics
             </p>
           </div>
-          <RoleSwitcher />
+          <div className="w-full md:w-auto">
+            <RoleSwitcher />
+          </div>
         </div>
 
         {/* Stats */}
@@ -116,7 +118,7 @@ const FinanceDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="earnings" className="space-y-8">
-          <TabsList>
+          <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="earnings" className="gap-2" disabled={!canViewFinance}>
               <DollarSign className="h-4 w-4" />
               Earnings

@@ -78,7 +78,7 @@ const LocationManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-foreground">Business Locations</h2>
           <p className="text-sm text-muted-foreground">
@@ -118,7 +118,7 @@ const LocationManagement = () => {
                   required
                 />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-2 col-span-1">
                   <Label htmlFor="city">City</Label>
                   <Input id="city" name="city" placeholder="City" required />
@@ -181,7 +181,7 @@ const LocationManagement = () => {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 pt-2 border-t border-border">
+              <div className="flex flex-wrap items-center gap-2 border-t border-border pt-2">
                 {!location.isDefault && (
                   <Button
                     variant="outline"

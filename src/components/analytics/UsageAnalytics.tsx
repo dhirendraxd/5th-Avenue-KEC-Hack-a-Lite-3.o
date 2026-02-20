@@ -81,7 +81,7 @@ const UsageAnalytics = ({
   return (
     <div className="space-y-6">
       {/* Location Filter */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-foreground">Usage Analytics</h3>
           <p className="text-sm text-muted-foreground">
@@ -89,7 +89,7 @@ const UsageAnalytics = ({
           </p>
         </div>
         <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-full sm:w-[200px]">
             <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
             <SelectValue placeholder="All Locations" />
           </SelectTrigger>
@@ -256,7 +256,7 @@ const UsageAnalytics = ({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                  <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                     <div>
                       <p className="text-muted-foreground">Total Rentals</p>
                       <p className="font-semibold text-foreground">

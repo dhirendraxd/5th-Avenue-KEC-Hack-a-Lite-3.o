@@ -216,7 +216,7 @@ const AddEquipmentDialog = ({ open, onOpenChange, onSubmit }: AddEquipmentDialog
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0">
+      <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-2xl p-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5 text-primary" />
@@ -229,7 +229,7 @@ const AddEquipmentDialog = ({ open, onOpenChange, onSubmit }: AddEquipmentDialog
 
         <form onSubmit={handleSubmit}>
           <Tabs value={currentTab} onValueChange={setCurrentTab} className="px-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
               <TabsTrigger value="basic" className="gap-1">
                 <Info className="h-4 w-4" />
                 <span className="hidden sm:inline">Basic</span>
@@ -265,7 +265,7 @@ const AddEquipmentDialog = ({ open, onOpenChange, onSubmit }: AddEquipmentDialog
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="category">Category *</Label>
                     <Select value={category} onValueChange={(v) => setCategory(v as EquipmentCategory)}>
@@ -316,7 +316,7 @@ const AddEquipmentDialog = ({ open, onOpenChange, onSubmit }: AddEquipmentDialog
 
                 <div className="space-y-2">
                   <Label>Equipment Condition *</Label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {conditionOptions.map((opt) => (
                       <div
                         key={opt.value}
@@ -399,7 +399,7 @@ const AddEquipmentDialog = ({ open, onOpenChange, onSubmit }: AddEquipmentDialog
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="minRental">Minimum Rental Days</Label>
                     <Input
@@ -428,7 +428,7 @@ const AddEquipmentDialog = ({ open, onOpenChange, onSubmit }: AddEquipmentDialog
 
               {/* Pricing Tab */}
               <TabsContent value="pricing" className="space-y-4 pr-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="price">Daily Rental Rate *</Label>
                     <div className="relative">
@@ -535,7 +535,7 @@ const AddEquipmentDialog = ({ open, onOpenChange, onSubmit }: AddEquipmentDialog
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                       {photos.map((photo, index) => (
                         <div key={index} className="relative group aspect-square">
                           <img
@@ -589,11 +589,11 @@ const AddEquipmentDialog = ({ open, onOpenChange, onSubmit }: AddEquipmentDialog
             </ScrollArea>
           </Tabs>
 
-          <div className="flex items-center justify-between p-6 pt-4 border-t border-border">
+          <div className="flex flex-col gap-3 border-t border-border p-6 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-muted-foreground">
               {photos.length === 0 && <span className="text-warning">Add at least 1 photo</span>}
             </div>
-            <div className="flex gap-3">
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>

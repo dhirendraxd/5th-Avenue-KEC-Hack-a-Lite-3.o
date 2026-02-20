@@ -23,7 +23,7 @@ const RoleSwitcher = () => {
 
   return (
     <Select value={user.role} onValueChange={(value) => switchRole(value as UserRole)}>
-      <SelectTrigger className="w-[200px] h-9">
+      <SelectTrigger className="h-9 w-full sm:w-[200px]">
         <div className="flex items-center gap-2">
           <div className={roleLabels[user.role].color}>
             {roleIcons[user.role]}
