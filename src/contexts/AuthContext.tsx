@@ -1,10 +1,19 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { CurrentUser, UserRole, mockBusinesses, mockTeamMembers, mockLocations } from '@/lib/mockData';
-import { logout as firebaseLogout, onAuthChange, signInWithGoogle as firebaseSignInWithGoogle } from '@/lib/firebase/auth';
+import { 
+  signIn as firebaseSignIn, 
+  logout as firebaseLogout,
+  onAuthChange,
+  getCurrentUser,
+  signUp as firebaseSignUp,
+  signInWithGoogle as firebaseSignInWithGoogle,
+} from '@/lib/firebase/auth';
+import { auth } from '@/lib/firebase/config';
 
 interface AuthContextType {
   user: CurrentUser | null;
   isAuthenticated: boolean;
+  login: (email: string, password: string, role?: UserRole) => Promise<boolean>;
   loginWithGoogle: () => Promise<boolean>;
   logout: () => Promise<void>;
   switchRole: (role: UserRole) => void;
@@ -67,41 +76,77 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const unsubscribe = onAuthChange((authUser) => {
-      if (!authUser) {
-        setUser(null);
-        localStorage.removeItem('gearshift_user');
+    try {
+      const unsubscribe = onAuthChange((authUser) => {
+        if (authUser) {
+          const mappedUser = mapAuthUserToCurrentUser(authUser);
+          setUser(mappedUser);
+          localStorage.setItem('gearshift_user', JSON.stringify(mappedUser));
+        } else {
+          setUser(null);
+          localStorage.removeItem('gearshift_user');
+        }
         setIsLoading(false);
-        return;
-      }
+      });
 
-      const mappedUser = mapAuthUserToCurrentUser(authUser);
-      setUser(mappedUser);
-      localStorage.setItem('gearshift_user', JSON.stringify(mappedUser));
+      return unsubscribe;
+    } catch (error) {
+      console.error('Auth state listener error:', error);
       setIsLoading(false);
-    });
-
+    }
     return unsubscribe;
   }, []);
 
-  const loginWithGoogle = async (): Promise<boolean> => {
+<<<<<<< HEAD
+=======
+  const login = async (email: string, password: string, role?: UserRole): Promise<boolean> => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const firebaseUser = await firebaseSignInWithGoogle();
+      const firebaseUser = await firebaseSignIn(email, password);
+      
+      // Find user in mock data to get role and business info
+      const teamMember = mockTeamMembers.find(tm => tm.email === firebaseUser.email);
+      const userRole = role || teamMember?.role || 'owner';
+      
+      const newUser: CurrentUser = {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || email.split('@')[0],
+        email: firebaseUser.email || email,
+        role: userRole,
+        businessId: 'b1',
+        businessName: mockBusinesses[0].name,
+        locationAccess: teamMember?.locationAccess || mockLocations.map(l => l.id),
+      };
+      
+      setUser(newUser);
+      localStorage.setItem('gearshift_user', JSON.stringify(newUser));
+      setIsLoading(false);
+      return true;
+  const login = async (email: string, password: string, role?: UserRole): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const firebaseUser = await firebaseSignIn(email, password);
+      
+      // Find user in mock data to get role and business info
+      const teamMember = mockTeamMembers.find(tm => tm.email === firebaseUser.email);
+      const userRole = role || teamMember?.role || 'owner';
+      
+      const newUser: CurrentUser = {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || email.split('@')[0],
       const mappedUser = mapAuthUserToCurrentUser(firebaseUser);
       setUser(mappedUser);
       localStorage.setItem('gearshift_user', JSON.stringify(mappedUser));
-      return true;
-    } catch (error) {
-      console.error('Google login error:', error);
-      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
+<<<<<<< HEAD
   const logout = async (): Promise<void> => {
+=======
+  const logout = async () => {
+>>>>>>> b50a011 (feat: update AuthContext to enhance Firebase authentication flow and user data handling)
     try {
       await firebaseLogout();
     } catch (error) {
@@ -124,9 +169,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return rolePermissions[user.role].includes(permission);
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
         user,
         isAuthenticated: !!user,
         loginWithGoogle,
@@ -148,3 +190,5 @@ export const useAuth = () => {
   }
   return context;
 };
+,
+        login
