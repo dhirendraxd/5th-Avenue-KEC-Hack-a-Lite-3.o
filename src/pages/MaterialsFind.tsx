@@ -75,6 +75,7 @@ const MaterialsFind = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedPickupLocation, setSelectedPickupLocation] = useState("Thamel");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "advance">("cod");
+  const [selectedGateway, setSelectedGateway] = useState<"khalti" | "esewa" | "bank" | null>(null);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -138,21 +139,55 @@ const MaterialsFind = () => {
     setSelected(listing);
     setSelectedPickupLocation("Thamel");
     setPaymentMethod("cod");
+    setSelectedGateway(null);
     setDialogOpen(true);
   };
 
   const handlePurchase = () => {
     if (!selected) return;
     
-    const paymentLabel = paymentMethod === "cod" ? "Cash on Delivery" : "Advance Payment";
-    
-    toast({
-      title: "Purchase Confirmed! ✓",
-      description: `${selected.name} - Pickup at ${selectedPickupLocation}\nPayment: ${paymentLabel}\n\nCalling ${selected.contactName}...`,
-      duration: 5000,
-    });
+    if (paymentMethod === "cod") {
+      toast({
+        title: "Order Confirmed! ✓",
+        description: `${selected.name} - Pickup at ${selectedPickupLocation}\nPayment: Cash on Delivery\n\nCalling ${selected.contactName}...`,
+        duration: 5000,
+      });
+    } else {
+      toast({
+        title: "Proceed to Payment",
+        description: `${selected.name}\nAmount: NPR ${selected.price}\n\nSelect payment method above`,
+        duration: 4000,
+      });
+      return;
+    }
     
     setDialogOpen(false);
+  };
+
+  const handlePaymentGateway = (gateway: "khalti" | "esewa" | "bank") => {
+    if (!selected) return;
+    
+    setSelectedGateway(gateway);
+    
+    let gatewayName = "";
+    if (gateway === "khalti") gatewayName = "Khalti";
+    else if (gateway === "esewa") gatewayName = "eSewa";
+    else gatewayName = "Bank Transfer";
+    
+    toast({
+      title: `Redirecting to ${gatewayName}...`,
+      description: `Amount: NPR ${selected.price}\nItem: ${selected.name}`,
+      duration: 3000,
+    });
+    
+    setTimeout(() => {
+      toast({
+        title: "Payment Processing",
+        description: `Your payment of NPR ${selected.price} is being processed...`,
+        duration: 4000,
+      });
+      setDialogOpen(false);
+    }, 2000);
   };
 
   return (
@@ -433,7 +468,7 @@ const MaterialsFind = () => {
                 <img
                   src={selected.imageUrl}
                   alt={selected.name}
-                  className="block h-auto w-full object-contain"
+                  className="block w-full max-h-64 object-contain"
                   loading="lazy"
                 />
               </div>
@@ -478,6 +513,34 @@ const MaterialsFind = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {paymentMethod === "advance" && (
+                <div className="border-t border-border pt-4">
+                  <p className="text-sm font-semibold text-foreground mb-3">Choose payment gateway</p>
+                  <div className="space-y-2">
+                    <Button variant="outline" className="w-full justify-start" onClick={() => handlePaymentGateway("khalti")}>
+                      <span className="text-base font-bold text-purple-600 mr-2">₭</span>
+                      Pay with Khalti
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" onClick={() => handlePaymentGateway("esewa")}>
+                      <span className="text-base font-bold text-green-600 mr-2">e</span>
+                      Pay with eSewa
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" onClick={() => handlePaymentGateway("bank")}>
+                      <span className="text-base font-bold text-blue-600 mr-2">🏦</span>
+                      Bank Transfer
+                    </Button>
+                  </div>
+                  <div className="mt-3 p-3 bg-muted/40 rounded-lg border border-border">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-semibold">Account:</span> Nepal Builder's Bank, Branch: Thamel
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-semibold">Account No:</span> 123456789
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
