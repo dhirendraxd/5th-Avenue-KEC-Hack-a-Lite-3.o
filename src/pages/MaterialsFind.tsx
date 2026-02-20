@@ -27,9 +27,9 @@ import { MapPin, Phone, CircleDollarSign, Lightbulb, TrendingUp, Users, Upload }
 import {
   materialCategoryLabels,
   materialConditionLabels,
-  mockMaterialListings,
   type MaterialListing,
 } from "@/lib/materialsMock";
+import { subscribeFirebaseMaterials } from "@/lib/firebase/materials";
 
 const DEFAULT_LOCATION = {
   latitude: 27.7172,
@@ -76,6 +76,7 @@ const MaterialsFind = () => {
   const [selectedPickupLocation, setSelectedPickupLocation] = useState("Thamel");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "advance">("cod");
   const [selectedGateway, setSelectedGateway] = useState<"khalti" | "esewa" | "bank" | null>(null);
+  const [allListings, setAllListings] = useState<MaterialListing[]>([]);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -97,9 +98,22 @@ const MaterialsFind = () => {
     );
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = subscribeFirebaseMaterials(
+      (listings) => {
+        setAllListings(listings);
+      },
+      (error) => {
+        console.error("Failed to load materials from Firebase:", error);
+      },
+    );
+
+    return () => unsubscribe();
+  }, []);
+
   const listings = useMemo(() => {
     const maxDistance = Number(radius);
-    return mockMaterialListings
+    return allListings
       .map((listing) => ({
         ...listing,
         distance: distanceInMiles(
@@ -112,7 +126,7 @@ const MaterialsFind = () => {
       .filter((listing) => listing.distance <= maxDistance)
       .filter((listing) => category === "all" || listing.category === category)
       .sort((a, b) => a.distance - b.distance);
-  }, [radius, category, location]);
+  }, [radius, category, location, allListings]);
 
   const areaInsights = useMemo(() => {
     const counts = listings.reduce<Record<string, number>>((acc, listing) => {

@@ -94,31 +94,61 @@ const FinanceDashboard = () => {
   const getRentalServiceFee = (rental: RentalRequest) =>
     typeof rental.serviceFee === "number" ? rental.serviceFee : 0;
 
+  const isRealizedRental = (rental: RentalRequest) =>
+    rental.status === "approved" ||
+    rental.status === "active" ||
+    rental.status === "completed";
+
+  const isPendingRental = (rental: RentalRequest) =>
+    rental.status === "requested" || rental.status === "extension_requested";
+
   const financeSummary = useMemo(() => {
-    const totalEarnings = ownerRentals.reduce(
+    const realizedRentals = ownerRentals.filter(isRealizedRental);
+    const pendingRentals = ownerRentals.filter(isPendingRental);
+
+    const totalEarnings = realizedRentals.reduce(
       (sum, rental) => sum + getRentalRevenue(rental),
       0
     );
-    const thisMonthEarnings = ownerRentals
+    const thisMonthEarnings = realizedRentals
       .filter((rental) => {
         const monthStart = startOfMonth(new Date());
         return rental.startDate >= monthStart;
       })
       .reduce((sum, rental) => sum + getRentalRevenue(rental), 0);
 
-    const averageRentalValue = ownerRentals.length
-      ? ownerRentals.reduce(
+    const pendingPayouts = pendingRentals.reduce(
+      (sum, rental) => sum + getRentalRevenue(rental),
+      0
+    );
+
+    const totalFeesPaid = realizedRentals.reduce(
+      (sum, rental) => sum + getRentalServiceFee(rental),
+      0
+    );
+
+    const totalGrossRevenue = realizedRentals.reduce(
+      (sum, rental) => sum + (rental.totalPrice ?? getRentalRevenue(rental)),
+      0
+    );
+
+    const platformFeeRate =
+      totalGrossRevenue > 0 ? totalFeesPaid / totalGrossRevenue : 0;
+
+    const averageRentalValue = realizedRentals.length
+      ? realizedRentals.reduce(
           (sum, rental) => sum + (rental.totalPrice ?? getRentalRevenue(rental)),
           0
-        ) / ownerRentals.length
+        ) / realizedRentals.length
       : 0;
 
     return {
       totalEarnings,
       thisMonthEarnings,
-      pendingPayouts: totalEarnings,
+      pendingPayouts,
       averageRentalValue,
-      platformFeeRate: 0.1,
+      totalFeesPaid,
+      platformFeeRate,
       totalRentals: ownerRentals.length,
     };
   }, [ownerRentals]);
@@ -129,9 +159,11 @@ const FinanceDashboard = () => {
     );
 
     return months.map((monthStart) => {
-      const monthRentals = ownerRentals.filter((rental) =>
-        format(rental.startDate, "yyyy-MM") === format(monthStart, "yyyy-MM")
-      );
+      const monthRentals = ownerRentals
+        .filter(isRealizedRental)
+        .filter((rental) =>
+          format(rental.startDate, "yyyy-MM") === format(monthStart, "yyyy-MM")
+        );
       const revenue = monthRentals.reduce(
         (sum, rental) => sum + (rental.totalPrice ?? getRentalRevenue(rental)),
         0
@@ -165,9 +197,18 @@ const FinanceDashboard = () => {
 
   const transactions: Transaction[] = useMemo(() => {
     const items: Transaction[] = [];
-    ownerRentals.forEach((rental) => {
+    ownerRentals
+      .filter((rental) => rental.status !== "declined")
+      .forEach((rental) => {
       const revenue = getRentalRevenue(rental);
       const fees = getRentalServiceFee(rental);
+      const transactionStatus =
+        rental.status === "completed"
+          ? "completed"
+          : rental.status === "approved" || rental.status === "active"
+            ? "processing"
+            : "pending";
+
       if (revenue > 0) {
         items.push({
           id: `${rental.id}-income`,
@@ -175,7 +216,7 @@ const FinanceDashboard = () => {
           amount: revenue,
           description: `${rental.equipment.name} - ${rental.totalDays} day rental`,
           date: rental.startDate,
-          status: rental.status === "requested" ? "pending" : "completed",
+          status: transactionStatus,
           rentalId: rental.id,
           equipmentName: rental.equipment.name,
         });
@@ -187,7 +228,7 @@ const FinanceDashboard = () => {
           amount: fees,
           description: "Platform service fee",
           date: rental.startDate,
-          status: rental.status === "requested" ? "pending" : "completed",
+          status: transactionStatus,
           rentalId: rental.id,
         });
       }
@@ -438,7 +479,7 @@ const FinanceDashboard = () => {
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Total Fees Paid</span>
                         <span className="font-semibold text-foreground">
-                          NPR {(financeSummary.totalEarnings * financeSummary.platformFeeRate).toLocaleString()}
+                          NPR {financeSummary.totalFeesPaid.toLocaleString()}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground pt-2 border-t border-border">

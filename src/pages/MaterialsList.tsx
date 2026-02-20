@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Camera, X } from "lucide-react";
 import {
   Select,
@@ -18,9 +19,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { materialImages, pickRandomCondition } from "@/lib/materialsMock";
+import { createFirebaseMaterial } from "@/lib/firebase/materials";
+import { isCloudinaryConfigured, uploadImagesToCloudinary } from "@/lib/cloudinary";
+
+const DEFAULT_COORDINATES = {
+  latitude: 27.7172,
+  longitude: 85.324,
+};
 
 const MaterialsList = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [name, setName] = useState("");
   const [category, setCategory] = useState<string>("");
   const [condition, setCondition] = useState<string>(() => pickRandomCondition());
@@ -29,6 +38,8 @@ const MaterialsList = () => {
   const [location, setLocation] = useState("");
   const [isLocating, setIsLocating] = useState(false);
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
+  const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleUseLocation = () => {
     if (!navigator.geolocation) {
@@ -45,6 +56,7 @@ const MaterialsList = () => {
       (pos) => {
         const { latitude, longitude } = pos.coords;
         setLocation(`GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        setCoordinates({ latitude, longitude });
         setIsLocating(false);
       },
       () => {
@@ -92,14 +104,25 @@ const MaterialsList = () => {
       };
       reader.readAsDataURL(file);
     });
+
+    event.target.value = "";
   };
 
   const removePhoto = (index: number) => {
     setUploadedPhotos(uploadedPhotos.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to publish material listings.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (!name.trim() || !category || !condition || !location.trim()) {
       toast({
@@ -119,18 +142,69 @@ const MaterialsList = () => {
       return;
     }
 
-    toast({
-      title: "Listing saved",
-      description: "This is a prototype. Your item is not yet published.",
-    });
+    if (uploadedPhotos.length === 0) {
+      toast({
+        title: "Photo required",
+        description: "Please upload at least one image.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setName("");
-    setCategory("");
-    setCondition(pickRandomCondition());
-    setPrice("");
-    setIsFree(false);
-    setLocation("");
-    setUploadedPhotos([]);
+    if (!isCloudinaryConfigured()) {
+      toast({
+        title: "Cloudinary not configured",
+        description: "Set Cloudinary env vars to publish material images.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const [primaryImageUrl] = await uploadImagesToCloudinary(uploadedPhotos);
+
+      await createFirebaseMaterial({
+        name: name.trim(),
+        category: category as "wood" | "metal" | "concrete",
+        condition: condition as "sealed" | "new" | "used",
+        imageUrl: primaryImageUrl,
+        price: isFree ? 0 : Number(price),
+        isFree,
+        locationName: location.trim(),
+        latitude: coordinates?.latitude ?? DEFAULT_COORDINATES.latitude,
+        longitude: coordinates?.longitude ?? DEFAULT_COORDINATES.longitude,
+        contactName: user.name,
+        contactPhone: "+977 9800000000",
+        sellerId: user.id,
+      });
+
+      toast({
+        title: "Listing published",
+        description: "Material and image were saved to Firebase + Cloudinary.",
+      });
+
+      setName("");
+      setCategory("");
+      setCondition(pickRandomCondition());
+      setPrice("");
+      setIsFree(false);
+      setLocation("");
+      setUploadedPhotos([]);
+      setCoordinates(null);
+    } catch (error) {
+      toast({
+        title: "Publish failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Could not publish this listing. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -237,7 +311,9 @@ const MaterialsList = () => {
               </div>
 
               <div className="flex justify-end">
-                <Button type="submit">Publish listing</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Publishing..." : "Publish listing"}
+                </Button>
               </div>
               </form>
 
