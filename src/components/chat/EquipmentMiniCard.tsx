@@ -1,14 +1,39 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { mockEquipment } from "@/lib/mockData";
+import { Equipment } from "@/lib/mockData";
 import { Badge } from "@/components/ui/badge";
 import { Star, ArrowRight } from "lucide-react";
+import { getFirebaseEquipment } from "@/lib/firebase/equipment";
 
 interface EquipmentMiniCardProps {
   equipmentId: string;
 }
 
 const EquipmentMiniCard = ({ equipmentId }: EquipmentMiniCardProps) => {
-  const equipment = mockEquipment.find((e) => e.id === equipmentId);
+  const [equipment, setEquipment] = useState<Equipment | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadEquipment = async () => {
+      try {
+        const equipmentList = await getFirebaseEquipment();
+        if (!isMounted) return;
+
+        const item = equipmentList.find((entry) => entry.id === equipmentId) || null;
+        setEquipment(item);
+      } catch (error) {
+        console.error("Failed to load chat equipment card:", error);
+      }
+    };
+
+    loadEquipment();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [equipmentId]);
+
   if (!equipment) return null;
 
   const avgRating =

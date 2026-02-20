@@ -29,7 +29,6 @@ const PhotoUploadGrid = ({
 }: PhotoUploadGridProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewPhoto, setPreviewPhoto] = useState<ConditionPhoto | null>(null);
-  const [captionInputs, setCaptionInputs] = useState<Record<string, string>>({});
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

@@ -1,22 +1,22 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { useMemo } from 'react';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { useMemo } from "react";
 
 export interface ConditionPhoto {
   id: string;
   url: string;
   caption: string;
   timestamp: Date;
-  type: 'pickup' | 'return' | 'damage';
+  type: "pickup" | "return" | "damage";
 }
 
 export interface ConditionLogEntry {
   id: string;
   rentalId: string;
   equipmentId: string;
-  type: 'pickup' | 'return';
+  type: "pickup" | "return";
   timestamp: Date;
-  condition: 'excellent' | 'good' | 'fair' | 'damaged';
+  condition: "excellent" | "good" | "fair" | "damaged";
   notes: string;
   photos: ConditionPhoto[];
   verifiedBy: string;
@@ -26,7 +26,7 @@ export interface ConditionLogEntry {
 
 interface ConditionLogStore {
   logs: ConditionLogEntry[];
-  addLog: (log: Omit<ConditionLogEntry, 'id' | 'timestamp'>) => void;
+  addLog: (log: Omit<ConditionLogEntry, "id" | "timestamp">) => void;
 }
 
 // Custom storage that handles Date serialization
@@ -74,14 +74,17 @@ export const useConditionLogStore = create<ConditionLogStore>()(
       },
     }),
     {
-      name: 'gearshift-condition-logs',
+      name: "gearshift-condition-logs",
       storage: customStorage as any,
-    }
-  )
+    },
+  ),
 );
 
 // Hook to get logs for a rental with stable reference
 export const useLogsForRental = (rentalId: string) => {
   const logs = useConditionLogStore((state) => state.logs);
-  return useMemo(() => logs.filter((log) => log.rentalId === rentalId), [logs, rentalId]);
+  return useMemo(
+    () => logs.filter((log) => log.rentalId === rentalId),
+    [logs, rentalId],
+  );
 };

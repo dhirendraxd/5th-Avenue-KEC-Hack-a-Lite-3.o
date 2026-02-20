@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { mockEquipment, categoryLabels, sortOptions, Equipment, EquipmentCategory, SortOption } from "@/lib/mockData";
+import { categoryLabels, sortOptions, Equipment, EquipmentCategory, SortOption } from "@/lib/mockData";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { getFirebaseEquipment } from "@/lib/firebase/equipment";
 import { Search, SlidersHorizontal, X, Heart, Grid3X3, LayoutList, Package } from "lucide-react";
@@ -28,7 +28,7 @@ const BrowseEquipment = () => {
   const [sortBy, setSortBy] = useState<SortOption>("most_rented");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [allEquipment, setAllEquipment] = useState<Equipment[]>(mockEquipment);
+  const [allEquipment, setAllEquipment] = useState<Equipment[]>([]);
 
   const { favorites } = useFavoritesStore();
   const categories = Object.keys(categoryLabels) as EquipmentCategory[];
@@ -41,7 +41,7 @@ const BrowseEquipment = () => {
         const firebaseEquipment = await getFirebaseEquipment();
         if (!isMounted) return;
 
-        setAllEquipment([...mockEquipment, ...firebaseEquipment]);
+        setAllEquipment(firebaseEquipment);
       } catch (error) {
         console.error("Failed to load Firebase equipment:", error);
       }

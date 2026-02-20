@@ -180,7 +180,7 @@ const UsageAnalytics = ({
               <ChartTooltip
                 content={
                   <ChartTooltipContent
-                    formatter={(value, name, item) =>
+                    formatter={(value, _name, item) =>
                       `${item.payload.fullName}: ${value}%`
                     }
                   />

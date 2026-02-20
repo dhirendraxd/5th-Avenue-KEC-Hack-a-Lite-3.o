@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -19,7 +19,6 @@ import { useFlagStore } from '@/lib/flagStore';
 import {
   flagCategories,
   severityConfig,
-  FlagCategory,
   FlagSeverity,
   FlagOption,
 } from '@/lib/flaggingSystem';
@@ -35,7 +34,6 @@ import {
   MessageCircle,
   HelpCircle,
   ChevronRight,
-  X,
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ElementType> = {

@@ -12,7 +12,6 @@ interface PickupReturnChecklistProps {
   type: "pickup" | "return";
   items: ChecklistItem[];
   onComplete: (items: ChecklistItem[]) => void;
-  isOwner?: boolean;
   isCompleted?: boolean;
 }
 
@@ -20,7 +19,6 @@ const PickupReturnChecklist = ({
   type,
   items: initialItems,
   onComplete,
-  isOwner = false,
   isCompleted = false,
 }: PickupReturnChecklistProps) => {
   const { toast } = useToast();

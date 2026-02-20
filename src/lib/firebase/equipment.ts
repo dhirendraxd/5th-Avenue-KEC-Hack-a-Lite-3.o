@@ -3,8 +3,6 @@ import {
   Equipment,
   EquipmentCategory,
   EquipmentCondition,
-  mockBusinesses,
-  mockLocations,
 } from "@/lib/mockData";
 
 const EQUIPMENT_COLLECTION = "equipment";
@@ -88,28 +86,17 @@ const toEquipment = (
   id: string,
   doc: FirestoreEquipmentDocument,
 ): Equipment => {
-  const matchingBusiness = mockBusinesses.find(
-    (business) => business.id === doc.ownerId,
-  );
-
-  const owner = matchingBusiness
-    ? {
-        ...matchingBusiness,
-        name: doc.ownerName,
-        location: doc.ownerLocation || matchingBusiness.location,
-        verified: doc.ownerVerified ?? matchingBusiness.verified,
-      }
-    : {
-        id: doc.ownerId,
-        name: doc.ownerName,
-        rating: 5,
-        totalRentals: doc.totalRentals,
-        verified: doc.ownerVerified ?? false,
-        location: doc.ownerLocation || "N/A",
-        memberSince: new Date(),
-        responseRate: 100,
-        responseTime: "< 24 hours",
-      };
+  const owner = {
+    id: doc.ownerId,
+    name: doc.ownerName,
+    rating: 5,
+    totalRentals: doc.totalRentals,
+    verified: doc.ownerVerified ?? false,
+    location: doc.ownerLocation || "N/A",
+    memberSince: new Date(),
+    responseRate: 100,
+    responseTime: "< 24 hours",
+  };
 
   return {
     id,
@@ -156,10 +143,7 @@ export const addFirebaseEquipment = async (
 ): Promise<Equipment> => {
   const equipmentId = `fb-${globalThis.crypto?.randomUUID?.() || Date.now()}`;
 
-  const locationName =
-    input.locationName ||
-    mockLocations.find((location) => location.id === input.locationId)?.name ||
-    "Default Location";
+  const locationName = input.locationName || "Custom Location";
 
   const document: FirestoreEquipmentDocument = {
     name: input.name,

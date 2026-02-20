@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import BackgroundIllustrations from "@/components/layout/BackgroundIllustrations";
@@ -38,8 +38,6 @@ import BusinessProfileSection from "@/components/dashboard/BusinessProfileSectio
 import { useAuth } from "@/contexts/AuthContext";
 import { getFirebaseEquipment } from "@/lib/firebase/equipment";
 import {
-  mockEquipment,
-  mockRentalRequests,
   categoryLabels,
   statusColors,
   RentalRequest,
@@ -50,7 +48,6 @@ import {
   Package,
   Clock,
   CheckCircle,
-  XCircle,
   Calendar,
   DollarSign,
   CalendarRange,
@@ -71,19 +68,14 @@ const OwnerDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, logout } = useAuth();
-  const [requests, setRequests] = useState<RentalRequest[]>(mockRentalRequests);
+  const [requests, setRequests] = useState<RentalRequest[]>([]);
   const [activeTab, setActiveTab] = useState("timeline");
   const [approveDialog, setApproveDialog] = useState<{
     open: boolean;
     request: RentalRequest | null;
   }>({ open: false, request: null });
-  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
 
-  const mockOwnedEquipment = useMemo(
-    () => mockEquipment.filter((equipment) => equipment.owner.id === "b1" || equipment.owner.id === "b2"),
-    []
-  );
-  const [myEquipment, setMyEquipment] = useState<Equipment[]>(mockOwnedEquipment);
+  const [myEquipment, setMyEquipment] = useState<Equipment[]>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -101,7 +93,7 @@ const OwnerDashboard = () => {
             equipment.owner.location === user.businessName
         );
 
-        setMyEquipment([...mockOwnedEquipment, ...userOwnedFromFirebase]);
+        setMyEquipment(userOwnedFromFirebase);
       } catch (error) {
         console.error("Failed to load equipment from Firebase:", error);
       }
@@ -112,7 +104,7 @@ const OwnerDashboard = () => {
     return () => {
       isMounted = false;
     };
-  }, [mockOwnedEquipment, user]);
+  }, [user]);
 
   const pendingRequests = requests.filter((r) => r.status === "requested");
   const activeRentals = requests.filter(
@@ -121,7 +113,6 @@ const OwnerDashboard = () => {
   const extensionRequests = requests.filter(
     (r) => r.extensionRequest?.status === "pending"
   );
-  const completedRentals = requests.filter((r) => r.status === "completed");
 
   // Categorize by urgency
   const urgentRequests = pendingRequests.filter((r) => {
@@ -651,7 +642,6 @@ const OwnerDashboard = () => {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={() => setSelectedEquipment(equipment)}
                               >
                                 <Settings2 className="h-4 w-4" />
                               </Button>

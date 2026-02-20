@@ -10,51 +10,51 @@
     /* Core backgrounds */
     --background: 210 20% 98%;
     --foreground: 220 25% 10%;
-    
+
     /* Card surfaces */
     --card: 0 0% 100%;
     --card-foreground: 220 25% 10%;
-    
+
     /* Popover surfaces */
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 10%;
-    
+
     /* Primary - Professional Blue */
     --primary: 217 91% 55%;
     --primary-foreground: 0 0% 100%;
-    
+
     /* Secondary - Soft neutral */
     --secondary: 210 20% 96%;
     --secondary-foreground: 220 25% 20%;
-    
+
     /* Muted elements */
     --muted: 210 15% 94%;
     --muted-foreground: 220 10% 45%;
-    
+
     /* Accent - Sustainability Green */
     --accent: 152 60% 45%;
     --accent-foreground: 0 0% 100%;
-    
+
     /* Success - For approvals */
     --success: 152 60% 45%;
     --success-foreground: 0 0% 100%;
-    
+
     /* Warning - For pending states */
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    
+
     /* Destructive */
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    
+
     /* Borders and inputs */
     --border: 214 20% 88%;
     --input: 214 20% 88%;
     --ring: 217 91% 55%;
-    
+
     /* Radius */
     --radius: 0.75rem;
-    
+
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 25% 25%;
@@ -64,49 +64,49 @@
     --sidebar-accent-foreground: 220 25% 20%;
     --sidebar-border: 214 20% 92%;
     --sidebar-ring: 217 91% 55%;
-    
+
     /* Custom tokens */
-    --hero-gradient: linear-gradient(135deg, hsl(210 20% 98%) 0%, hsl(210 30% 95%) 100%);
-    --card-shadow: 0 4px 20px -4px hsl(220 25% 10% / 0.08);
-    --card-shadow-hover: 0 8px 30px -8px hsl(220 25% 10% / 0.12);
+    --hero-gradient: linear-gradient(180deg, hsl(210 20% 98%) 0%, hsl(210 20% 96%) 100%);
+    --card-shadow: 0 2px 12px -6px hsl(220 25% 10% / 0.08);
+    --card-shadow-hover: 0 6px 20px -10px hsl(220 25% 10% / 0.12);
     --badge-pill: hsl(217 91% 55% / 0.1);
   }
 
   .dark {
     --background: 222 30% 8%;
     --foreground: 210 20% 95%;
-    
+
     --card: 222 25% 12%;
     --card-foreground: 210 20% 95%;
-    
+
     --popover: 222 25% 12%;
     --popover-foreground: 210 20% 95%;
-    
+
     --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    
+
     --secondary: 222 20% 18%;
     --secondary-foreground: 210 20% 90%;
-    
+
     --muted: 222 20% 16%;
     --muted-foreground: 215 15% 55%;
-    
+
     --accent: 152 55% 50%;
     --accent-foreground: 0 0% 100%;
-    
+
     --success: 152 55% 50%;
     --success-foreground: 0 0% 100%;
-    
+
     --warning: 38 88% 55%;
     --warning-foreground: 0 0% 10%;
-    
+
     --destructive: 0 65% 45%;
     --destructive-foreground: 0 0% 100%;
-    
+
     --border: 222 20% 20%;
     --input: 222 20% 20%;
     --ring: 217 91% 60%;
-    
+
     --sidebar-background: 222 25% 10%;
     --sidebar-foreground: 210 20% 90%;
     --sidebar-primary: 217 91% 60%;
@@ -115,10 +115,10 @@
     --sidebar-accent-foreground: 210 20% 90%;
     --sidebar-border: 222 20% 18%;
     --sidebar-ring: 217 91% 60%;
-    
-    --hero-gradient: linear-gradient(135deg, hsl(222 30% 8%) 0%, hsl(222 25% 12%) 100%);
-    --card-shadow: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
-    --card-shadow-hover: 0 8px 30px -8px hsl(0 0% 0% / 0.4);
+
+    --hero-gradient: linear-gradient(180deg, hsl(222 30% 8%) 0%, hsl(222 28% 10%) 100%);
+    --card-shadow: 0 2px 12px -6px hsl(0 0% 0% / 0.35);
+    --card-shadow-hover: 0 6px 20px -10px hsl(0 0% 0% / 0.45);
     --badge-pill: hsl(217 91% 60% / 0.15);
   }
 }
@@ -138,15 +138,15 @@
   .hero-gradient {
     background: var(--hero-gradient);
   }
-  
+
   .card-shadow {
     box-shadow: var(--card-shadow);
   }
-  
+
   .card-shadow-hover {
     box-shadow: var(--card-shadow-hover);
   }
-  
+
   .text-balance {
     text-wrap: balance;
   }

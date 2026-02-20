@@ -1,7 +1,7 @@
 import { RentalRequest, statusColors } from "@/lib/mockData";
 import { Badge } from "@/components/ui/badge";
 import { format, differenceInDays, addDays, startOfDay, isWithinInterval } from "date-fns";
-import { Calendar, ArrowRight, Clock, MapPin } from "lucide-react";
+import { Calendar, ArrowRight, Clock } from "lucide-react";
 
 interface RentalTimelineProps {
   rentals: RentalRequest[];
@@ -17,11 +17,6 @@ const RentalTimeline = ({ rentals, onRentalClick }: RentalTimelineProps) => {
   const getPositionPercent = (date: Date) => {
     const daysDiff = differenceInDays(startOfDay(date), timelineStart);
     return Math.max(0, Math.min(100, (daysDiff / totalDays) * 100));
-  };
-
-  const getWidthPercent = (start: Date, end: Date) => {
-    const days = differenceInDays(startOfDay(end), startOfDay(start)) + 1;
-    return Math.max(8, (days / totalDays) * 100);
   };
 
   const isActiveToday = (rental: RentalRequest) => {

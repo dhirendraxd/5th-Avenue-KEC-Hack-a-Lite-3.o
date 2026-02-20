@@ -5,7 +5,6 @@ import {
   Building2, 
   Star, 
   MapPin, 
-  Clock, 
   CheckCircle, 
   Repeat, 
   Calendar 

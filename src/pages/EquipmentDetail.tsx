@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import ReviewHighlights from "@/components/equipment/ReviewHighlights";
@@ -22,7 +22,8 @@ import {
   getBusinessProfileFromFirebase,
   isBusinessKycComplete,
 } from "@/lib/firebase/businessProfile";
-import { mockEquipment, categoryLabels, conditionLabels } from "@/lib/mockData";
+import { getFirebaseEquipment } from "@/lib/firebase/equipment";
+import { categoryLabels, conditionLabels, Equipment } from "@/lib/mockData";
 import {
   ArrowLeft,
   Shield,
@@ -38,7 +39,7 @@ import {
   Repeat,
   XCircle,
 } from "lucide-react";
-import { format, differenceInDays, isWithinInterval, isSameDay } from "date-fns";
+import { differenceInDays, isWithinInterval, isSameDay } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 
@@ -50,9 +51,52 @@ const EquipmentDetail = () => {
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isRequesting, setIsRequesting] = useState(false);
+  const [equipment, setEquipment] = useState<Equipment | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const equipment = mockEquipment.find((e) => e.id === id);
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadEquipment = async () => {
+      if (!id) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const equipmentList = await getFirebaseEquipment();
+        if (!isMounted) return;
+
+        const selectedEquipment = equipmentList.find((item) => item.id === id) || null;
+        setEquipment(selectedEquipment);
+      } catch (error) {
+        console.error("Failed to load equipment details:", error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadEquipment();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
   const favorite = equipment ? isFavorite(equipment.id) : false;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container mx-auto px-4 py-16 text-center">
+          <p className="text-muted-foreground">Loading equipment details...</p>
+        </main>
+      </div>
+    );
+  }
 
   if (!equipment) {
     return (

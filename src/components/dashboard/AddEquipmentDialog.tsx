@@ -24,7 +24,6 @@ import {
   categoryLabels,
   EquipmentCategory,
   EquipmentCondition,
-  mockLocations,
 } from "@/lib/mockData";
 import {
   Plus,
@@ -101,7 +100,6 @@ const AddEquipmentDialog = ({
   const [description, setDescription] = useState("");
   const [pricePerDay, setPricePerDay] = useState("");
   const [securityDeposit, setSecurityDeposit] = useState("");
-  const [locationId, setLocationId] = useState("");
   const [customLocationName, setCustomLocationName] = useState("");
   const [locationMapUrl, setLocationMapUrl] = useState("");
   const [condition, setCondition] = useState<EquipmentCondition>("good");
@@ -249,19 +247,10 @@ const AddEquipmentDialog = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !category || !description || !pricePerDay || !locationId) {
+    if (!name || !category || !description || !pricePerDay || !customLocationName.trim()) {
       toast({
         title: "Missing Required Fields",
         description: "Please fill in all required fields before submitting.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (locationId === "custom" && !customLocationName.trim()) {
-      toast({
-        title: "Custom location required",
-        description: "Please enter a place name when using custom location.",
         variant: "destructive",
       });
       return;
@@ -294,9 +283,8 @@ const AddEquipmentDialog = ({
       return;
     }
 
-    const selectedLocation = mockLocations.find((location) => location.id === locationId);
-    const finalLocationId = selectedLocation ? selectedLocation.id : `custom-${Date.now()}`;
-    const finalLocationName = selectedLocation?.name || customLocationName.trim();
+    const finalLocationId = `loc-${Date.now()}`;
+    const finalLocationName = customLocationName.trim();
 
     try {
       await onSubmit({
@@ -333,7 +321,6 @@ const AddEquipmentDialog = ({
     setDescription("");
     setPricePerDay("");
     setSecurityDeposit("");
-    setLocationId("");
     setCustomLocationName("");
     setLocationMapUrl("");
     setCondition("good");
@@ -434,35 +421,22 @@ const AddEquipmentDialog = ({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location">Location *</Label>
-                  <Select value={locationId} onValueChange={setLocationId}>
-                    <SelectTrigger>
-                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mockLocations.map((loc) => (
-                        <SelectItem key={loc.id} value={loc.id}>
-                          {loc.name}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="custom">Custom location</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {locationId === "custom" && (
-                    <div className="space-y-2">
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         value={customLocationName}
                         onChange={(e) => setCustomLocationName(e.target.value)}
                         placeholder="Enter place name (e.g. Baneshwor, Kathmandu)"
-                      />
-                      <Input
-                        value={locationMapUrl}
-                        onChange={(e) => setLocationMapUrl(e.target.value)}
-                        placeholder="Paste Google Maps location link (optional)"
+                        className="pl-9"
                       />
                     </div>
-                  )}
+                    <Input
+                      value={locationMapUrl}
+                      onChange={(e) => setLocationMapUrl(e.target.value)}
+                      placeholder="Paste Google Maps location link (optional)"
+                    />
+                  </div>
                 </div>
               </div>
 

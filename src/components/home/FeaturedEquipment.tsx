@@ -1,11 +1,33 @@
-import { mockEquipment } from "@/lib/mockData";
+import { useEffect, useState } from "react";
+import { Equipment } from "@/lib/mockData";
 import EquipmentCard from "@/components/equipment/EquipmentCard";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { getFirebaseEquipment } from "@/lib/firebase/equipment";
 
 const FeaturedEquipment = () => {
-  const featuredItems = mockEquipment.slice(0, 3);
+  const [featuredItems, setFeaturedItems] = useState<Equipment[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadFeatured = async () => {
+      try {
+        const equipment = await getFirebaseEquipment();
+        if (!isMounted) return;
+        setFeaturedItems(equipment.slice(0, 3));
+      } catch (error) {
+        console.error("Failed to load featured equipment:", error);
+      }
+    };
+
+    loadFeatured();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <section className="py-24 lg:py-32 bg-background">

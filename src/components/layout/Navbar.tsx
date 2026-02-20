@@ -1,6 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { roleLabels } from "@/lib/mockData";
 import { Package, Home, LayoutDashboard, Search, Menu, X, User, DollarSign } from "lucide-react";

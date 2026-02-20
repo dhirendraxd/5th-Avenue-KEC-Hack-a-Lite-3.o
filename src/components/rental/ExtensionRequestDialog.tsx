@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { CalendarPlus, Clock, DollarSign } from "lucide-react";
-import { format, differenceInDays, addDays } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 
 interface ExtensionRequestDialogProps {
   open: boolean;
@@ -33,7 +33,6 @@ const ExtensionRequestDialog = ({
 }: ExtensionRequestDialogProps) => {
   const [newEndDate, setNewEndDate] = useState<Date | undefined>();
 
-  const minDate = addDays(currentEndDate, 1);
   const additionalDays = newEndDate
     ? differenceInDays(newEndDate, currentEndDate)
     : 0;

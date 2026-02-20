@@ -1,16 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Building2, Home } from 'lucide-react';
+import { Volume2, Mic, ArrowUp, Plus, Sparkles } from 'lucide-react';
+import heroEquipment from '@/assets/hero-equipment.jpg';
 
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { loginWithGoogle, isAuthenticated } = useAuth();
+  const { loginWithGoogle, login, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isCreating, setIsCreating] = useState(true);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -25,7 +29,7 @@ const Auth = () => {
       if (success) {
         toast({
           title: 'Signed in with Google',
-          description: 'Firebase integration can be connected next.',
+          description: 'Welcome to 5th Avenue.',
         });
         navigate('/dashboard');
       }
@@ -40,49 +44,145 @@ const Auth = () => {
     }
   };
 
+  const handleEmailAuth = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const success = await login(email, password);
+      if (success) {
+        toast({
+          title: isCreating ? 'Account ready' : 'Signed in',
+          description: 'Welcome to 5th Avenue.',
+        });
+        navigate('/dashboard');
+        return;
+      }
+
+      toast({
+        title: isCreating ? 'Could not create account' : 'Sign in failed',
+        description: 'Try Google sign in, or check your email and password.',
+        variant: 'destructive',
+      });
+    } catch {
+      toast({
+        title: isCreating ? 'Could not create account' : 'Sign in failed',
+        description: 'Try Google sign in, or check your email and password.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
-        <div className="mb-4 flex justify-center">
-          <Link to="/">
-            <Button variant="outline" className="gap-2">
-              <Home className="h-4 w-4" />
-              Home
-            </Button>
-          </Link>
+    <div className="min-h-screen bg-muted/30 p-2 sm:p-4">
+      <div className="mx-auto flex min-h-[calc(100vh-1rem)] w-full max-w-[1500px] overflow-hidden rounded-[28px] border border-border/60 bg-card shadow-xl sm:min-h-[calc(100vh-2rem)]">
+        <div className="flex w-full items-center justify-center bg-background px-6 py-10 sm:px-10 lg:w-[44%] lg:px-16">
+          <div className="w-full max-w-[360px] space-y-6">
+            <h1 className="text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
+              {isCreating ? 'Create your account' : 'Sign in to your account'}
+            </h1>
+
+            <div className="space-y-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 w-full gap-2 rounded-lg bg-muted/45 text-xs"
+                onClick={handleGoogleAuth}
+                disabled={isLoading}
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.2-.9 2.3-1.9 3v2.5h3.1c1.8-1.6 2.8-4 2.8-6.9 0-.7-.1-1.3-.2-1.9H12z" />
+                  <path fill="#34A853" d="M12 21c2.5 0 4.7-.8 6.2-2.2l-3.1-2.5c-.9.6-2 .9-3.1.9-2.4 0-4.5-1.6-5.2-3.8H3.6v2.6C5.1 19 8.3 21 12 21z" />
+                  <path fill="#4A90E2" d="M6.8 13.4c-.2-.6-.3-1.2-.3-1.9s.1-1.3.3-1.9V7H3.6A9 9 0 0 0 2.7 11.5c0 1.4.3 2.8.9 4l3.2-2.1z" />
+                  <path fill="#FBBC05" d="M12 5.8c1.4 0 2.6.5 3.6 1.4l2.7-2.7C16.7 3 14.5 2 12 2 8.3 2 5.1 4 3.6 7l3.2 2.6c.7-2.2 2.8-3.8 5.2-3.8z" />
+                </svg>
+                {isLoading ? 'Please wait...' : 'Sign up with Google'}
+              </Button>
+
+              <form onSubmit={handleEmailAuth} className="space-y-3">
+                <div className="space-y-2">
+                  <label className="text-xs text-muted-foreground">Email</label>
+                  <Input
+                    type="email"
+                    placeholder="name@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-10 rounded-lg border-border/80"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs text-muted-foreground">Password</label>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-10 rounded-lg border-border/80"
+                  />
+                </div>
+
+                <Button type="submit" className="h-10 w-full rounded-lg bg-foreground text-background hover:bg-foreground/90">
+                  {isCreating ? 'Create account' : 'Sign in'}
+                </Button>
+              </form>
+
+              <p className="text-center text-xs text-muted-foreground">
+                {isCreating ? 'Already have an account?' : 'Need an account?'}{' '}
+                <button
+                  type="button"
+                  className="font-medium text-foreground hover:underline"
+                  onClick={() => setIsCreating((previous) => !previous)}
+                >
+                  {isCreating ? 'Sign in' : 'Create account'}
+                </button>
+              </p>
+            </div>
+          </div>
         </div>
 
-        <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-            <Building2 className="h-6 w-6 text-primary-foreground" />
+        <div className="relative hidden overflow-hidden lg:block lg:w-[56%]">
+          <img src={heroEquipment} alt="Creative equipment visual" className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/35 via-emerald-900/10 to-slate-950/45" />
+
+          <button
+            type="button"
+            className="absolute left-5 top-5 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm"
+            aria-label="Audio"
+          >
+            <Volume2 className="h-3.5 w-3.5" />
+          </button>
+
+          <div className="absolute inset-x-0 bottom-7 flex justify-center px-8">
+            <div className="w-full max-w-[520px] rounded-2xl border border-border/60 bg-background/95 p-4 shadow-2xl backdrop-blur">
+              <p className="text-sm leading-relaxed text-foreground">
+                Describe your task and 5th Avenue suggests the closest equipment match instantly.
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                <Button size="icon" variant="outline" className="h-8 w-8 rounded-full">
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" className="h-8 rounded-full px-3 text-xs">
+                  <Sparkles className="mr-1 h-3.5 w-3.5 text-accent" />
+                  Inspiration
+                </Button>
+                <span className="text-xs font-medium text-muted-foreground">Assistant 2.0</span>
+                <div className="ml-auto flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                    <Mic className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" className="h-8 w-8 rounded-full">
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <p className="mt-3 text-center text-xs text-muted-foreground">Try 5th Avenue Assistant</p>
+            </div>
           </div>
-          <span className="text-2xl font-bold text-foreground">5th Avenue</span>
-        </Link>
-
-        <Card>
-          <CardHeader className="space-y-2 text-center">
-            <CardTitle className="text-2xl">Sign in to 5th Avenue</CardTitle>
-            <CardDescription>
-              Google is the default and only login method.
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="space-y-4">
-            <Button type="button" variant="outline" className="w-full gap-2" onClick={handleGoogleAuth} disabled={isLoading}>
-              <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-                <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.2-.9 2.3-1.9 3v2.5h3.1c1.8-1.6 2.8-4 2.8-6.9 0-.7-.1-1.3-.2-1.9H12z" />
-                <path fill="#34A853" d="M12 21c2.5 0 4.7-.8 6.2-2.2l-3.1-2.5c-.9.6-2 .9-3.1.9-2.4 0-4.5-1.6-5.2-3.8H3.6v2.6C5.1 19 8.3 21 12 21z" />
-                <path fill="#4A90E2" d="M6.8 13.4c-.2-.6-.3-1.2-.3-1.9s.1-1.3.3-1.9V7H3.6A9 9 0 0 0 2.7 11.5c0 1.4.3 2.8.9 4l3.2-2.1z" />
-                <path fill="#FBBC05" d="M12 5.8c1.4 0 2.6.5 3.6 1.4l2.7-2.7C16.7 3 14.5 2 12 2 8.3 2 5.1 4 3.6 7l3.2 2.6c.7-2.2 2.8-3.8 5.2-3.8z" />
-              </svg>
-              {isLoading ? 'Signing in...' : 'Continue with Google'}
-            </Button>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Sign in uses your Firebase Google Auth configuration.
-            </p>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );

@@ -10,7 +10,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  ResponsiveContainer,
   LineChart,
   Line,
 } from "recharts";

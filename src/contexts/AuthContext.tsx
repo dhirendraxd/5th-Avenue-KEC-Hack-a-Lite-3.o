@@ -1,14 +1,11 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { CurrentUser, UserRole, mockBusinesses, mockTeamMembers, mockLocations } from '@/lib/mockData';
+import { CurrentUser, UserRole } from '@/lib/mockData';
 import { 
   signIn as firebaseSignIn, 
   logout as firebaseLogout,
   onAuthChange,
-  getCurrentUser,
-  signUp as firebaseSignUp,
   signInWithGoogle as firebaseSignInWithGoogle,
 } from '@/lib/firebase/auth';
-import { auth } from '@/lib/firebase/config';
 
 interface AuthContextType {
   user: CurrentUser | null;
@@ -55,17 +52,17 @@ const rolePermissions: Record<UserRole, Permission[]> = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const mapAuthUserToCurrentUser = (authUser: { uid: string; email: string | null; displayName: string | null }): CurrentUser => {
-  const teamMember = mockTeamMembers.find((member) => member.email === authUser.email);
-  const role: UserRole = teamMember?.role || 'owner';
+  const role: UserRole = 'owner';
+  const baseName = authUser.displayName || authUser.email?.split('@')[0] || 'User';
 
   return {
     id: authUser.uid,
-    name: authUser.displayName || authUser.email?.split('@')[0] || 'Google User',
+    name: baseName,
     email: authUser.email || '',
     role,
-    businessId: 'b1',
-    businessName: mockBusinesses[0].name,
-    locationAccess: teamMember?.locationAccess || mockLocations.map((location) => location.id),
+    businessId: authUser.uid,
+    businessName: `${baseName} Business`,
+    locationAccess: [],
   };
 };
 
@@ -97,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const login = async (email: string, password: string, role?: UserRole): Promise<boolean> => {
+  const login = async (email: string, password: string, _role?: UserRole): Promise<boolean> => {
     setIsLoading(true);
     try {
       const firebaseUser = await firebaseSignIn(email, password);

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,11 +12,8 @@ import ExtensionRequestDialog from "@/components/rental/ExtensionRequestDialog";
 import ConditionLogForm from "@/components/rental/ConditionLogForm";
 import { TaskFlagDialog } from "@/components/rental/TaskFlagging";
 import { useLogsForRental } from "@/lib/conditionLogStore";
-import {
-  mockRentalRequests,
-  statusColors,
-  ChecklistItem,
-} from "@/lib/mockData";
+import { statusColors, ChecklistItem, RentalRequest } from "@/lib/mockData";
+import { getFirebaseRentalById } from "@/lib/firebase/rentals";
 import {
   ArrowLeft,
   Calendar,
@@ -29,7 +26,6 @@ import {
   AlertCircle,
   FileText,
   Camera,
-  Flag,
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 
@@ -37,8 +33,35 @@ const RentalOperations = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const rental = mockRentalRequests.find((r) => r.id === id);
+  const [rental, setRental] = useState<RentalRequest | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadRental = async () => {
+      if (!id) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const data = await getFirebaseRentalById(id);
+        if (!isMounted) return;
+        setRental(data);
+      } catch (error) {
+        console.error("Failed to load rental:", error);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    loadRental();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
   
   const [extensionDialogOpen, setExtensionDialogOpen] = useState(false);
   const [pickupChecklist, setPickupChecklist] = useState<ChecklistItem[]>(
@@ -52,6 +75,17 @@ const RentalOperations = () => {
   const [returnLogCompleted, setReturnLogCompleted] = useState(false);
   
   const conditionLogs = useLogsForRental(id || '');
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container mx-auto px-4 py-16 text-center">
+          <p className="text-muted-foreground">Loading rental...</p>
+        </main>
+      </div>
+    );
+  }
 
   if (!rental) {
     return (
