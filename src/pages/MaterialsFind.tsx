@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MapPin, Phone, CircleDollarSign, Lightbulb, TrendingUp, Users, Upload } from "lucide-react";
+import { MapPin, Phone, CircleDollarSign, Lightbulb, TrendingUp, Users, Upload, History, CheckCircle, Lock, Package } from "lucide-react";
 import {
   materialCategoryLabels,
   materialConditionLabels,
@@ -612,6 +612,82 @@ const MaterialsFind = () => {
                 <Phone className="h-4 w-4" />
                 {selected.contactPhone}
               </div>
+              
+              {/* Item History Timeline */}
+              {selected.history && selected.history.length > 0 && (
+                <div className="border-t border-border pt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <History className="h-4 w-4 text-primary" />
+                    <p className="text-sm font-semibold text-foreground">Item History</p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {selected.history
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .map((event, index) => {
+                        const getEventIcon = () => {
+                          switch (event.type) {
+                            case "listed":
+                              return <Upload className="h-4 w-4 text-blue-500" />;
+                            case "reserved":
+                              return <Lock className="h-4 w-4 text-yellow-500" />;
+                            case "sold":
+                              return <CheckCircle className="h-4 w-4 text-green-500" />;
+                            case "condition_change":
+                              return <Package className="h-4 w-4 text-orange-500" />;
+                            default:
+                              return null;
+                          }
+                        };
+                        
+                        const getEventColor = () => {
+                          switch (event.type) {
+                            case "listed":
+                              return "bg-blue-50 border-blue-200";
+                            case "reserved":
+                              return "bg-yellow-50 border-yellow-200";
+                            case "sold":
+                              return "bg-green-50 border-green-200";
+                            case "condition_change":
+                              return "bg-orange-50 border-orange-200";
+                            default:
+                              return "bg-muted border-border";
+                          }
+                        };
+                        
+                        return (
+                          <div key={index} className={`flex gap-3 p-3 rounded-lg border ${getEventColor()}`}>
+                            <div className="flex-shrink-0 mt-1">
+                              {getEventIcon()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground">
+                                {event.description}
+                              </p>
+                              {event.owner && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Owner: {event.owner}
+                                </p>
+                              )}
+                              {event.condition && (
+                                <p className="text-xs text-muted-foreground">
+                                  Condition: {materialConditionLabels[event.condition]}
+                                </p>
+                              )}
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {new Date(event.date).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
               
               <div className="border-t border-border pt-4">
                 <div className="flex items-center justify-between mb-3">

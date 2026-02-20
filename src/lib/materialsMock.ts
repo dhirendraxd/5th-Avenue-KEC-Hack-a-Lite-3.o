@@ -7,6 +7,20 @@ export type MaterialCategory = "wood" | "metal" | "concrete";
 
 export type MaterialCondition = "sealed" | "new" | "used";
 
+export type HistoryEventType =
+  | "listed"
+  | "reserved"
+  | "sold"
+  | "condition_change";
+
+export interface HistoryEvent {
+  date: string;
+  type: HistoryEventType;
+  description: string;
+  owner?: string;
+  condition?: MaterialCondition;
+}
+
 export interface MaterialListing {
   id: string;
   name: string;
@@ -21,6 +35,7 @@ export interface MaterialListing {
   contactName: string;
   contactPhone: string;
   notes?: string;
+  history?: HistoryEvent[];
 }
 
 export const materialCategoryLabels: Record<MaterialCategory, string> = {
@@ -61,6 +76,27 @@ const baseMaterialListings: Array<Omit<MaterialListing, "condition">> = [
     contactName: "Arjun",
     contactPhone: "+91 90000 00001",
     notes: "Pickup after 5 PM.",
+    history: [
+      {
+        date: "2026-02-21",
+        type: "listed",
+        description: "First listed by Arjun",
+      },
+      {
+        date: "2026-02-20",
+        type: "reserved",
+        description: "Reserved by Ramesh Kumar",
+        owner: "Ramesh Kumar",
+        condition: "new",
+      },
+      { date: "2026-02-15", type: "sold", description: "Sold to Ramesh Kumar" },
+      {
+        date: "2026-02-10",
+        type: "condition_change",
+        description: "Condition updated from sealed to new",
+        condition: "new",
+      },
+    ],
   },
   {
     id: "mat-002",
@@ -75,6 +111,22 @@ const baseMaterialListings: Array<Omit<MaterialListing, "condition">> = [
     contactName: "Neha",
     contactPhone: "+91 90000 00002",
     notes: "Min order 10 rods.",
+    history: [
+      { date: "2026-02-21", type: "listed", description: "Listed by Neha" },
+      {
+        date: "2026-02-18",
+        type: "reserved",
+        description: "Reserved by Prakash Singh",
+        owner: "Prakash Singh",
+        condition: "used",
+      },
+      {
+        date: "2026-02-12",
+        type: "condition_change",
+        description: "Condition changed from new to used",
+        condition: "used",
+      },
+    ],
   },
   {
     id: "mat-003",
@@ -89,6 +141,25 @@ const baseMaterialListings: Array<Omit<MaterialListing, "condition">> = [
     contactName: "Ravi",
     contactPhone: "+91 90000 00003",
     notes: "Some edges worn.",
+    history: [
+      {
+        date: "2026-02-21",
+        type: "listed",
+        description: "Listed for free donation by Ravi",
+      },
+      {
+        date: "2026-02-19",
+        type: "condition_change",
+        description: "Condition noted as used",
+        condition: "used",
+      },
+      {
+        date: "2026-02-10",
+        type: "sold",
+        description: "Previously owned by Rishab Patel",
+        owner: "Rishab Patel",
+      },
+    ],
   },
   {
     id: "mat-004",
@@ -102,6 +173,21 @@ const baseMaterialListings: Array<Omit<MaterialListing, "condition">> = [
     longitude: 85.281,
     contactName: "Sita",
     contactPhone: "+91 90000 00004",
+    history: [
+      { date: "2026-02-21", type: "listed", description: "Listed by Sita" },
+      {
+        date: "2026-02-01",
+        type: "sold",
+        description: "Previously owned by Bikram Tamang",
+        owner: "Bikram Tamang",
+      },
+      {
+        date: "2026-01-25",
+        type: "condition_change",
+        description: "Partially used, condition changed",
+        condition: "used",
+      },
+    ],
   },
 ];
 
