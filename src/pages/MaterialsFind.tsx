@@ -102,6 +102,27 @@ const MaterialsFind = () => {
       .sort((a, b) => a.distance - b.distance);
   }, [radius, category, location]);
 
+  const areaInsights = useMemo(() => {
+    const counts = listings.reduce<Record<string, number>>((acc, listing) => {
+      acc[listing.locationName] = (acc[listing.locationName] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+  }, [listings]);
+
+  const categoryInsights = useMemo(() => {
+    const counts = listings.reduce<Record<string, number>>((acc, listing) => {
+      const label = materialCategoryLabels[listing.category];
+      acc[label] = (acc[label] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(counts);
+  }, [listings]);
+
   const handleOpenDialog = (listing: MaterialListing) => {
     setSelected(listing);
     setDialogOpen(true);
@@ -111,88 +132,126 @@ const MaterialsFind = () => {
     <div className="min-h-screen bg-background relative">
       <BackgroundIllustrations variant="marketplace" />
       <Navbar />
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 relative z-10">
-        <PageHeader
-          title="Find It"
-          description="See materials available within 5-10 miles of your location."
-          actions={
-            <div className="flex flex-wrap gap-2">
-              <Button asChild variant="outline">
-                <Link to="/materials/list">List it</Link>
-              </Button>
-              <Select value={radius} onValueChange={setRadius}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Radius" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">Within 5 miles</SelectItem>
-                  <SelectItem value="10">Within 10 miles</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  <SelectItem value="wood">Wood</SelectItem>
-                  <SelectItem value="metal">Metal</SelectItem>
-                  <SelectItem value="concrete">Concrete</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          }
-        />
-
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
-          <Card className="overflow-hidden">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-primary" />
-                Nearby availability
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-xl border border-border bg-gradient-to-br from-primary/10 via-background to-muted p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Current location</p>
-                    <p className="text-lg font-semibold text-foreground">{location.label}</p>
-                  </div>
-                  <Badge variant={locationStatus === "error" ? "destructive" : "secondary"}>
-                    {locationStatus === "loading"
-                      ? "Locating"
-                      : locationStatus === "error"
-                        ? "GPS unavailable"
-                        : "GPS ready"}
-                  </Badge>
-                </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg bg-card/80 p-3 shadow-sm">
-                    <p className="text-xs text-muted-foreground">Listings in range</p>
-                    <p className="text-2xl font-semibold text-foreground">{listings.length}</p>
-                  </div>
-                  <div className="rounded-lg bg-card/80 p-3 shadow-sm">
-                    <p className="text-xs text-muted-foreground">Radius</p>
-                    <p className="text-2xl font-semibold text-foreground">{radius} mi</p>
-                  </div>
-                </div>
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 relative materials-shell">
+        <div className="materials-ambient" aria-hidden="true" />
+        <div className="relative z-10">
+          <PageHeader
+            title="Find It"
+            description="See materials available within 5-10 miles of your location."
+            actions={
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant="outline">
+                  <Link to="/materials/list">List it</Link>
+                </Button>
+                <Select value={radius} onValueChange={setRadius}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Radius" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">Within 5 miles</SelectItem>
+                    <SelectItem value="10">Within 10 miles</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All categories</SelectItem>
+                    <SelectItem value="wood">Wood</SelectItem>
+                    <SelectItem value="metal">Metal</SelectItem>
+                    <SelectItem value="concrete">Concrete</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Move around to refresh GPS. Listings are sorted by distance.
-              </p>
-            </CardContent>
-          </Card>
+            }
+          />
+
+          <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="space-y-4">
+              <Card className="overflow-hidden card-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    Nearby availability
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-background to-muted p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Current location</p>
+                        <p className="text-lg font-semibold text-foreground">{location.label}</p>
+                      </div>
+                      <Badge variant={locationStatus === "error" ? "destructive" : "secondary"}>
+                        {locationStatus === "loading"
+                          ? "Locating"
+                          : locationStatus === "error"
+                            ? "GPS unavailable"
+                            : "GPS ready"}
+                      </Badge>
+                    </div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl bg-card/80 p-3 shadow-sm">
+                        <p className="text-xs text-muted-foreground">Listings in range</p>
+                        <p className="text-2xl font-semibold text-foreground">{listings.length}</p>
+                      </div>
+                      <div className="rounded-xl bg-card/80 p-3 shadow-sm">
+                        <p className="text-xs text-muted-foreground">Radius</p>
+                        <p className="text-2xl font-semibold text-foreground">{radius} mi</p>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Move around to refresh GPS. Listings are sorted by distance.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="card-shadow">
+                <CardHeader>
+                  <CardTitle className="text-base">Availability insights</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {categoryInsights.length > 0 ? (
+                      categoryInsights.map(([label, count]) => (
+                        <Badge key={label} variant="secondary">
+                          {label} · {count}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No listings yet.</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Top areas</p>
+                    {areaInsights.length > 0 ? (
+                      <div className="grid gap-2">
+                        {areaInsights.map(([area, count]) => (
+                          <div key={area} className="flex items-center justify-between text-sm">
+                            <span className="text-foreground">{area}</span>
+                            <span className="text-muted-foreground">{count} listings</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No areas detected yet.</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
           <div className="space-y-4">
             {listings.map((listing) => (
-              <Card key={listing.id}>
+              <Card key={listing.id} className="card-shadow">
                 <CardHeader className="space-y-2">
-                  <div className="overflow-hidden rounded-lg border border-border">
+                    <div className="overflow-hidden rounded-2xl border border-border bg-muted/40">
                     <img
                       src={listing.imageUrl}
                       alt={listing.name}
-                      className="h-44 w-full object-cover"
+                        className="block h-52 w-full object-cover"
                       loading="lazy"
                     />
                   </div>
@@ -212,9 +271,10 @@ const MaterialsFind = () => {
                     {listing.isFree ? (
                       <Badge>Free</Badge>
                     ) : (
-                      <Badge variant="outline">
-                        <CircleDollarSign className="mr-1 h-3 w-3" />
-                        {listing.price}
+                      <Badge variant="outline" className="gap-2">
+                        <CircleDollarSign className="h-3 w-3" />
+                        <span className="text-base font-semibold">NPR</span>
+                        <span>{listing.price}</span>
                       </Badge>
                     )}
                   </div>
@@ -228,7 +288,7 @@ const MaterialsFind = () => {
                     <p className="text-sm text-muted-foreground">{listing.notes}</p>
                   )}
                   <Button className="w-full" onClick={() => handleOpenDialog(listing)}>
-                    I Want This
+                    Purchase
                   </Button>
                 </CardContent>
               </Card>
@@ -241,6 +301,7 @@ const MaterialsFind = () => {
                 </CardContent>
               </Card>
             )}
+          </div>
           </div>
         </div>
       </main>
@@ -256,11 +317,11 @@ const MaterialsFind = () => {
           </DialogHeader>
           {selected && (
             <div className="space-y-3">
-              <div className="overflow-hidden rounded-lg border border-border">
+              <div className="overflow-hidden rounded-lg border border-border bg-muted/40 p-3">
                 <img
                   src={selected.imageUrl}
                   alt={selected.name}
-                  className="h-40 w-full object-cover"
+                  className="block h-auto w-full object-contain"
                   loading="lazy"
                 />
               </div>

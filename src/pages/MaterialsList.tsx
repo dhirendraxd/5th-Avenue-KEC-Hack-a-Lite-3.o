@@ -95,57 +95,26 @@ const MaterialsList = () => {
     <div className="min-h-screen bg-background relative">
       <BackgroundIllustrations variant="marketplace" />
       <Navbar />
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 relative z-10">
-        <PageHeader
-          title="List It"
-          description="Share unused construction materials with nearby builders."
-          actions={
-            <Button asChild variant="outline">
-              <Link to="/materials/find">Find materials</Link>
-            </Button>
-          }
-        />
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 relative materials-shell">
+        <div className="materials-ambient" aria-hidden="true" />
+        <div className="relative z-10">
+          <PageHeader
+            title="List It"
+            description="Share unused construction materials with nearby builders."
+            actions={
+              <Button asChild variant="outline">
+                <Link to="/materials/find">Find materials</Link>
+              </Button>
+            }
+          />
 
-        <Card className="max-w-3xl">
+          <Card className="max-w-3xl">
           <CardHeader>
             <CardTitle>Material details</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="mb-6 grid gap-3 sm:grid-cols-2">
-              <div className="overflow-hidden rounded-lg border border-border">
-                <img
-                  src={materialImages.cement}
-                  alt="Cement bags"
-                  className="h-32 w-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <div className="overflow-hidden rounded-lg border border-border">
-                <img
-                  src={materialImages.rod}
-                  alt="TMT steel rods"
-                  className="h-32 w-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <div className="overflow-hidden rounded-lg border border-border">
-                <img
-                  src={materialImages.plywood}
-                  alt="Plywood sheets"
-                  className="h-32 w-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <div className="overflow-hidden rounded-lg border border-border">
-                <img
-                  src={materialImages.redOxide}
-                  alt="Red oxide floor coat"
-                  className="h-32 w-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-            </div>
-            <form className="grid gap-5" onSubmit={handleSubmit}>
+          <CardContent className="relative">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+              <form className="order-2 grid gap-5 lg:order-1" onSubmit={handleSubmit}>
               <div className="grid gap-2">
                 <label className="text-sm font-medium">Item Name</label>
                 <Input
@@ -228,9 +197,48 @@ const MaterialsList = () => {
               <div className="flex justify-end">
                 <Button type="submit">Publish listing</Button>
               </div>
-            </form>
+              </form>
+
+              <div className="order-1 space-y-3 lg:order-2">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                  <div className="overflow-hidden rounded-lg border border-border bg-muted/40 p-2 shadow-sm fade-up">
+                    <img
+                      src={materialImages.cement}
+                      alt="Cement bags"
+                      className="block max-h-28 w-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="overflow-hidden rounded-lg border border-border bg-muted/40 shadow-sm fade-up">
+                    <img
+                      src={materialImages.rod}
+                      alt="TMT steel rods"
+                      className="block max-h-28 w-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="overflow-hidden rounded-lg border border-border bg-muted/40 shadow-sm fade-up">
+                    <img
+                      src={materialImages.plywood}
+                      alt="Plywood sheets"
+                      className="block max-h-28 w-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="overflow-hidden rounded-lg border border-border bg-muted/40 shadow-sm fade-up">
+                    <img
+                      src={materialImages.redOxide}
+                      alt="Red oxide floor coat"
+                      className="block max-h-28 w-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
       </main>
       <Footer />
     </div>
