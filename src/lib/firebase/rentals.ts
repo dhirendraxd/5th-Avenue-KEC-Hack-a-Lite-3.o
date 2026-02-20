@@ -156,14 +156,13 @@ export const createFirebaseRentalRequest = async (
   input: CreateRentalRequestInput,
 ): Promise<RentalRequest> => {
   const rentalId = `rental-${globalThis.crypto?.randomUUID?.() || Date.now()}`;
-  const totalDays =
-    Math.max(
-      1,
-      Math.ceil(
-        (input.endDate.getTime() - input.startDate.getTime()) /
-          (1000 * 60 * 60 * 24),
-      ) + 1,
-    );
+  const totalDays = Math.max(
+    1,
+    Math.ceil(
+      (input.endDate.getTime() - input.startDate.getTime()) /
+        (1000 * 60 * 60 * 24),
+    ) + 1,
+  );
   const rentalFee = input.equipment.pricePerDay * totalDays;
   const serviceFee = Math.round(
     (rentalFee * input.equipment.serviceFeePercent) / 100,
@@ -238,10 +237,16 @@ export const updateFirebaseRentalStatus = async (
   status: RentalRequest["status"],
   ownerNotes?: string,
 ) => {
-  await updateDocument<FirestoreRentalDocument>(RENTALS_COLLECTION, rentalId, {
-    status,
-    ownerNotes,
-  });
+  const payload: Partial<FirestoreRentalDocument> = { status };
+  if (ownerNotes !== undefined) {
+    payload.ownerNotes = ownerNotes;
+  }
+
+  await updateDocument<FirestoreRentalDocument>(
+    RENTALS_COLLECTION,
+    rentalId,
+    payload,
+  );
 };
 
 export const getFirebaseRentals = async (): Promise<RentalRequest[]> => {
@@ -264,7 +269,7 @@ export const getFirebaseRentalById = async (
 
 export const subscribeFirebaseRentals = (
   onNext: (rentals: RentalRequest[]) => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
 ) => {
   return subscribeDocuments<FirestoreRentalDocument & { id: string }>(
     RENTALS_COLLECTION,
@@ -272,14 +277,14 @@ export const subscribeFirebaseRentals = (
       onNext(documents.map((document) => toRental(document.id, document)));
     },
     [],
-    onError
+    onError,
   );
 };
 
 export const subscribeFirebaseRentalById = (
   rentalId: string,
   onNext: (rental: RentalRequest | null) => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
 ) => {
   return subscribeDocument<FirestoreRentalDocument>(
     RENTALS_COLLECTION,
@@ -291,6 +296,6 @@ export const subscribeFirebaseRentalById = (
       }
       onNext(toRental(document.id, document));
     },
-    onError
+    onError,
   );
 };
