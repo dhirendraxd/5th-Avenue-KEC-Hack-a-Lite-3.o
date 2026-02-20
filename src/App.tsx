@@ -6,6 +6,7 @@ import Auth from "./pages/Auth";
 import BrowseEquipment from "./pages/BrowseEquipment";
 import EquipmentDetail from "./pages/EquipmentDetail";
 import OwnerDashboard from "./pages/OwnerDashboard";
+import AddEquipment from "./pages/AddEquipment";
 import RentalOperations from "./pages/RentalOperations";
 import FinanceDashboard from "./pages/FinanceDashboard";
 import Chat from "./pages/Chat";
@@ -20,6 +21,7 @@ const App = () => (
         <Route path="/browse" element={<BrowseEquipment />} />
         <Route path="/equipment/:id" element={<EquipmentDetail />} />
         <Route path="/dashboard" element={<OwnerDashboard />} />
+        <Route path="/dashboard/add-equipment" element={<AddEquipment />} />
         <Route path="/rental/:id" element={<RentalOperations />} />
         <Route path="/finance" element={<FinanceDashboard />} />
         <Route path="/chat" element={<Chat />} />

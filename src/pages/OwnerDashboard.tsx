@@ -34,9 +34,9 @@ import RentalTimeline from "@/components/dashboard/RentalTimeline";
 import RenterProfileCard from "@/components/dashboard/RenterProfileCard";
 import AvailabilityControls from "@/components/dashboard/AvailabilityControls";
 import ApproveWithConditionsDialog from "@/components/dashboard/ApproveWithConditionsDialog";
-import AddEquipmentDialog, { AddEquipmentFormData } from "@/components/dashboard/AddEquipmentDialog";
+import BusinessProfileSection from "@/components/dashboard/BusinessProfileSection";
 import { useAuth } from "@/contexts/AuthContext";
-import { addFirebaseEquipment, getFirebaseEquipment } from "@/lib/firebase/equipment";
+import { getFirebaseEquipment } from "@/lib/firebase/equipment";
 import {
   mockEquipment,
   mockRentalRequests,
@@ -60,6 +60,10 @@ import {
   AlertTriangle,
   Inbox,
   LogOut,
+  ListChecks,
+  ClipboardCheck,
+  TrendingUp,
+  Building2,
 } from "lucide-react";
 import { format, isToday, isTomorrow, differenceInDays } from "date-fns";
 
@@ -68,7 +72,7 @@ const OwnerDashboard = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const [requests, setRequests] = useState<RentalRequest[]>(mockRentalRequests);
-  const [isAddingEquipment, setIsAddingEquipment] = useState(false);
+  const [activeTab, setActiveTab] = useState("timeline");
   const [approveDialog, setApproveDialog] = useState<{
     open: boolean;
     request: RentalRequest | null;
@@ -187,31 +191,6 @@ const OwnerDashboard = () => {
     });
   };
 
-  const handleAddEquipment = async (data: AddEquipmentFormData) => {
-    if (!user) {
-      toast({
-        title: "Sign in required",
-        description: "Please sign in to list equipment.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const createdEquipment = await addFirebaseEquipment({
-      ...data,
-      ownerId: user.id,
-      ownerName: user.name,
-      ownerEmail: user.email,
-    });
-
-    setMyEquipment((previous) => [createdEquipment, ...previous]);
-    setIsAddingEquipment(false);
-    toast({
-      title: "Equipment listed",
-      description: "Your equipment is now saved in Firebase and visible in your dashboard.",
-    });
-  };
-
   const handleRentalClick = (rental: RentalRequest) => {
     navigate(`/rental/${rental.id}`);
   };
@@ -239,7 +218,7 @@ const OwnerDashboard = () => {
           description={`Welcome, ${user?.name || "User"}. Monitor equipment, manage requests, and track performance`}
           actions={
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-              <Button onClick={() => setIsAddingEquipment(true)} size="default" className="w-full sm:w-auto">
+              <Button onClick={() => navigate("/dashboard/add-equipment")} size="default" className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Equipment
               </Button>
@@ -265,11 +244,6 @@ const OwnerDashboard = () => {
               </AlertDialog>
             </div>
           }
-        />
-        <AddEquipmentDialog
-          open={isAddingEquipment}
-          onOpenChange={setIsAddingEquipment}
-          onSubmit={handleAddEquipment}
         />
 
         {/* Stats Grid - Modern cards with better visual weight */}
@@ -306,6 +280,55 @@ const OwnerDashboard = () => {
           />
         </div>
 
+        <Card className="mb-8 border-border/60 bg-card/80">
+          <CardContent className="p-5 sm:p-6">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-3">
+                <h2 className="text-lg font-semibold text-foreground">How this dashboard works</h2>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="flex items-start gap-2">
+                    <div className="mt-0.5 rounded-md bg-primary/10 p-1.5">
+                      <Package className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">1. Add listings</p>
+                      <p className="text-xs text-muted-foreground">Create equipment listings with pricing and availability.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="mt-0.5 rounded-md bg-warning/10 p-1.5">
+                      <ClipboardCheck className="h-4 w-4 text-warning" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">2. Review requests</p>
+                      <p className="text-xs text-muted-foreground">Approve or decline incoming rental requests quickly.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="mt-0.5 rounded-md bg-success/10 p-1.5">
+                      <TrendingUp className="h-4 w-4 text-success" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">3. Track operations</p>
+                      <p className="text-xs text-muted-foreground">Monitor active rentals, timeline, and performance.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <Button onClick={() => navigate("/dashboard/add-equipment")} className="w-full sm:w-auto">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Listing
+                </Button>
+                <Button variant="outline" onClick={() => setActiveTab("requests")} className="w-full sm:w-auto">
+                  <ListChecks className="mr-2 h-4 w-4" />
+                  Open Requests
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Priority Alerts - Cleaner design with better grouping */}
         {(urgentRequests.length > 0 || extensionRequests.length > 0) && (
           <div className="mb-10 space-y-4">
@@ -326,10 +349,7 @@ const OwnerDashboard = () => {
                   size="sm"
                   variant="outline"
                   className="w-full shrink-0 border-warning/30 hover:bg-warning/10 sm:w-auto"
-                  onClick={() => {
-                    const element = document.querySelector('[data-state="inactive"][value="requests"]');
-                    if (element) (element as HTMLElement).click();
-                  }}
+                  onClick={() => setActiveTab("requests")}
                 >
                   Review Now
                 </Button>
@@ -390,7 +410,7 @@ const OwnerDashboard = () => {
         )}
 
         {/* Main Content Tabs - Improved visual hierarchy */}
-        <Tabs defaultValue="timeline" className="space-y-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="h-11 w-full justify-start overflow-x-auto bg-muted/50 p-1">
             <TabsTrigger value="timeline" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
               <CalendarRange className="h-4 w-4" />
@@ -409,7 +429,18 @@ const OwnerDashboard = () => {
               <Package className="h-4 w-4" />
               <span className="hidden sm:inline">Listings</span>
             </TabsTrigger>
+            <TabsTrigger value="business" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <Building2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Business Info</span>
+            </TabsTrigger>
           </TabsList>
+
+          <p className="text-sm text-muted-foreground">
+            {activeTab === "timeline" && "See upcoming and active rentals in chronological order."}
+            {activeTab === "requests" && "Review incoming requests, approve quickly, and keep bookings moving."}
+            {activeTab === "listings" && "Manage your equipment catalog, pricing, and availability settings."}
+            {activeTab === "business" && "Add your business details so other users can verify your listing profile."}
+          </p>
 
           {/* Timeline Tab */}
           <TabsContent value="timeline">
@@ -571,7 +602,7 @@ const OwnerDashboard = () => {
                     title="No equipment listed"
                     description="Add your first equipment to start earning from idle assets."
                     action={
-                      <Button onClick={() => setIsAddingEquipment(true)}>
+                      <Button onClick={() => navigate("/dashboard/add-equipment")}>
                         <Plus className="h-4 w-4 mr-2" />
                         Add Equipment
                       </Button>
@@ -652,6 +683,21 @@ const OwnerDashboard = () => {
                   </Card>
                 ))}
               </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="business">
+            {user ? (
+              <BusinessProfileSection
+                userId={user.id}
+                businessNameFallback={user.businessName || user.name}
+              />
+            ) : (
+              <Card className="border-border/50">
+                <CardContent className="p-6 text-sm text-muted-foreground">
+                  Please sign in to manage business verification details.
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
         </Tabs>
