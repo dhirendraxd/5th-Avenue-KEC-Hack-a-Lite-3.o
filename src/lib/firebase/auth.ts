@@ -6,8 +6,10 @@ import {
   User,
   setPersistence,
   browserLocalPersistence,
-} from 'firebase/auth';
-import { auth } from './config';
+  GoogleAuthProvider,
+  signInWithPopup,
+} from "firebase/auth";
+import { auth } from "./config";
 
 export interface AuthUser {
   uid: string;
@@ -17,18 +19,25 @@ export interface AuthUser {
 
 // Set persistence for auth
 setPersistence(auth, browserLocalPersistence).catch((error) => {
-  console.warn('Failed to set persistence:', error);
+  console.warn("Failed to set persistence:", error);
 });
 
 /**
  * Sign up a new user with email and password
  */
-export const signUp = async (email: string, password: string): Promise<User> => {
+export const signUp = async (
+  email: string,
+  password: string,
+): Promise<User> => {
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password,
+    );
     return userCredential.user;
   } catch (error) {
-    console.error('Sign up error:', error);
+    console.error("Sign up error:", error);
     throw error;
   }
 };
@@ -36,12 +45,19 @@ export const signUp = async (email: string, password: string): Promise<User> => 
 /**
  * Sign in user with email and password
  */
-export const signIn = async (email: string, password: string): Promise<User> => {
+export const signIn = async (
+  email: string,
+  password: string,
+): Promise<User> => {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password,
+    );
     return userCredential.user;
   } catch (error) {
-    console.error('Sign in error:', error);
+    console.error("Sign in error:", error);
     throw error;
   }
 };
@@ -53,7 +69,7 @@ export const logout = async (): Promise<void> => {
   try {
     await signOut(auth);
   } catch (error) {
-    console.error('Sign out error:', error);
+    console.error("Sign out error:", error);
     throw error;
   }
 };
@@ -64,7 +80,7 @@ export const logout = async (): Promise<void> => {
 export const getCurrentUser = (): AuthUser | null => {
   const user = auth.currentUser;
   if (!user) return null;
-  
+
   return {
     uid: user.uid,
     email: user.email,
@@ -87,4 +103,18 @@ export const onAuthChange = (callback: (user: AuthUser | null) => void) => {
       callback(null);
     }
   });
+};
+
+/**
+ * Sign in with Google
+ */
+export const signInWithGoogle = async (): Promise<User> => {
+  try {
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    return userCredential.user;
+  } catch (error) {
+    console.error("Google sign in error:", error);
+    throw error;
+  }
 };
