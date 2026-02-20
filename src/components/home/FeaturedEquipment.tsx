@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Equipment } from "@/lib/mockData";
 import EquipmentCard from "@/components/equipment/EquipmentCard";
-import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { getFirebaseEquipment } from "@/lib/firebase/equipment";
@@ -41,11 +40,12 @@ const FeaturedEquipment = () => {
               High-demand equipment from verified businesses
             </p>
           </div>
-          <Link to="/browse">
-            <Button variant="outline" className="gap-2">
-              View All Equipment
-              <ArrowRight className="h-4 w-4" />
-            </Button>
+          <Link
+            to="/browse"
+            className="group inline-flex items-center gap-1.5 text-base font-medium text-foreground transition-colors after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:text-primary hover:after:w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative"
+          >
+            View All Equipment
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
 
