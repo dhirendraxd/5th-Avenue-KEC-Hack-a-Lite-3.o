@@ -120,39 +120,45 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-[calc(100vh-3.5rem)] overflow-hidden bg-background">
-      <div className="container relative z-10 mx-auto flex min-h-[calc(100vh-3.5rem)] items-center px-4 py-24 sm:px-6 lg:px-8 lg:py-28">
-        <div className="mx-auto w-full max-w-4xl text-center">
-          <h1 className="text-5xl font-bold leading-[1.03] tracking-tight text-foreground md:text-6xl lg:text-7xl">
-            A simple <span className="text-primary">equipment</span> rental platform.
+      {/* Subtle ambient background */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[15%] top-[20%] h-[500px] w-[500px] rounded-full bg-primary/[0.02] blur-3xl" />
+        <div className="absolute right-[15%] bottom-[15%] h-[600px] w-[600px] rounded-full bg-accent/[0.02] blur-3xl" />
+      </div>
+
+      <div className="container relative z-10 mx-auto flex min-h-[calc(100vh-3.5rem)] items-center px-4 py-28 sm:px-6 lg:px-8 lg:py-32">
+        <div className="mx-auto w-full max-w-5xl text-center">
+          <h1 className="animate-fade-in text-6xl font-bold leading-[1.1] tracking-tight text-foreground md:text-7xl lg:text-8xl xl:text-[6.5rem]">
+            <span className="whitespace-nowrap">A simple <span className="text-primary">equipment</span></span><br />rental platform.
           </h1>
-          <p className="mx-auto mt-8 max-w-2xl text-base text-muted-foreground md:text-lg">
+          <p className="mx-auto mt-10 max-w-3xl animate-fade-in text-lg text-muted-foreground [animation-delay:150ms] md:text-xl lg:text-2xl lg:line-clamp-2">
             Find the right equipment for your task in seconds with clear pricing and trusted business listings.
           </p>
 
-          <div className="mt-10 flex items-center justify-center gap-8">
+          <div className="mt-12 flex animate-fade-in items-center justify-center gap-10 [animation-delay:300ms]">
             <Link
               to="/dashboard"
-              className="group relative inline-flex items-center gap-1 text-sm font-medium text-foreground after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+              className="group relative inline-flex items-center gap-1.5 text-base font-medium text-foreground transition-colors after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:text-primary hover:after:w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:text-lg"
             >
               Get started
-              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 md:h-5 md:w-5" />
             </Link>
             <Link
               to="/browse"
-              className="relative text-sm text-muted-foreground after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:text-foreground hover:after:w-full"
+              className="relative text-base text-muted-foreground transition-colors after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:text-foreground hover:after:w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:text-lg"
             >
               Browse listings
             </Link>
           </div>
 
-          <div className="mx-auto mt-12 w-full max-w-2xl">
-            <div className="relative mx-auto w-full max-w-xl">
-              <Sparkles className="pointer-events-none absolute left-1 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/90" />
+          <div className="mx-auto mt-14 w-full max-w-3xl animate-fade-in [animation-delay:450ms]">
+            <div className="relative mx-auto w-full max-w-2xl">
+              <Sparkles className="pointer-events-none absolute left-1 top-1/2 h-5 w-5 -translate-y-1/2 animate-pulse-gentle text-primary/90" />
               <Input
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
-                placeholder={typedPlaceholder}
-                className="h-12 rounded-none border-0 border-b border-border/70 bg-transparent px-0 pl-8 text-sm shadow-none focus-visible:border-primary focus-visible:ring-0"
+                placeholder={typedPlaceholder + (prompt === '' ? '|' : '')}
+                className="h-14 rounded-none border-0 border-b border-border/70 bg-transparent px-0 pl-9 text-base shadow-none transition-colors focus-visible:border-primary focus-visible:ring-0 md:text-lg"
               />
             </div>
 
@@ -164,7 +170,7 @@ const HeroSection = () => {
                       <Link
                         key={equipment.id}
                         to={`/equipment/${equipment.id}`}
-                        className="block border-b border-border/60 pb-3 text-sm"
+                        className="block border-b border-border/60 pb-3 text-sm transition-all duration-300 hover:border-primary/50 hover:pl-2 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                       >
                         <p className="line-clamp-1 font-medium text-foreground">{equipment.name}</p>
                         <p className="line-clamp-1 text-xs text-muted-foreground">
