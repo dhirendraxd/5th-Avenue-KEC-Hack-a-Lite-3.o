@@ -12,8 +12,24 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Debug: log resolved Firebase config (non-sensitive fields only)
+try {
+  console.debug('[firebase/config] resolved config:', {
+    apiKey: firebaseConfig.apiKey ? '***' : undefined,
+    authDomain: firebaseConfig.authDomain,
+    projectId: firebaseConfig.projectId,
+    storageBucket: firebaseConfig.storageBucket,
+    messagingSenderId: firebaseConfig.messagingSenderId,
+    appId: firebaseConfig.appId,
+  });
+
+  // Initialize Firebase
+  var app = initializeApp(firebaseConfig);
+} catch (e) {
+  console.error('[firebase/config] initializeApp error:', e);
+  // rethrow so ErrorBoundary / runtime can capture it
+  throw e;
+}
 
 // Initialize Firebase services
 export const auth = getAuth(app);
