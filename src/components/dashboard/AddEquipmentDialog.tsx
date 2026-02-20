@@ -246,39 +246,34 @@ const AddEquipmentDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!name || !category || !description || !pricePerDay || !customLocationName.trim()) {
-      toast({
-        title: "Missing Required Fields",
-        description: "Please fill in all required fields before submitting.",
-        variant: "destructive",
-      });
-      return;
-    }
+    const missing: string[] = [];
 
-    if (features.length === 0) {
-      toast({
-        title: "Add equipment features",
-        description: "Please add at least one feature/capability in the Details step.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!name?.trim()) missing.push('Equipment Name');
+    if (!category) missing.push('Category');
+    if (!customLocationName?.trim()) missing.push('Location');
+    if (!description?.trim()) missing.push('Description');
+    if (!pricePerDay?.trim()) missing.push('Daily Rental Rate');
+    if (features.length === 0) missing.push('Features');
+    if (!usageNotes?.trim()) missing.push('Usage Notes');
+    if (photos.length === 0) missing.push('Photos');
 
-    if (!usageNotes.trim()) {
-      toast({
-        title: "Usage notes required",
-        description: "Please add usage notes or renter requirements in the Details step.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (missing.length > 0) {
+      // Choose a tab to focus based on the first missing field
+      const first = missing[0];
+      if (['Equipment Name', 'Category', 'Location', 'Description'].includes(first)) {
+        setCurrentTab('basic');
+      } else if (['Features', 'Usage Notes'].includes(first)) {
+        setCurrentTab('details');
+      } else if (['Daily Rental Rate'].includes(first)) {
+        setCurrentTab('pricing');
+      } else if (['Photos'].includes(first)) {
+        setCurrentTab('photos');
+      }
 
-    if (photos.length === 0) {
       toast({
-        title: "Photos Required",
-        description: "Please add at least one photo of your equipment.",
-        variant: "destructive",
+        title: 'Missing Required Fields',
+        description: `Please provide: ${missing.join(', ')}`,
+        variant: 'destructive',
       });
       return;
     }
