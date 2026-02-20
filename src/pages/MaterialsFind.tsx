@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,13 @@ const kathmandu_locations = [
 
 const toRadians = (value: number) => (value * Math.PI) / 180;
 
+/**
+ * Calculate distance between two geographic coordinates using Haversine formula
+ * This determines how far a listing is from the user's current location
+ * @param lat1, lon1 - User's current coordinates
+ * @param lat2, lon2 - Material listing coordinates
+ * @returns Distance in miles
+ */
 const distanceInMiles = (
   lat1: number,
   lon1: number,
@@ -76,6 +84,10 @@ const MaterialsFind = () => {
   const [selectedPickupLocation, setSelectedPickupLocation] = useState("Thamel");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "advance">("cod");
   const [selectedGateway, setSelectedGateway] = useState<"khalti" | "esewa" | "bank" | null>(null);
+  const [showOfferMode, setShowOfferMode] = useState(false);
+  const [offerAmount, setOfferAmount] = useState("");
+  const [offerStatus, setOfferStatus] = useState<"idle" | "sent" | "accepted" | "rejected" | "counter">("idle");
+  const [counterOfferAmount, setCounterOfferAmount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -97,6 +109,13 @@ const MaterialsFind = () => {
     );
   }, []);
 
+  /**
+   * Filter and sort listings based on:
+   * - Distance from user's current location (within selected radius)
+   * - Material category (or "all")
+   * - Calculates distance for each listing using Haversine formula
+   * - Returns listings sorted by distance (closest first)
+   */
   const listings = useMemo(() => {
     const maxDistance = Number(radius);
     return mockMaterialListings
@@ -114,6 +133,11 @@ const MaterialsFind = () => {
       .sort((a, b) => a.distance - b.distance);
   }, [radius, category, location]);
 
+  /**
+   * Calculate area insights for sidebar
+   * Shows top 3 locations with most material listings
+   * Used to display "Top Areas" in the insights card
+   */
   const areaInsights = useMemo(() => {
     const counts = listings.reduce<Record<string, number>>((acc, listing) => {
       acc[listing.locationName] = (acc[listing.locationName] || 0) + 1;
@@ -125,6 +149,11 @@ const MaterialsFind = () => {
       .slice(0, 3);
   }, [listings]);
 
+  /**
+   * Calculate category insights for sidebar
+   * Groups available materials by category and counts occurrences
+   * Shows category distribution as badges in insights card
+   */
   const categoryInsights = useMemo(() => {
     const counts = listings.reduce<Record<string, number>>((acc, listing) => {
       const label = materialCategoryLabels[listing.category];
@@ -135,11 +164,20 @@ const MaterialsFind = () => {
     return Object.entries(counts);
   }, [listings]);
 
+  /**
+   * Open purchase dialog for selected material
+   * Resets all offer/payment states to initial values
+   * Prepares UI for buyer interaction (offer or direct payment)
+   */
   const handleOpenDialog = (listing: MaterialListing) => {
     setSelected(listing);
     setSelectedPickupLocation("Thamel");
     setPaymentMethod("cod");
     setSelectedGateway(null);
+    setShowOfferMode(false);
+    setOfferAmount("");
+    setOfferStatus("idle");
+    setCounterOfferAmount(null);
     setDialogOpen(true);
   };
 
@@ -188,6 +226,96 @@ const MaterialsFind = () => {
       });
       setDialogOpen(false);
     }, 2000);
+  };
+
+  /**
+   * Send offer to seller (OLX-style negotiation)
+   * Validates offer amount and simulates seller response
+   * Seller randomly accepts, rejects, or counter-offers
+   */
+  const handleSendOffer = () => {
+    if (!selected || !offerAmount) {
+      toast({
+        title: "Enter an offer amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const offer = Number(offerAmount);
+    if (offer <= 0 || offer >= selected.price) {
+      toast({
+        title: "Invalid offer",
+        description: "Offer must be less than asking price",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update status and notify buyer
+    setOfferStatus("sent");
+    toast({
+      title: "Offer sent! 📤",
+      description: `NPR ${offer} offer sent to ${selected.contactName}. Waiting for response...`,
+    });
+
+    // Simulate seller response with 2-second delay
+    setTimeout(() => {
+      const responses = ["accepted", "counter", "rejected"] as const;
+      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+      
+      if (randomResponse === "accepted") {
+        setOfferStatus("accepted");
+        toast({
+          title: "Offer accepted! ✓",
+          description: `Great! ${selected.contactName} accepted your NPR ${offer} offer.`,
+        });
+      } else if (randomResponse === "counter") {
+        // Seller suggests ~85% of original price as counter
+        const counterPrice = Math.round(selected.price * 0.85);
+        setCounterOfferAmount(counterPrice);
+        setOfferStatus("counter");
+        toast({
+          title: "Counter offer received 🎯",
+          description: `${selected.contactName} countered with NPR ${counterPrice}`,
+        });
+      } else {
+        setOfferStatus("rejected");
+        toast({
+          title: "Offer declined",
+          description: `Sorry, ${selected.contactName} rejected your offer.`,
+          variant: "destructive",
+        });
+      }
+    }, 2000);
+  };
+
+  /**
+   * Accept seller's counter offer
+   * Updates status and allows buyer to proceed to payment
+   */
+  const handleAcceptCounter = () => {
+    if (!counterOfferAmount) return;
+    
+    toast({
+      title: "Counter offer accepted! ✓",
+      description: `You agreed to NPR ${counterOfferAmount}. Call ${selected?.contactName} to finalize.`,
+    });
+    setOfferStatus("accepted");
+  };
+
+  /**
+   * Reject seller's counter offer and return to initial offer state
+   * Buyer can send a new offer or try different amount
+   */
+  const handleRejectCounter = () => {
+    setOfferStatus("idle");
+    setCounterOfferAmount(null);
+    setOfferAmount("");
+    toast({
+      title: "Counter offer rejected",
+      description: "You can send a new offer.",
+    });
   };
 
   return (
@@ -485,6 +613,107 @@ const MaterialsFind = () => {
                 {selected.contactPhone}
               </div>
               
+              <div className="border-t border-border pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-semibold text-foreground">Pricing</label>
+                  <span className="text-lg font-bold text-foreground">NPR {selected.price}</span>
+                </div>
+                
+                {!showOfferMode ? (
+                  <div className="grid gap-2">
+                    <Button 
+                      variant="default" 
+                      className="w-full"
+                      onClick={() => setShowOfferMode(true)}
+                    >
+                      Make an Offer
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">Or negotiate the price</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {offerStatus === "idle" && (
+                      <>
+                        <Input
+                          type="number"
+                          placeholder="Enter your offer amount"
+                          value={offerAmount}
+                          onChange={(e) => setOfferAmount(e.target.value)}
+                          min="1"
+                          max={selected.price - 1}
+                        />
+                        <Button 
+                          className="w-full"
+                          onClick={handleSendOffer}
+                        >
+                          Send Offer
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setShowOfferMode(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+                    
+                    {offerStatus === "sent" && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded text-center">
+                        <p className="text-sm font-medium text-blue-900">Waiting for seller response...</p>
+                      </div>
+                    )}
+                    
+                    {offerStatus === "accepted" && (
+                      <div className="p-3 bg-green-50 border border-green-200 rounded text-center">
+                        <p className="text-sm font-bold text-green-900">✓ Offer Accepted!</p>
+                        <p className="text-xs text-green-800">Proceed to payment below</p>
+                      </div>
+                    )}
+                    
+                    {offerStatus === "rejected" && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded text-center">
+                        <p className="text-sm font-medium text-red-900">Offer declined</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="w-full mt-2"
+                          onClick={() => {
+                            setOfferStatus("idle");
+                            setOfferAmount("");
+                          }}
+                        >
+                          Try Again
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {offerStatus === "counter" && counterOfferAmount && (
+                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded space-y-2">
+                        <p className="text-sm font-medium text-yellow-900">Counter Offer: NPR {counterOfferAmount}</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button 
+                            size="sm"
+                            className="w-full"
+                            onClick={handleAcceptCounter}
+                          >
+                            Accept
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={handleRejectCounter}
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="border-t border-border pt-4">
                 <label className="text-sm text-muted-foreground">Pickup location</label>
                 <Select value={selectedPickupLocation} onValueChange={setSelectedPickupLocation}>

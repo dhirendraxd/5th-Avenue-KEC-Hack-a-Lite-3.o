@@ -59,11 +59,19 @@ const MaterialsList = () => {
     );
   };
 
+  /**
+   * Handle photo upload from file input
+   * - Validates files are images
+   * - Converts to Base64 data URL for preview
+   * - Limits to 4 photos max per listing
+   * - Shows progress toast notifications
+   */
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
     Array.from(files).forEach((file) => {
+      // Validate file type is image
       if (!file.type.startsWith("image/")) {
         toast({
           title: "Invalid file",
@@ -73,9 +81,11 @@ const MaterialsList = () => {
         return;
       }
 
+      // Convert file to Base64 for display
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
+        // Check photo limit before adding
         if (uploadedPhotos.length < 4) {
           setUploadedPhotos([...uploadedPhotos, result]);
           toast({
@@ -94,13 +104,25 @@ const MaterialsList = () => {
     });
   };
 
+  /**
+   * Remove photo from uploaded list by index
+   * Allows user to replace or delete unwanted photos
+   */
   const removePhoto = (index: number) => {
     setUploadedPhotos(uploadedPhotos.filter((_, i) => i !== index));
   };
 
+  /**
+   * Handle listing submission form
+   * - Validates all required fields are filled
+   * - Ensures price is provided unless marked as free
+   * - Resets form and photos after successful submission
+   * - Shows success confirmation toast
+   */
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
 
+    // Check all required fields
     if (!name.trim() || !category || !condition || !location.trim()) {
       toast({
         title: "Missing fields",
@@ -110,6 +132,7 @@ const MaterialsList = () => {
       return;
     }
 
+    // Validate price if not free
     if (!isFree && (!price || Number(price) <= 0)) {
       toast({
         title: "Price required",
@@ -119,11 +142,13 @@ const MaterialsList = () => {
       return;
     }
 
+    // Success confirmation
     toast({
       title: "Listing saved",
       description: "This is a prototype. Your item is not yet published.",
     });
 
+    // Reset all form fields and photos
     setName("");
     setCategory("");
     setCondition(pickRandomCondition());

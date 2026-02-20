@@ -50,7 +50,7 @@ export const materialImages = {
 const baseMaterialListings: Array<Omit<MaterialListing, "condition">> = [
   {
     id: "mat-001",
-    name: "Cement Bags 4kg - सिमेन्ट",
+    name: "Cement Bags 4kg",
     category: "concrete",
     imageUrl: materialImages.cement,
     price: 280,
@@ -64,7 +64,7 @@ const baseMaterialListings: Array<Omit<MaterialListing, "condition">> = [
   },
   {
     id: "mat-002",
-    name: "TMT Rods 12MM - टीएमटी रडी",
+    name: "TMT Rods 12MM",
     category: "metal",
     imageUrl: materialImages.rod,
     price: 520,
@@ -78,7 +78,7 @@ const baseMaterialListings: Array<Omit<MaterialListing, "condition">> = [
   },
   {
     id: "mat-003",
-    name: "Plywood 8x4 - प्लाइवुड",
+    name: "Plywood 8x4",
     category: "wood",
     imageUrl: materialImages.plywood,
     price: 0,
@@ -92,7 +92,7 @@ const baseMaterialListings: Array<Omit<MaterialListing, "condition">> = [
   },
   {
     id: "mat-004",
-    name: "Floor Paint Red - लाल रङ",
+    name: "Floor Paint Red",
     category: "concrete",
     imageUrl: materialImages.redOxide,
     price: 150,
