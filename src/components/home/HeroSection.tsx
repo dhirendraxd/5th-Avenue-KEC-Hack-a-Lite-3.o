@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Shield, Leaf, Building2, ChevronDown, Sparkles } from "lucide-react";
-import AnimatedHeroVisual from "./AnimatedHeroVisual";
-import { useParallax } from "@/hooks/useParallax";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { getFirebaseEquipment } from "@/lib/firebase/equipment";
 import { Equipment } from "@/lib/mockData";
 
@@ -42,7 +38,6 @@ const buildMatchScore = (equipment: Equipment, query: string): number => {
 };
 
 const HeroSection = () => {
-  const { offsetY, opacity } = useParallax();
   const [prompt, setPrompt] = useState("");
   const [allEquipment, setAllEquipment] = useState<Equipment[]>([]);
 
@@ -79,136 +74,68 @@ const HeroSection = () => {
   }, [allEquipment, prompt]);
 
   return (
-    <section className="relative min-h-[calc(100vh-4rem)] overflow-hidden hero-gradient flex items-center pt-8 lg:pt-0">
-      {/* Bottom gradient divider for smooth transition */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background via-background/60 to-transparent" />
-      {/* Parallax background elements */}
-      <div 
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          transform: `translateY(${offsetY(0.3)}px)`,
-          opacity: opacity(0, 600),
-        }}
-      >
-        <div className="absolute top-20 left-10 h-56 w-56 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute bottom-16 right-16 h-64 w-64 rounded-full bg-muted/40 blur-3xl" />
-      </div>
+    <section className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-background">
+      <div className="container relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] items-center px-4 py-24 sm:px-6 lg:px-8 lg:py-28">
+        <div className="mx-auto w-full max-w-4xl text-center">
+          <h1 className="text-5xl font-bold leading-[1.05] tracking-tight text-foreground md:text-6xl lg:text-7xl">
+            A simple <span className="text-primary">equipment</span> rental platform.
+          </h1>
+          <p className="mx-auto mt-8 max-w-2xl text-base text-muted-foreground md:text-lg">
+            Find the right equipment for your task in seconds with clear pricing and trusted business listings.
+          </p>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-16">
-          {/* Left Content - slower parallax */}
-          <div 
-            className="space-y-10 animate-fade-in"
-            style={{
-              transform: `translateY(${offsetY(-0.1)}px)`,
-            }}
-          >
-            <Badge variant="outline" className="w-fit gap-2 px-4 py-2 text-xs">
-              <Leaf className="h-4 w-4" />
-              B2B Equipment Sharing Platform
-            </Badge>
-
-            <div className="space-y-8">
-              <h1 
-                className="text-4xl font-bold leading-tight tracking-tight text-foreground md:text-5xl lg:text-6xl text-balance"
-                style={{
-                  transform: `translateY(${offsetY(-0.05)}px)`,
-                }}
-              >
-                Professional Equipment Rentals for Business Teams
-              </h1>
-              <p 
-                className="max-w-2xl text-lg text-muted-foreground md:text-xl leading-relaxed"
-                style={{
-                  transform: `translateY(${offsetY(-0.02)}px)`,
-                }}
-              >
-                Access verified listings, transparent pricing, and dependable partners across your local network.
-              </p>
-            </div>
-
-            <div className="space-y-4 pt-4">
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <div className="relative flex-1">
-                  <Sparkles className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
-                  <Input
-                    value={prompt}
-                    onChange={(event) => setPrompt(event.target.value)}
-                    placeholder="Describe what you need (e.g., road work, concrete drilling, event lighting setup)"
-                    className="h-12 pl-10"
-                  />
-                </div>
-                <Link to="/dashboard" className="sm:w-auto">
-                  <Button size="lg" variant="outline" className="w-full px-7">
-                    List Equipment
-                  </Button>
-                </Link>
-              </div>
-              {prompt.trim() && (
-                <div>
-                  {suggestions.length > 0 ? (
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                      {suggestions.map((equipment) => (
-                        <Link
-                          key={equipment.id}
-                          to={`/equipment/${equipment.id}`}
-                          className="border-b border-border/70 pb-2 text-sm"
-                        >
-                          <p className="line-clamp-1 font-semibold text-foreground">{equipment.name}</p>
-                          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                            {equipment.locationName || equipment.owner.location}
-                          </p>
-                          <p className="mt-1 text-sm font-medium text-primary">NPR {equipment.pricePerDay}/day</p>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No close match yet. Try adding equipment type, task, location, or capacity keywords.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-6 pt-4">
-              <div className="flex items-center gap-3 text-base text-muted-foreground">
-                <Shield className="h-5 w-5 text-success" />
-                Insurance Protected
-              </div>
-              <div className="flex items-center gap-3 text-base text-muted-foreground">
-                <Building2 className="h-5 w-5 text-primary" />
-                Verified Partners
-              </div>
-              <div className="flex items-center gap-3 text-base text-muted-foreground">
-                <Leaf className="h-5 w-5 text-accent" />
-                Sustainable Sharing
-              </div>
-            </div>
+          <div className="mt-10 flex items-center justify-center gap-8">
+            <Link
+              to="/dashboard"
+              className="group relative inline-flex items-center gap-1 text-sm font-medium text-foreground after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+            >
+              Get started
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <Link
+              to="/browse"
+              className="relative text-sm text-muted-foreground after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:text-foreground hover:after:w-full"
+            >
+              Browse listings
+            </Link>
           </div>
 
-          {/* Right Animated Visual - faster parallax */}
-          <div 
-            className="relative mx-auto w-full max-w-[34rem] sm:max-w-[38rem] lg:max-w-[42rem] xl:max-w-[46rem] animate-slide-in-right" 
-            style={{ 
-              animationDelay: '0.15s',
-              transform: `translateY(${offsetY(0.08)}px)`,
-            }}
-          >
-            <AnimatedHeroVisual />
-          </div>
-        </div>
+          <div className="mx-auto mt-12 w-full max-w-2xl">
+            <div className="relative mx-auto w-full max-w-xl">
+              <Sparkles className="pointer-events-none absolute left-1 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/90" />
+              <Input
+                value={prompt}
+                onChange={(event) => setPrompt(event.target.value)}
+                placeholder="Describe what you need and we will suggest matching equipment"
+                className="h-12 rounded-none border-0 border-b border-border/70 bg-transparent px-0 pl-8 text-sm shadow-none focus-visible:border-primary focus-visible:ring-0"
+              />
+            </div>
 
-        {/* Scroll cue */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center">
-          <Link
-            to="/browse"
-            className="pointer-events-auto inline-flex items-center gap-2 px-2 py-1 text-sm font-medium text-muted-foreground"
-            aria-label="Explore equipment"
-          >
-            <span>Explore equipment</span>
-            <ChevronDown className="h-4 w-4 animate-bounce" />
-          </Link>
+            {prompt.trim() && (
+              <div className="mt-5 text-left">
+                {suggestions.length > 0 ? (
+                  <div className="space-y-3">
+                    {suggestions.map((equipment) => (
+                      <Link
+                        key={equipment.id}
+                        to={`/equipment/${equipment.id}`}
+                        className="block border-b border-border/60 pb-3 text-sm"
+                      >
+                        <p className="line-clamp-1 font-medium text-foreground">{equipment.name}</p>
+                        <p className="line-clamp-1 text-xs text-muted-foreground">
+                          {equipment.locationName || equipment.owner.location} · NPR {equipment.pricePerDay}/day
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No close match found. Try adding task type, equipment name, or location keywords.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </section>

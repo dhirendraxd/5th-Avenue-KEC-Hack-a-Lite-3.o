@@ -1,15 +1,15 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { roleLabels } from "@/lib/mockData";
 import { Package, Home, LayoutDashboard, Search, Menu, X, User, DollarSign } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   const publicNavLinks = [
     { href: "/", label: "Home", icon: Home },
@@ -27,9 +27,34 @@ const Navbar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+
+      if (currentY <= 8) {
+        setIsVisible(true);
+      } else if (currentY > lastScrollY) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+
+      lastScrollY = currentY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <>
-      <nav className="fixed left-0 right-0 top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
+      <nav
+        className={`fixed left-0 right-0 top-0 z-50 border-b border-transparent bg-transparent shadow-none transition-transform duration-300 ${
+          isVisible || mobileMenuOpen ? "translate-y-0" : "-translate-y-full"
+        }`}
+      >
         <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -41,16 +66,18 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden items-center gap-1 md:flex">
+          <div className="hidden items-center gap-6 md:flex">
             {navLinks.map((link) => (
-              <Link key={link.href} to={link.href}>
-                <Button
-                  variant={isActive(link.href) ? "secondary" : "ghost"}
-                  className="gap-2"
-                >
-                  <link.icon className="h-4 w-4" />
-                  {link.label}
-                </Button>
+              <Link
+                key={link.href}
+                to={link.href}
+                className={`relative text-sm after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:bg-primary after:transition-all ${
+                  isActive(link.href)
+                    ? "text-success font-medium after:w-full"
+                    : "text-muted-foreground hover:text-foreground after:w-0 hover:after:w-full"
+                }`}
+              >
+                {link.label}
               </Link>
             ))}
           </div>
@@ -59,36 +86,42 @@ const Navbar = () => {
           <div className="hidden items-center gap-3 md:flex">
             {isAuthenticated && user ? (
               <>
-                <Button
-                  variant="outline"
-                  size="icon"
+                <button
                   aria-label="Go to dashboard"
                   onClick={() => navigate("/dashboard")}
+                  className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <User className="h-4 w-4" />
-                </Button>
+                  Dashboard
+                </button>
               </>
             ) : (
               <>
-                <Link to="/dashboard">
-                  <Button variant="outline">List Equipment</Button>
+                <Link
+                  to="/dashboard"
+                  className="relative text-sm font-medium text-foreground after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+                >
+                  List Equipment
                 </Link>
-                <Link to="/auth">
-                  <Button>Sign In</Button>
+                <Link
+                  to="/auth"
+                  className="relative text-sm text-muted-foreground after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:text-foreground hover:after:w-full"
+                >
+                  Sign In
                 </Link>
               </>
             )}
           </div>
 
           {/* Mobile Menu Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
+            type="button"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             className="md:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          </button>
         </div>
 
         {/* Mobile Menu */}
@@ -100,14 +133,22 @@ const Navbar = () => {
                   key={link.href}
                   to={link.href}
                   onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm ${
+                    isActive(link.href)
+                      ? "font-medium text-success"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  <Button
-                    variant={isActive(link.href) ? "secondary" : "ghost"}
-                    className="w-full justify-start gap-2"
+                  <link.icon className="h-4 w-4" />
+                  <span
+                    className={`relative after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:bg-primary after:transition-all ${
+                      isActive(link.href)
+                        ? "after:w-full"
+                        : "after:w-0 hover:after:w-full"
+                    }`}
                   >
-                    <link.icon className="h-4 w-4" />
                     {link.label}
-                  </Button>
+                  </span>
                 </Link>
               ))}
               <div className="mt-2 flex flex-col gap-2 border-t border-border pt-4">
@@ -125,13 +166,23 @@ const Navbar = () => {
                   </>
                 ) : (
                   <>
-                    <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="outline" className="w-full">
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="px-4 py-2 text-sm font-medium text-foreground"
+                    >
+                      <span className="relative after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:after:w-full">
                         List Equipment
-                      </Button>
+                      </span>
                     </Link>
-                    <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                      <Button className="w-full">Sign In</Button>
+                    <Link
+                      to="/auth"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      <span className="relative after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:after:w-full">
+                        Sign In
+                      </span>
                     </Link>
                   </>
                 )}

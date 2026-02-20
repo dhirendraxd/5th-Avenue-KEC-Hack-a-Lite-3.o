@@ -29,9 +29,9 @@ const stats = [
 
 const TrustSection = () => {
   return (
-    <section className="py-24 lg:py-32 bg-background">
+    <section className="py-28 lg:py-36 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-16 lg:mb-20 text-center">
+        <div className="mb-20 lg:mb-24 text-center">
           <h2 className="text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
             Trusted by Business Operators
           </h2>
@@ -40,7 +40,7 @@ const TrustSection = () => {
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
           {stats.map((stat, index) => (
             <div
               key={index}
