@@ -1,4 +1,9 @@
-import { createDocument, getDocuments, subscribeDocument, subscribeDocuments } from "./firestore";
+import {
+  createDocument,
+  getDocuments,
+  subscribeDocument,
+  subscribeDocuments,
+} from "./firestore";
 import {
   Equipment,
   EquipmentCategory,
@@ -142,7 +147,7 @@ export const getFirebaseEquipment = async (): Promise<Equipment[]> => {
 
 export const subscribeFirebaseEquipment = (
   onNext: (equipment: Equipment[]) => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
 ) => {
   return subscribeDocuments<FirestoreEquipmentDocument & { id: string }>(
     EQUIPMENT_COLLECTION,
@@ -150,14 +155,14 @@ export const subscribeFirebaseEquipment = (
       onNext(documents.map((document) => toEquipment(document.id, document)));
     },
     [],
-    onError
+    onError,
   );
 };
 
 export const subscribeFirebaseEquipmentById = (
   equipmentId: string,
   onNext: (equipment: Equipment | null) => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
 ) => {
   return subscribeDocument<FirestoreEquipmentDocument>(
     EQUIPMENT_COLLECTION,
@@ -169,7 +174,7 @@ export const subscribeFirebaseEquipmentById = (
       }
       onNext(toEquipment(document.id, document));
     },
-    onError
+    onError,
   );
 };
 
