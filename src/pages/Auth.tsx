@@ -73,7 +73,7 @@ const Auth = () => {
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
-              Firebase Google auth hookup can be added next.
+              Sign in uses your Firebase Google Auth configuration.
             </p>
           </CardContent>
         </Card>
