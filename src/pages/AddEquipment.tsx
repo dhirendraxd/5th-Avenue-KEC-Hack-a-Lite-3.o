@@ -14,6 +14,8 @@ import {
 } from "@/lib/firebase/businessProfile";
 import { ArrowLeft } from "lucide-react";
 
+const INLINE_PHOTO_FALLBACK_MAX_BYTES = 700_000;
+
 const AddEquipment = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -25,13 +27,46 @@ const AddEquipment = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  const withTimeout = async <T,>(promise: Promise<T>, ms: number, message: string): Promise<T> => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(message)), ms);
+    });
+
+    try {
+      return await Promise.race([promise, timeoutPromise]);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
+  };
+
+  const estimateDataUrlBytes = (dataUrl: string) => {
+    const base64 = dataUrl.split(",")[1] ?? "";
+    return Math.ceil((base64.length * 3) / 4);
+  };
+
+  const canFallbackToInlinePhotos = (error: unknown) => {
+    if (!(error instanceof Error)) return false;
+    const message = error.message.toLowerCase();
+    return (
+      message.includes("firebase storage has not been set up") ||
+      message.includes("storage is not configured") ||
+      message.includes("storage/unauthorized") ||
+      message.includes("storage/object-not-found")
+    );
+  };
+
   const handleAddEquipment = async (data: AddEquipmentFormData) => {
     if (!user) {
       throw new Error("Please sign in to list equipment.");
     }
 
     try {
-      const savedBusinessProfile = await getBusinessProfileFromFirebase(user.id);
+      const savedBusinessProfile = await withTimeout(
+        getBusinessProfileFromFirebase(user.id),
+        12000,
+        "Timed out while loading business profile. Please try again."
+      );
 
       if (!savedBusinessProfile || !isBusinessKycComplete(savedBusinessProfile)) {
         navigate("/dashboard");
@@ -47,15 +82,18 @@ const AddEquipment = () => {
         savedBusinessProfile.businessAddress?.trim() ||
         data.locationName;
 
-      // Upload photos to Firebase Storage if they are base64 data URLs
+      // Upload only base64 photos; keep already-uploaded URLs
       let photoUrls: string[] = [];
       try {
         if (data.photos && data.photos.length > 0) {
+          const existingRemoteUrls = data.photos.filter((photo) => /^https?:\/\//.test(photo));
+          const dataUrls = data.photos.filter((photo) => photo.startsWith("data:"));
+
           // convert base64 data URLs to File objects
-          const files: File[] = data.photos.map((dataUrl, idx) => {
+          const files: File[] = dataUrls.map((dataUrl, idx) => {
             const arr = dataUrl.split(',');
             const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-            const bstr = atob(arr[1]);
+            const bstr = atob(arr[1] || '');
             let n = bstr.length;
             const u8arr = new Uint8Array(n);
             while (n--) {
@@ -64,14 +102,44 @@ const AddEquipment = () => {
             return new File([u8arr], `photo_${Date.now()}_${idx}.jpg`, { type: mime });
           });
 
-          photoUrls = await uploadMultipleFiles(`equipment/${user.id}`, files);
+          const uploadedUrls = files.length > 0
+            ? await withTimeout(
+                uploadMultipleFiles(`equipment/${user.id}`, files),
+                45000,
+                "Timed out while uploading photos. Please try with fewer/smaller images."
+              )
+            : [];
+
+          photoUrls = [...existingRemoteUrls, ...uploadedUrls];
         }
       } catch (error) {
         console.error('Failed to upload photos:', error);
-        throw new Error('Failed to upload photos. Please try again.');
+        if (canFallbackToInlinePhotos(error)) {
+          const existingRemoteUrls = data.photos.filter((photo) => /^https?:\/\//.test(photo));
+          const dataUrls = data.photos.filter((photo) => photo.startsWith("data:"));
+          const totalInlineBytes = dataUrls.reduce((sum, photo) => sum + estimateDataUrlBytes(photo), 0);
+
+          if (totalInlineBytes > INLINE_PHOTO_FALLBACK_MAX_BYTES) {
+            throw new Error(
+              "Storage is unavailable and your photos are too large for fallback save. Please upload fewer/smaller images."
+            );
+          }
+
+          photoUrls = [...existingRemoteUrls, ...dataUrls];
+          toast({
+            title: "Using photo fallback",
+            description: "Firebase Storage is unavailable, so photos are saved inline for now.",
+          });
+        } else {
+          if (error instanceof Error && error.message) {
+            throw error;
+          }
+          throw new Error('Failed to upload photos. Please try again.');
+        }
       }
 
-      const created = await addFirebaseEquipment({
+      const created = await withTimeout(
+        addFirebaseEquipment({
         ...data,
         photos: photoUrls.length > 0 ? photoUrls : data.photos,
         ownerId: user.id,
@@ -79,7 +147,10 @@ const AddEquipment = () => {
         ownerEmail: user.email,
         ownerLocation,
         ownerVerified: savedBusinessProfile.isProfileComplete,
-      });
+      }),
+        15000,
+        "Timed out while saving equipment. Please try again."
+      );
 
       // Optimistic: store the newly created equipment locally so the dashboard can pick it up immediately
       try {

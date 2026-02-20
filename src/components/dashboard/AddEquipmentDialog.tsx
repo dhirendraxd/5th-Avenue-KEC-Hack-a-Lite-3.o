@@ -128,6 +128,7 @@ const kathmanduLocations = [
 ];
 
 const ADD_EQUIPMENT_DRAFT_KEY = "gearshift_add_equipment_draft";
+const MAX_PHOTO_SIZE_BYTES = 8 * 1024 * 1024;
 
 const AddEquipmentDialog = ({
   open,
@@ -160,6 +161,7 @@ const AddEquipmentDialog = ({
   const [insuranceProtected, setInsuranceProtected] = useState(true);
   const [cancellationPolicy, setCancellationPolicy] = useState("48hours");
   const [photos, setPhotos] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [frontViewPhotoIndex, setFrontViewPhotoIndex] = useState<number | null>(null);
   const [leftViewPhotoIndex, setLeftViewPhotoIndex] = useState<number | null>(null);
   const [rightViewPhotoIndex, setRightViewPhotoIndex] = useState<number | null>(null);
@@ -292,12 +294,36 @@ const AddEquipmentDialog = ({
     setShowLocationSuggestions(value.trim().length > 0);
   };
 
+  const isValidPhotoFile = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid file type",
+        description: `\"${file.name}\" is not an image file.`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (file.size > MAX_PHOTO_SIZE_BYTES) {
+      toast({
+        title: "Image too large",
+        description: `\"${file.name}\" exceeds 8MB. Please upload a smaller image.`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     const remainingSlots = 6 - photos.length;
-    const filesToProcess = Array.from(files).slice(0, remainingSlots);
+    const filesToProcess = Array.from(files)
+      .slice(0, remainingSlots)
+      .filter(isValidPhotoFile);
 
     filesToProcess.forEach((file) => {
       const reader = new FileReader();
@@ -340,6 +366,14 @@ const AddEquipmentDialog = ({
   const handleViewPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeViewUpload) {
+      return;
+    }
+
+    if (!isValidPhotoFile(file)) {
+      if (viewFileInputRef.current) {
+        viewFileInputRef.current.value = "";
+      }
+      setActiveViewUpload(null);
       return;
     }
 
@@ -406,6 +440,7 @@ const AddEquipmentDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     const missing: string[] = [];
 
     if (!name?.trim()) missing.push('Equipment Name');
@@ -442,6 +477,7 @@ const AddEquipmentDialog = ({
     const finalLocationName = customLocationName.trim();
 
     try {
+      setIsSubmitting(true);
       await onSubmit({
         name,
         category,
@@ -470,6 +506,8 @@ const AddEquipmentDialog = ({
             : "Please try again. If the issue persists, check Firebase setup.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -513,6 +551,63 @@ const AddEquipmentDialog = ({
   );
   const isStandaloneLastStep = currentTab === "photos";
 
+  const getStepMissing = (step: (typeof standaloneSteps)[number]) => {
+    const missing: string[] = [];
+    if (step === "basic") {
+      if (!name?.trim()) missing.push("Equipment Name");
+      if (!category) missing.push("Category");
+      if (!customLocationName?.trim()) missing.push("Location");
+      if (!description?.trim()) missing.push("Description");
+    }
+    if (step === "details") {
+      if (features.length === 0) missing.push("Features");
+      if (!usageNotes?.trim()) missing.push("Usage Notes");
+    }
+    if (step === "pricing") {
+      if (!pricePerDay?.trim()) missing.push("Daily Rental Rate");
+    }
+    if (step === "photos") {
+      if (photos.length === 0) missing.push("Photos");
+    }
+    return missing;
+  };
+
+  const canProceedFromStep = (step: (typeof standaloneSteps)[number]) => {
+    const missing = getStepMissing(step);
+    if (missing.length === 0) return true;
+
+    toast({
+      title: "Complete this section",
+      description: `Please provide: ${missing.join(", ")}`,
+      variant: "destructive",
+    });
+    return false;
+  };
+
+  const handleNextStep = () => {
+    const step = currentTab as (typeof standaloneSteps)[number];
+    if (!canProceedFromStep(step)) return;
+    setCurrentTab(standaloneSteps[standaloneStepIndex + 1]);
+  };
+
+  const handleTabChange = (nextTab: string) => {
+    const currentIndex = standaloneSteps.indexOf(
+      currentTab as (typeof standaloneSteps)[number]
+    );
+    const nextIndex = standaloneSteps.indexOf(
+      nextTab as (typeof standaloneSteps)[number]
+    );
+
+    if (nextIndex <= currentIndex) {
+      setCurrentTab(nextTab);
+      return;
+    }
+
+    if (canProceedFromStep(currentTab as (typeof standaloneSteps)[number])) {
+      setCurrentTab(nextTab);
+    }
+  };
+
   const handleCancel = () => {
     if (standalone) {
       onCancel?.();
@@ -533,8 +628,8 @@ const AddEquipmentDialog = ({
         </p>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <Tabs value={currentTab} onValueChange={setCurrentTab} className="px-6">
+      <form onSubmit={handleSubmit} noValidate>
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="px-6">
           <TabsList className={`grid w-full ${standalone ? "grid-cols-4" : "grid-cols-2 sm:grid-cols-4"}`}>
             <TabsTrigger value="basic" className="gap-1">
               <Info className="h-4 w-4" />
@@ -1016,14 +1111,14 @@ const AddEquipmentDialog = ({
               {!isStandaloneLastStep ? (
                 <Button
                   type="button"
-                  onClick={() => setCurrentTab(standaloneSteps[standaloneStepIndex + 1])}
+                  onClick={handleNextStep}
                 >
                   Next
                 </Button>
               ) : (
-                <Button type="submit" className="gap-2">
+                <Button type="submit" className="gap-2" disabled={isSubmitting}>
                   <Plus className="h-4 w-4" />
-                  List Equipment
+                  {isSubmitting ? "Listing..." : "List Equipment"}
                 </Button>
               )}
             </div>
@@ -1032,9 +1127,9 @@ const AddEquipmentDialog = ({
               <Button type="button" variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button type="submit" className="gap-2">
+              <Button type="submit" className="gap-2" disabled={isSubmitting}>
                 <Plus className="h-4 w-4" />
-                List Equipment
+                {isSubmitting ? "Listing..." : "List Equipment"}
               </Button>
             </div>
           )}
