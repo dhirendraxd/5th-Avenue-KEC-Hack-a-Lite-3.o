@@ -120,7 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return true;
     } catch (error) {
       console.error('Google login error:', error);
-      return false;
+      throw error;
     } finally {
       setIsLoading(false);
     }

@@ -13,9 +13,12 @@ const firebaseConfig = {
 };
 
 // Debug: log resolved Firebase config (non-sensitive fields only)
+let app: any = null;
+let hasError = false;
+
 try {
-  console.debug('[firebase/config] resolved config:', {
-    apiKey: firebaseConfig.apiKey ? '***' : undefined,
+  console.debug("[firebase/config] resolved config:", {
+    apiKey: firebaseConfig.apiKey ? "***" : undefined,
     authDomain: firebaseConfig.authDomain,
     projectId: firebaseConfig.projectId,
     storageBucket: firebaseConfig.storageBucket,
@@ -24,16 +27,20 @@ try {
   });
 
   // Initialize Firebase
-  var app = initializeApp(firebaseConfig);
+  app = initializeApp(firebaseConfig);
+  console.info("[firebase/config] Firebase initialized successfully");
 } catch (e) {
-  console.error('[firebase/config] initializeApp error:', e);
-  // rethrow so ErrorBoundary / runtime can capture it
-  throw e;
+  hasError = true;
+  console.error("[firebase/config] Firebase initialization error:", e);
+  console.warn(
+    "[firebase/config] App will run in fallback mode without Firebase features",
+  );
 }
 
-// Initialize Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+// Initialize Firebase services - provide null values if initialization failed
+export const auth = app ? getAuth(app) : (null as any);
+export const db = app ? getFirestore(app) : (null as any);
+export const storage = app ? getStorage(app) : (null as any);
 
 export default app;
+export { hasError };

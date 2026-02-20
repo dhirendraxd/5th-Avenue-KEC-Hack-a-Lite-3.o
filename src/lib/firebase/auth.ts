@@ -9,7 +9,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
-import { auth } from "./config";
+import { auth, hasError } from "./config";
 
 export interface AuthUser {
   uid: string;
@@ -17,10 +17,12 @@ export interface AuthUser {
   displayName: string | null;
 }
 
-// Set persistence for auth
-setPersistence(auth, browserLocalPersistence).catch((error) => {
-  console.warn("Failed to set persistence:", error);
-});
+// Set persistence for auth only if Firebase is available
+if (auth) {
+  setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.warn("Failed to set persistence:", error);
+  });
+}
 
 /**
  * Sign up a new user with email and password
@@ -29,6 +31,7 @@ export const signUp = async (
   email: string,
   password: string,
 ): Promise<User> => {
+  if (!auth) throw new Error("Firebase not initialized");
   try {
     const userCredential = await createUserWithEmailAndPassword(
       auth,
@@ -49,6 +52,7 @@ export const signIn = async (
   email: string,
   password: string,
 ): Promise<User> => {
+  if (!auth) throw new Error("Firebase not initialized");
   try {
     const userCredential = await signInWithEmailAndPassword(
       auth,
@@ -66,6 +70,7 @@ export const signIn = async (
  * Sign out the current user
  */
 export const logout = async (): Promise<void> => {
+  if (!auth) throw new Error("Firebase not initialized");
   try {
     await signOut(auth);
   } catch (error) {
@@ -78,6 +83,7 @@ export const logout = async (): Promise<void> => {
  * Get the current authenticated user
  */
 export const getCurrentUser = (): AuthUser | null => {
+  if (!auth) return null;
   const user = auth.currentUser;
   if (!user) return null;
 
@@ -92,6 +98,12 @@ export const getCurrentUser = (): AuthUser | null => {
  * Listen to auth state changes
  */
 export const onAuthChange = (callback: (user: AuthUser | null) => void) => {
+  if (!auth) {
+    console.warn("Firebase not initialized, calling callback with null");
+    callback(null);
+    return () => {}; // Return empty unsubscribe function
+  }
+
   return onAuthStateChanged(auth, (user) => {
     if (user) {
       callback({
@@ -109,6 +121,7 @@ export const onAuthChange = (callback: (user: AuthUser | null) => void) => {
  * Sign in with Google
  */
 export const signInWithGoogle = async (): Promise<User> => {
+  if (!auth) throw new Error("Firebase not initialized");
   try {
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(auth, provider);

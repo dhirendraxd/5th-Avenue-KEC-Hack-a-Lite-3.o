@@ -26,17 +26,19 @@ const Auth = () => {
     setIsLoading(true);
     try {
       const success = await loginWithGoogle();
-      if (success) {
-        toast({
-          title: 'Signed in with Google',
-          description: 'Welcome to 5th Avenue.',
-        });
-        navigate('/dashboard');
+      if (!success) {
+        throw new Error('Google sign-in was canceled or failed.');
       }
-    } catch {
+      toast({
+        title: 'Signed in with Google',
+        description: 'Welcome to 5th Avenue.',
+      });
+      navigate('/dashboard');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Please try again.';
       toast({
         title: 'Google sign-in failed',
-        description: 'Please try again.',
+        description: message,
         variant: 'destructive',
       });
     } finally {
