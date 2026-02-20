@@ -1,43 +1,32 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserRole, roleLabels } from '@/lib/mockData';
-import { Building2, Shield, Users, Briefcase } from 'lucide-react';
+import { Building2, Home } from 'lucide-react';
 
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login } = useAuth();
-  
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('owner');
+  const { loginWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleAuth = async () => {
     setIsLoading(true);
-
     try {
-      const success = await login(email, password, selectedRole);
+      const success = await loginWithGoogle();
       if (success) {
         toast({
-          title: 'Welcome back!',
-          description: `Logged in as ${roleLabels[selectedRole].label}`,
+          title: 'Signed in with Google',
+          description: 'Firebase integration can be connected next.',
         });
         navigate('/dashboard');
       }
     } catch {
       toast({
-        title: 'Login failed',
-        description: 'Please check your credentials and try again.',
+        title: 'Google sign-in failed',
+        description: 'Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -45,33 +34,18 @@ const Auth = () => {
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const success = await login(email, password, selectedRole);
-      if (success) {
-        toast({
-          title: 'Account created!',
-          description: 'Welcome to GearShift.',
-        });
-        navigate('/dashboard');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const roleIcons: Record<UserRole, React.ReactNode> = {
-    owner: <Briefcase className="h-5 w-5" />,
-    operations_manager: <Users className="h-5 w-5" />,
-    finance: <Shield className="h-5 w-5" />,
-  };
-
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
+        <div className="mb-4 flex justify-center">
+          <Link to="/">
+            <Button variant="outline" className="gap-2">
+              <Home className="h-4 w-4" />
+              Home
+            </Button>
+          </Link>
+        </div>
+
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
           <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
             <Building2 className="h-6 w-6 text-primary-foreground" />
@@ -80,162 +54,28 @@ const Auth = () => {
         </Link>
 
         <Card>
-          <Tabs defaultValue="login">
-            <CardHeader>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-            </CardHeader>
+          <CardHeader className="space-y-2 text-center">
+            <CardTitle className="text-2xl">Sign in to GearShift</CardTitle>
+            <CardDescription>
+              Google is the default and only login method.
+            </CardDescription>
+          </CardHeader>
 
-            <CardContent>
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <CardTitle className="text-xl">Welcome back</CardTitle>
-                  <CardDescription>
-                    Sign in to manage your equipment and rentals
-                  </CardDescription>
+          <CardContent className="space-y-4">
+            <Button type="button" variant="outline" className="w-full gap-2" onClick={handleGoogleAuth} disabled={isLoading}>
+              <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.2-.9 2.3-1.9 3v2.5h3.1c1.8-1.6 2.8-4 2.8-6.9 0-.7-.1-1.3-.2-1.9H12z" />
+                <path fill="#34A853" d="M12 21c2.5 0 4.7-.8 6.2-2.2l-3.1-2.5c-.9.6-2 .9-3.1.9-2.4 0-4.5-1.6-5.2-3.8H3.6v2.6C5.1 19 8.3 21 12 21z" />
+                <path fill="#4A90E2" d="M6.8 13.4c-.2-.6-.3-1.2-.3-1.9s.1-1.3.3-1.9V7H3.6A9 9 0 0 0 2.7 11.5c0 1.4.3 2.8.9 4l3.2-2.1z" />
+                <path fill="#FBBC05" d="M12 5.8c1.4 0 2.6.5 3.6 1.4l2.7-2.7C16.7 3 14.5 2 12 2 8.3 2 5.1 4 3.6 7l3.2 2.6c.7-2.2 2.8-3.8 5.2-3.8z" />
+              </svg>
+              {isLoading ? 'Signing in...' : 'Continue with Google'}
+            </Button>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="you@company.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Password</Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label>Sign in as</Label>
-                    <RadioGroup
-                      value={selectedRole}
-                      onValueChange={(value) => setSelectedRole(value as UserRole)}
-                      className="space-y-2"
-                    >
-                      {(Object.keys(roleLabels) as UserRole[]).map((role) => (
-                        <div
-                          key={role}
-                          className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                            selectedRole === role
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border hover:bg-muted/50'
-                          }`}
-                          onClick={() => setSelectedRole(role)}
-                        >
-                          <RadioGroupItem value={role} id={`login-${role}`} />
-                          <div className={`${roleLabels[role].color}`}>
-                            {roleIcons[role]}
-                          </div>
-                          <div className="flex-1">
-                            <Label htmlFor={`login-${role}`} className="cursor-pointer font-medium">
-                              {roleLabels[role].label}
-                            </Label>
-                            <p className="text-xs text-muted-foreground">
-                              {roleLabels[role].description}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Signing in...' : 'Sign In'}
-                  </Button>
-
-                  <p className="text-center text-sm text-muted-foreground">
-                    Demo: Use any email/password to log in
-                  </p>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-4">
-                  <CardTitle className="text-xl">Create an account</CardTitle>
-                  <CardDescription>
-                    Join GearShift to rent or list equipment
-                  </CardDescription>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="you@company.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label>Your role</Label>
-                    <RadioGroup
-                      value={selectedRole}
-                      onValueChange={(value) => setSelectedRole(value as UserRole)}
-                      className="space-y-2"
-                    >
-                      {(Object.keys(roleLabels) as UserRole[]).map((role) => (
-                        <div
-                          key={role}
-                          className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                            selectedRole === role
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border hover:bg-muted/50'
-                          }`}
-                          onClick={() => setSelectedRole(role)}
-                        >
-                          <RadioGroupItem value={role} id={`signup-${role}`} />
-                          <div className={`${roleLabels[role].color}`}>
-                            {roleIcons[role]}
-                          </div>
-                          <div className="flex-1">
-                            <Label htmlFor={`signup-${role}`} className="cursor-pointer font-medium">
-                              {roleLabels[role].label}
-                            </Label>
-                            <p className="text-xs text-muted-foreground">
-                              {roleLabels[role].description}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Creating account...' : 'Create Account'}
-                  </Button>
-                </form>
-              </TabsContent>
-            </CardContent>
-          </Tabs>
+            <p className="text-center text-sm text-muted-foreground">
+              Firebase Google auth hookup can be added next.
+            </p>
+          </CardContent>
         </Card>
       </div>
     </div>

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { roleLabels } from "@/lib/mockData";
-import { Package, LayoutDashboard, Search, Menu, X, User, LogOut, Settings, Building2, DollarSign } from "lucide-react";
+import { Package, Home, LayoutDashboard, Search, Menu, X, User, LogOut, Settings, Building2, DollarSign } from "lucide-react";
 import { useState } from "react";
 
 const Navbar = () => {
@@ -21,6 +21,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
+    { href: "/", label: "Home", icon: Home },
     { href: "/browse", label: "Browse Equipment", icon: Search },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/finance", label: "Finance", icon: DollarSign },

@@ -4,7 +4,7 @@ import { CurrentUser, UserRole, mockBusinesses, mockTeamMembers, mockLocations }
 interface AuthContextType {
   user: CurrentUser | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string, role?: UserRole) => Promise<boolean>;
+  loginWithGoogle: () => Promise<boolean>;
   logout: () => void;
   switchRole: (role: UserRole) => void;
   hasPermission: (permission: Permission) => boolean;
@@ -52,15 +52,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const login = async (email: string, _password: string, role?: UserRole): Promise<boolean> => {
-    // Simulated login - find team member by email or use role
-    const teamMember = mockTeamMembers.find(tm => tm.email === email);
-    const userRole = role || teamMember?.role || 'owner';
+  const loginWithGoogle = async (): Promise<boolean> => {
+    const defaultGoogleEmail = 'google.user@gearshift.app';
+    const teamMember = mockTeamMembers.find(tm => tm.email === defaultGoogleEmail);
+    const userRole: UserRole = teamMember?.role || 'owner';
     
     const newUser: CurrentUser = {
       id: teamMember?.id || 'u1',
-      name: teamMember?.name || 'Demo User',
-      email: email,
+      name: teamMember?.name || 'Google User',
+      email: defaultGoogleEmail,
       role: userRole,
       businessId: 'b1',
       businessName: mockBusinesses[0].name,
@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       value={{
         user,
         isAuthenticated: !!user,
-        login,
+        loginWithGoogle,
         logout,
         switchRole,
         hasPermission,
