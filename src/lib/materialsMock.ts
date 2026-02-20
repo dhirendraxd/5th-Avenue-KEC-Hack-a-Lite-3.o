@@ -50,7 +50,7 @@ export const materialImages = {
 const baseMaterialListings: Array<Omit<MaterialListing, "condition">> = [
   {
     id: "mat-001",
-    name: "Cement Bags 50Kg - सिमेन्ट",
+    name: "Cement Bags 4kg - सिमेन्ट",
     category: "concrete",
     imageUrl: materialImages.cement,
     price: 280,
