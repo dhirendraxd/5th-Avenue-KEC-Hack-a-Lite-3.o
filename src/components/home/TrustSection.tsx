@@ -29,9 +29,9 @@ const stats = [
 
 const TrustSection = () => {
   return (
-    <section className="py-28 lg:py-36 bg-background">
+    <section className="py-28 lg:py-36 bg-background border-t border-border/40">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-20 lg:mb-24 text-center">
+        <div className="mb-16 lg:mb-20 text-center">
           <h2 className="text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
             Trusted by Business Operators
           </h2>
@@ -40,19 +40,19 @@ const TrustSection = () => {
           </p>
         </div>
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           {stats.map((stat, index) => (
             <div
               key={index}
-              className="flex flex-col items-center p-8 text-center animate-fade-in"
+              className="group flex flex-col items-center p-8 text-center rounded-xl border border-border/50 bg-card/30 backdrop-blur-sm transition-all duration-300 hover:border-primary/30 hover:shadow-sm hover:-translate-y-1 animate-fade-in"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <stat.icon className="h-7 w-7 text-primary" />
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-primary/5 border border-primary/10 transition-all duration-300 group-hover:bg-primary/10 group-hover:scale-110">
+                <stat.icon className="h-6 w-6 text-primary" strokeWidth={1.5} />
               </div>
-              <div className="text-3xl font-bold text-foreground">{stat.value}</div>
-              <div className="mt-1 font-medium text-foreground">{stat.label}</div>
-              <div className="mt-2 text-sm text-muted-foreground">
+              <div className="text-3xl font-bold text-foreground mb-1">{stat.value}</div>
+              <div className="font-medium text-foreground text-sm mb-2">{stat.label}</div>
+              <div className="text-xs text-muted-foreground leading-relaxed">
                 {stat.description}
               </div>
             </div>

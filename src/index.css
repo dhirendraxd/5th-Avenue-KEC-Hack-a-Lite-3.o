@@ -74,6 +74,58 @@
     --badge-pill: hsl(217 91% 55% / 0.1);
   }
 
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.8s ease-out forwards;
+    animation-fill-mode: backwards;
+  }
+
+  @keyframes cursor-blink {
+
+    0%,
+    49% {
+      opacity: 1;
+    }
+
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .animate-cursor-blink {
+    animation: cursor-blink 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse-gentle {
+
+    0%,
+    100% {
+      opacity: 0.9;
+      transform: scale(1);
+    }
+
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+  }
+
+  .animate-pulse-gentle {
+    animation: pulse-gentle 2.5s ease-in-out infinite;
+  }
+
   .dark {
     --background: 222 30% 8%;
     --foreground: 210 20% 95%;
@@ -152,7 +204,6 @@
   .text-balance {
     text-wrap: balance;
   }
-
   .materials-shell {
     font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
   }
@@ -175,6 +226,23 @@
 
   .float-slow {
     animation: floatSlow 8s ease-in-out infinite;
+  }
+  .handwritten-underline {
+    position: relative;
+    display: inline-block;
+  }
+
+  .handwritten-underline::after {
+    content: '';
+    position: absolute;
+    left: -1%;
+    right: -1%;
+    bottom: -0.08em;
+    height: 0.35em;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 15' preserveAspectRatio='none'%3E%3Cpath d='M0,8 C20,6 40,9 60,7.5 C80,6 100,9 120,7.8 C140,6.5 160,8.5 180,7.2 C200,6 220,8.8 240,7.5 C260,6.2 280,8.3 300,7.6 C320,6.8 340,8.2 360,7.4 C380,6.5 400,8.5 420,7.8 C440,7 460,8.2 480,7.5 C490,7 495,7.5 500,7.3' stroke='hsl(217 91%25 55%25)' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.85'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    pointer-events: none;
   }
 }
 

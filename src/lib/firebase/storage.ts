@@ -1,7 +1,7 @@
 import {
   ref,
   uploadBytes,
-  downloadURL,
+  getDownloadURL,
   deleteObject,
   listAll,
 } from 'firebase/storage';
@@ -14,7 +14,7 @@ export const uploadFile = async (path: string, file: File): Promise<string> => {
   try {
     const storageRef = ref(storage, path);
     const snapshot = await uploadBytes(storageRef, file);
-    const downloadUrl = await downloadURL(snapshot.ref);
+    const downloadUrl = await getDownloadURL(snapshot.ref);
     return downloadUrl;
   } catch (error) {
     console.error('Error uploading file:', error);
@@ -77,7 +77,7 @@ export const listFiles = async (path: string): Promise<string[]> => {
     const result = await listAll(dirRef);
     
     const urls = await Promise.all(
-      result.items.map((itemRef) => downloadURL(itemRef))
+      result.items.map((itemRef) => getDownloadURL(itemRef))
     );
     
     return urls;
