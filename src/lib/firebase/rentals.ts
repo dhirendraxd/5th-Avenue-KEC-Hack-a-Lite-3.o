@@ -201,6 +201,32 @@ export const createFirebaseRentalRequest = async (
   return toRental(rentalId, document);
 };
 
+export const createNotificationForOwner = async (
+  recipientId: string,
+  title: string,
+  message: string,
+  data: Record<string, any> = {},
+) => {
+  try {
+    const notifId = `notif-${globalThis.crypto?.randomUUID?.() || Date.now()}`;
+    const notification = {
+      recipientId,
+      title,
+      message,
+      type: "rental_request",
+      data,
+      read: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    await createDocument("notifications", notifId, notification as any);
+    return true;
+  } catch (err) {
+    console.error("Failed to create owner notification:", err);
+    throw err;
+  }
+};
+
 export const updateFirebaseRentalStatus = async (
   rentalId: string,
   status: RentalRequest["status"],

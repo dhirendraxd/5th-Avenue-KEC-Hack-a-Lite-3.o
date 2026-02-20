@@ -23,7 +23,7 @@ import {
   isBusinessKycComplete,
 } from "@/lib/firebase/businessProfile";
 import { subscribeFirebaseEquipmentById } from "@/lib/firebase/equipment";
-import { createFirebaseRentalRequest, subscribeFirebaseRentals } from "@/lib/firebase/rentals";
+import { createFirebaseRentalRequest, subscribeFirebaseRentals, createNotificationForOwner } from "@/lib/firebase/rentals";
 import { Equipment, RentalRequest } from "@/lib/mockData";
 import { categoryLabels, conditionLabels } from "@/lib/constants";
 import {
@@ -85,7 +85,15 @@ const EquipmentDetail = () => {
   useEffect(() => {
     const unsubscribe = subscribeFirebaseRentals(
       (rentals) => setAllRentals(rentals),
-      (error) => console.error("Failed to load rentals for detail availability:", error)
+      (error) => {
+        console.error("Failed to load rentals for detail availability:", error);
+        toast({
+          title: "Could not load availability",
+          description:
+            "Failed to load rental availability. Some dates may be missing. Check your connection or permissions.",
+          variant: "destructive",
+        });
+      }
     );
 
     return () => unsubscribe();
@@ -223,7 +231,7 @@ const EquipmentDetail = () => {
 
     setIsRequesting(true);
     try {
-      await createFirebaseRentalRequest({
+      const rental = await createFirebaseRentalRequest({
         equipment,
         renterId: user.id,
         renterName: user.name,
@@ -235,11 +243,22 @@ const EquipmentDetail = () => {
         notes,
       });
 
+      // Try to notify the owner via a notifications document
+      try {
+        await createNotificationForOwner(rental.owner.id, `New rental request for ${equipment.name}`, `${user.name} requested to rent ${equipment.name} from ${dateRange.from.toDateString()} to ${dateRange.to.toDateString()}`, { rentalId: rental.id, equipmentId: equipment.id });
+        toast({
+          title: "Request Submitted",
+          description: `Your rental request for ${equipment.name} has been sent to ${owner.name}. The owner has been notified.`,
+        });
+      } catch (notifErr) {
+        console.error("Notification creation failed:", notifErr);
+        toast({
+          title: "Request Submitted",
+          description: `Request sent but failed to notify ${owner.name}. They may still see the request in their dashboard.`,
+        });
+      }
+
       setIsRequesting(false);
-      toast({
-        title: "Request Submitted",
-        description: `Your rental request for ${equipment.name} has been sent to ${owner.name}. You'll receive a response within 24 hours.`,
-      });
     } catch (error) {
       console.error("Failed to create rental request:", error);
       setIsRequesting(false);
