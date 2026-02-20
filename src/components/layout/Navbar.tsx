@@ -20,12 +20,19 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navLinks = [
+  const publicNavLinks = [
     { href: "/", label: "Home", icon: Home },
     { href: "/browse", label: "Browse Equipment", icon: Search },
+  ];
+
+  const privateNavLinks = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/finance", label: "Finance", icon: DollarSign },
   ];
+
+  const navLinks = isAuthenticated
+    ? [...publicNavLinks, ...privateNavLinks]
+    : publicNavLinks;
 
   const isActive = (path: string) => location.pathname === path;
 
