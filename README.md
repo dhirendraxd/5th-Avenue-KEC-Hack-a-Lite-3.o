@@ -110,7 +110,7 @@ Your browser should open to `http://localhost:5173` and you'll see the homepage 
 
 ### Environment Setup
 
-Create a `.env` file in the root directory with your Firebase credentials:
+Create a `.env` file in the root directory with your Firebase + Cloudinary credentials:
 
 ```env
 VITE_FIREBASE_API_KEY=your_api_key_here
@@ -119,6 +119,8 @@ VITE_FIREBASE_PROJECT_ID=your_project_id_here
 VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket_here
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id_here
 VITE_FIREBASE_APP_ID=your_app_id_here
+VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name_here
+VITE_CLOUDINARY_UPLOAD_PRESET=your_unsigned_upload_preset_here
 ```
 
 > **Pro tip:** Don't commit this file. Git will ignore it, but your security team won't ignore you if you leak keys.
@@ -187,8 +189,24 @@ npm run lint
 2. Create a new project (or use existing)
 3. Enable **Authentication** → Google Sign-In
 4. Create a **Firestore Database** (start in test mode for development)
-5. Create **Storage** bucket for image uploads
+5. (Optional) Create **Storage** bucket if you want Firebase Storage later
 6. Copy your config to `.env` file
+
+### Cloudinary Setup (Recommended for image hosting)
+
+1. Go to [Cloudinary Console](https://console.cloudinary.com/) and create/login to your account.
+2. From **Dashboard**, copy your **Cloud Name**.
+3. Open **Settings → Upload → Upload presets** and create a preset.
+4. Set the preset to **Unsigned**.
+5. (Recommended) Restrict the preset to `image` uploads only.
+6. Add these env vars:
+
+```env
+VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
+VITE_CLOUDINARY_UPLOAD_PRESET=your_unsigned_upload_preset
+```
+
+After this, listing uploads images to Cloudinary and stores public image URLs in Firestore so all users can view them.
 
 ### Firestore Collections Structure
 

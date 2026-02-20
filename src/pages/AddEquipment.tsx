@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { addFirebaseEquipment } from "@/lib/firebase/equipment";
-import { uploadMultipleFiles } from "@/lib/firebase/storage";
+import { isCloudinaryConfigured, uploadImagesToCloudinary } from "@/lib/cloudinary";
 import {
   getBusinessProfileFromFirebase,
   isBusinessKycComplete,
 } from "@/lib/firebase/businessProfile";
 import { ArrowLeft } from "lucide-react";
 
-const INLINE_PHOTO_FALLBACK_MAX_BYTES = 700_000;
+const FIRESTORE_INLINE_PHOTO_MAX_BYTES = 700_000;
 
 const AddEquipment = () => {
   const navigate = useNavigate();
@@ -45,17 +45,6 @@ const AddEquipment = () => {
     return Math.ceil((base64.length * 3) / 4);
   };
 
-  const canFallbackToInlinePhotos = (error: unknown) => {
-    if (!(error instanceof Error)) return false;
-    const message = error.message.toLowerCase();
-    return (
-      message.includes("firebase storage has not been set up") ||
-      message.includes("storage is not configured") ||
-      message.includes("storage/unauthorized") ||
-      message.includes("storage/object-not-found")
-    );
-  };
-
   const handleAddEquipment = async (data: AddEquipmentFormData) => {
     if (!user) {
       throw new Error("Please sign in to list equipment.");
@@ -82,59 +71,54 @@ const AddEquipment = () => {
         savedBusinessProfile.businessAddress?.trim() ||
         data.locationName;
 
-      // Upload only base64 photos; keep already-uploaded URLs
+      // Cloudinary-first photo strategy with Firestore-inline fallback
       let photoUrls: string[] = [];
-      try {
-        if (data.photos && data.photos.length > 0) {
-          const existingRemoteUrls = data.photos.filter((photo) => /^https?:\/\//.test(photo));
-          const dataUrls = data.photos.filter((photo) => photo.startsWith("data:"));
+      let uploadedToCloudinary = false;
+      if (data.photos && data.photos.length > 0) {
+        const existingRemoteUrls = data.photos.filter((photo) => /^https?:\/\//.test(photo));
+        const dataUrls = data.photos.filter((photo) => photo.startsWith("data:"));
 
-          // convert base64 data URLs to File objects
-          const files: File[] = dataUrls.map((dataUrl, idx) => {
-            const arr = dataUrl.split(',');
-            const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-            const bstr = atob(arr[1] || '');
-            let n = bstr.length;
-            const u8arr = new Uint8Array(n);
-            while (n--) {
-              u8arr[n] = bstr.charCodeAt(n);
+        if (dataUrls.length > 0 && isCloudinaryConfigured()) {
+          try {
+            const cloudinaryUrls = await withTimeout(
+              uploadImagesToCloudinary(dataUrls),
+              45000,
+              "Timed out while uploading photos to Cloudinary. Please try again."
+            );
+            photoUrls = [...existingRemoteUrls, ...cloudinaryUrls];
+            uploadedToCloudinary = cloudinaryUrls.length > 0;
+          } catch (error) {
+            console.error("Cloudinary upload failed, using Firestore fallback:", error);
+            const totalInlineBytes = dataUrls.reduce((sum, photo) => sum + estimateDataUrlBytes(photo), 0);
+            if (totalInlineBytes > FIRESTORE_INLINE_PHOTO_MAX_BYTES) {
+              throw new Error(
+                "Cloudinary upload failed and photos are too large for fallback save. Please upload fewer/smaller images."
+              );
             }
-            return new File([u8arr], `photo_${Date.now()}_${idx}.jpg`, { type: mime });
-          });
 
-          const uploadedUrls = files.length > 0
-            ? await withTimeout(
-                uploadMultipleFiles(`equipment/${user.id}`, files),
-                45000,
-                "Timed out while uploading photos. Please try with fewer/smaller images."
-              )
-            : [];
-
-          photoUrls = [...existingRemoteUrls, ...uploadedUrls];
-        }
-      } catch (error) {
-        console.error('Failed to upload photos:', error);
-        if (canFallbackToInlinePhotos(error)) {
-          const existingRemoteUrls = data.photos.filter((photo) => /^https?:\/\//.test(photo));
-          const dataUrls = data.photos.filter((photo) => photo.startsWith("data:"));
+            photoUrls = [...existingRemoteUrls, ...dataUrls];
+            toast({
+              title: "Using fallback photo storage",
+              description: "Cloudinary upload failed, so photos were saved directly in Firestore.",
+            });
+          }
+        } else {
           const totalInlineBytes = dataUrls.reduce((sum, photo) => sum + estimateDataUrlBytes(photo), 0);
 
-          if (totalInlineBytes > INLINE_PHOTO_FALLBACK_MAX_BYTES) {
+          if (totalInlineBytes > FIRESTORE_INLINE_PHOTO_MAX_BYTES) {
             throw new Error(
-              "Storage is unavailable and your photos are too large for fallback save. Please upload fewer/smaller images."
+              "Photos are too large to save without cloud image hosting. Please upload fewer/smaller images."
             );
           }
 
           photoUrls = [...existingRemoteUrls, ...dataUrls];
-          toast({
-            title: "Using photo fallback",
-            description: "Firebase Storage is unavailable, so photos are saved inline for now.",
-          });
-        } else {
-          if (error instanceof Error && error.message) {
-            throw error;
+
+          if (dataUrls.length > 0) {
+            toast({
+              title: "Photos saved without cloud hosting",
+              description: "Set Cloudinary env vars for public image URLs visible to all users.",
+            });
           }
-          throw new Error('Failed to upload photos. Please try again.');
         }
       }
 
@@ -161,7 +145,9 @@ const AddEquipment = () => {
 
       toast({
         title: "Equipment listed",
-        description: "Your equipment is now saved in Firebase and visible in your dashboard.",
+        description: uploadedToCloudinary
+          ? "Photos uploaded to Cloudinary and equipment is now visible in your dashboard."
+          : "Your equipment is now saved in Firebase and visible in your dashboard.",
       });
 
       navigate("/dashboard");

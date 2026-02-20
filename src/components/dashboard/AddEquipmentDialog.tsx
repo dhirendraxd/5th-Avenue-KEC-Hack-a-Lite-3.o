@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { isCloudinaryConfigured } from "@/lib/cloudinary";
 import {
   categoryLabels,
   EquipmentCategory,
@@ -129,6 +130,8 @@ const kathmanduLocations = [
 
 const ADD_EQUIPMENT_DRAFT_KEY = "gearshift_add_equipment_draft";
 const MAX_PHOTO_SIZE_BYTES = 8 * 1024 * 1024;
+const MAX_PHOTO_DIMENSION = 1600;
+const TARGET_DATA_URL_BYTES = 170 * 1024;
 
 const AddEquipmentDialog = ({
   open,
@@ -138,6 +141,7 @@ const AddEquipmentDialog = ({
   onCancel,
 }: AddEquipmentDialogProps) => {
   const { toast } = useToast();
+  const cloudinaryReady = isCloudinaryConfigured();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const viewFileInputRef = useRef<HTMLInputElement>(null);
   const [currentTab, setCurrentTab] = useState("basic");
@@ -316,6 +320,58 @@ const AddEquipmentDialog = ({
     return true;
   };
 
+  const estimateDataUrlBytes = (dataUrl: string) => {
+    const base64 = dataUrl.split(",")[1] ?? "";
+    return Math.ceil((base64.length * 3) / 4);
+  };
+
+  const compressImageFile = async (file: File): Promise<string> => {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const imageElement = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      imageElement.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(imageElement);
+      };
+
+      imageElement.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Failed to read image file."));
+      };
+
+      imageElement.src = objectUrl;
+    });
+
+    const maxSourceDimension = Math.max(image.width, image.height);
+    const scale = maxSourceDimension > MAX_PHOTO_DIMENSION
+      ? MAX_PHOTO_DIMENSION / maxSourceDimension
+      : 1;
+
+    const width = Math.max(1, Math.round(image.width * scale));
+    const height = Math.max(1, Math.round(image.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Unable to process image.");
+    }
+
+    context.drawImage(image, 0, 0, width, height);
+
+    let quality = 0.82;
+    let result = canvas.toDataURL("image/jpeg", quality);
+    while (estimateDataUrlBytes(result) > TARGET_DATA_URL_BYTES && quality > 0.45) {
+      quality -= 0.1;
+      result = canvas.toDataURL("image/jpeg", quality);
+    }
+
+    return result;
+  };
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -325,13 +381,27 @@ const AddEquipmentDialog = ({
       .slice(0, remainingSlots)
       .filter(isValidPhotoFile);
 
-    filesToProcess.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setPhotos((prev) => [...prev, event.target?.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
+    const processFiles = async () => {
+      const converted: string[] = [];
+      for (const file of filesToProcess) {
+        try {
+          converted.push(await compressImageFile(file));
+        } catch (error) {
+          toast({
+            title: "Failed to process image",
+            description:
+              error instanceof Error ? error.message : `Could not process \"${file.name}\".`,
+            variant: "destructive",
+          });
+        }
+      }
+
+      if (converted.length > 0) {
+        setPhotos((prev) => [...prev, ...converted]);
+      }
+    };
+
+    void processFiles();
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -365,7 +435,8 @@ const AddEquipmentDialog = ({
 
   const handleViewPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !activeViewUpload) {
+    const targetView = activeViewUpload;
+    if (!file || !targetView) {
       return;
     }
 
@@ -377,7 +448,7 @@ const AddEquipmentDialog = ({
       return;
     }
 
-    const existingViewIndex = getViewIndex(activeViewUpload);
+    const existingViewIndex = getViewIndex(targetView);
     if (existingViewIndex === null && photos.length >= 6) {
       toast({
         title: "Photo limit reached",
@@ -391,24 +462,31 @@ const AddEquipmentDialog = ({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result as string;
-      if (!result) return;
+    const processViewPhoto = async () => {
+      try {
+        const result = await compressImageFile(file);
 
-      if (existingViewIndex !== null) {
-        setPhotos((previousPhotos) => {
-          const updatedPhotos = [...previousPhotos];
-          updatedPhotos[existingViewIndex] = result;
-          return updatedPhotos;
+        if (existingViewIndex !== null) {
+          setPhotos((previousPhotos) => {
+            const updatedPhotos = [...previousPhotos];
+            updatedPhotos[existingViewIndex] = result;
+            return updatedPhotos;
+          });
+        } else {
+          const newIndex = photos.length;
+          setPhotos((previousPhotos) => [...previousPhotos, result]);
+          setViewIndex(targetView, newIndex);
+        }
+      } catch (error) {
+        toast({
+          title: "Failed to process image",
+          description: error instanceof Error ? error.message : "Please try another image.",
+          variant: "destructive",
         });
-      } else {
-        const newIndex = photos.length;
-        setPhotos((previousPhotos) => [...previousPhotos, result]);
-        setViewIndex(activeViewUpload, newIndex);
       }
     };
-    reader.readAsDataURL(file);
+
+    void processViewPhoto();
 
     if (viewFileInputRef.current) {
       viewFileInputRef.current.value = "";
@@ -934,8 +1012,16 @@ const AddEquipmentDialog = ({
             <TabsContent value="photos" className="space-y-4 pr-4">
               <div className="space-y-2">
                 <Label>Equipment Photos <span className="text-destructive ml-1">*</span></Label>
+                <div className="flex items-center gap-2">
+                  <Badge variant={cloudinaryReady ? "default" : "outline"}>
+                    {cloudinaryReady ? "Cloudinary upload enabled" : "Cloudinary not configured"}
+                  </Badge>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   Add up to 6 high-quality photos showing different angles and condition
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Images are automatically compressed for compatibility.
                 </p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {[
@@ -994,7 +1080,7 @@ const AddEquipmentDialog = ({
                   <ImagePlus className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                   <p className="font-medium text-foreground">Click to upload photos</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    PNG, JPG up to 10MB each • Max 6 photos
+                    PNG, JPG up to 8MB each • Max 6 photos
                   </p>
                 </div>
               ) : (
