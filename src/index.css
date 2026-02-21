@@ -311,3 +311,55 @@
     }
   }
 }
+
+/* Broad mobile-friendly utilities */
+@layer utilities {
+  /* Responsive container widths */
+  .container {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  @media (max-width: 1024px) {
+    .container { max-width: 920px; }
+  }
+  @media (max-width: 768px) {
+    .container { max-width: 680px; }
+  }
+  @media (max-width: 420px) {
+    .container { max-width: 100%; padding-left: 0.75rem; padding-right: 0.75rem; }
+  }
+
+  /* Ensure basic form controls and actions are full-width on phones for easy tapping */
+  @media (max-width: 640px) {
+    input, textarea, select {
+      width: 100% !important;
+    }
+
+    /* When a container uses `flex w-full` for grouped actions, make children full-width on mobile */
+    .flex.w-full > * {
+      width: 100% !important;
+    }
+
+    /* Make primary CTAs easier to tap */
+    button {
+      min-height: 44px;
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+
+    /* Stack columns to single column on small screens */
+    .grid.grid-cols-2, .grid-cols-2 {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  /* Make card images and media adapt to narrow layouts */
+  .aspect-video, .aspect-square {
+    max-width: 100%;
+    height: auto !important;
+  }
+}

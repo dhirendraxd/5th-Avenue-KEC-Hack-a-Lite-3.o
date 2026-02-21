@@ -163,7 +163,7 @@ const BrowseEquipment = () => {
 
             {/* Category Select */}
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full lg:w-[200px]">
+              <SelectTrigger className="w-full sm:w-[260px] lg:w-[200px]">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
@@ -178,7 +178,7 @@ const BrowseEquipment = () => {
 
             {/* Sort Select */}
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-              <SelectTrigger className="w-full lg:w-[180px]">
+              <SelectTrigger className="w-full sm:w-[220px] lg:w-[180px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -194,7 +194,7 @@ const BrowseEquipment = () => {
             <Button
               variant={showFilters ? "secondary" : "outline"}
               onClick={() => setShowFilters(!showFilters)}
-              className="gap-2"
+              className="gap-2 w-full lg:w-auto"
             >
               <SlidersHorizontal className="h-4 w-4" />
               Filters
@@ -220,7 +220,7 @@ const BrowseEquipment = () => {
               </div>
               
               {/* Price Range */}
-              <div className="space-y-4">
+                <div className="space-y-4">
                 <h4 className="text-sm font-medium text-foreground">Price Range</h4>
                 <Slider
                   value={priceRange}
