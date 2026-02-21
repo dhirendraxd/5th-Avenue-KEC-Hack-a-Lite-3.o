@@ -322,19 +322,19 @@ const MaterialsFind = () => {
     <div className="min-h-screen bg-background relative">
       <BackgroundIllustrations variant="marketplace" />
       <Navbar />
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 relative materials-shell">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 relative materials-shell">
         <div className="materials-ambient" aria-hidden="true" />
         <div className="relative z-10">
           <PageHeader
-            title="Find It"
-            description="See materials available within 5-10 miles of your location."
+            title="Builder's Bazaar - Find Materials"
+            description="Discover construction materials available nearby. Buy directly from local suppliers and builders."
             actions={
-              <div className="flex flex-wrap gap-2">
-                <Button asChild variant="outline">
-                  <Link to="/materials/list">List it</Link>
+              <div className="flex flex-wrap gap-3">
+                <Button asChild variant="default" size="default">
+                  <Link to="/materials/list">+ List Materials</Link>
                 </Button>
                 <Select value={radius} onValueChange={setRadius}>
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-[150px]">
                     <SelectValue placeholder="Radius" />
                   </SelectTrigger>
                   <SelectContent>
@@ -343,7 +343,7 @@ const MaterialsFind = () => {
                   </SelectContent>
                 </Select>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="w-[160px]">
+                  <SelectTrigger className="w-[170px]">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -357,121 +357,121 @@ const MaterialsFind = () => {
             }
           />
 
-          <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="space-y-4">
-              <Card className="overflow-hidden card-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+          <div className="grid gap-6 lg:gap-8 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+            <div className="space-y-5">
+              <Card className="overflow-hidden card-shadow border-primary/20">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg">
                     <MapPin className="h-5 w-5 text-primary" />
-                    Nearby availability
+                    Your Location
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-background to-muted p-6">
+                  <div className="rounded-xl border border-border bg-gradient-to-br from-primary/5 via-background to-muted/30 p-5">
                     <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Current location</p>
-                        <p className="text-lg font-semibold text-foreground">{location.label}</p>
+                      <div className="flex-1">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Current location</p>
+                        <p className="text-base font-semibold text-foreground mt-1">{location.label}</p>
                       </div>
-                      <Badge variant={locationStatus === "error" ? "destructive" : "secondary"}>
+                      <Badge variant={locationStatus === "error" ? "destructive" : "secondary"} className="flex-shrink-0">
                         {locationStatus === "loading"
-                          ? "Locating"
+                          ? "Locating..."
                           : locationStatus === "error"
-                            ? "GPS unavailable"
-                            : "GPS ready"}
+                            ? "GPS Error"
+                            : "Active"}
                       </Badge>
                     </div>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-xl bg-card/80 p-3 shadow-sm">
-                        <p className="text-xs text-muted-foreground">Listings in range</p>
-                        <p className="text-2xl font-semibold text-foreground">{listings.length}</p>
+                    <div className="mt-4 grid gap-3 grid-cols-2">
+                      <div className="rounded-lg bg-card/90 backdrop-blur-sm p-3.5 border border-border/50">
+                        <p className="text-xs font-medium text-muted-foreground">Materials Found</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{listings.length}</p>
                       </div>
-                      <div className="rounded-xl bg-card/80 p-3 shadow-sm">
-                        <p className="text-xs text-muted-foreground">Radius</p>
-                        <p className="text-2xl font-semibold text-foreground">{radius} mi</p>
+                      <div className="rounded-lg bg-card/90 backdrop-blur-sm p-3.5 border border-border/50">
+                        <p className="text-xs font-medium text-muted-foreground">Search Radius</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{radius} mi</p>
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Move around to refresh GPS. Listings are sorted by distance.
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    📍 Listings sorted by proximity • Move to refresh GPS
                   </p>
                 </CardContent>
               </Card>
 
               <Card className="card-shadow">
-                <CardHeader>
-                  <CardTitle className="text-base">Availability insights</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-semibold">Material Insights</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex flex-wrap gap-2">
                     {categoryInsights.length > 0 ? (
                       categoryInsights.map(([label, count]) => (
-                        <Badge key={label} variant="secondary">
+                        <Badge key={label} variant="secondary" className="px-3 py-1">
                           {label} · {count}
                         </Badge>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground">No listings yet.</p>
+                      <p className="text-sm text-muted-foreground">No materials available in range.</p>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Top areas</p>
+                  <div className="space-y-2.5 pt-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Top Areas</p>
                     {areaInsights.length > 0 ? (
-                      <div className="grid gap-2">
+                      <div className="grid gap-2.5">
                         {areaInsights.map(([area, count]) => (
-                          <div key={area} className="flex items-center justify-between text-sm">
-                            <span className="text-foreground">{area}</span>
-                            <span className="text-muted-foreground">{count} listings</span>
+                          <div key={area} className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-muted/50 transition-colors">
+                            <span className="font-medium text-foreground">{area}</span>
+                            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">{count}</span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No areas detected yet.</p>
+                      <p className="text-sm text-muted-foreground">No locations found.</p>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="card-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
+              <Card className="card-shadow border-accent/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
                     <TrendingUp className="h-4 w-4 text-accent" />
-                    Search trends
+                    Trending Now
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid gap-3">
-                    <div className="rounded-lg border border-border bg-muted/40 p-3">
-                      <p className="text-xs text-muted-foreground">Most searched</p>
-                      <p className="font-semibold text-foreground">TMT Steel Rods</p>
+                <CardContent className="space-y-2.5">
+                  <div className="grid gap-2.5">
+                    <div className="rounded-lg border border-border bg-gradient-to-br from-accent/5 to-muted/40 p-3">
+                      <p className="text-xs font-medium text-muted-foreground">Most Searched</p>
+                      <p className="font-semibold text-foreground mt-0.5">TMT Steel Rods</p>
                     </div>
-                    <div className="rounded-lg border border-border bg-muted/40 p-3">
-                      <p className="text-xs text-muted-foreground">Best deals</p>
-                      <p className="font-semibold text-foreground">Free items</p>
+                    <div className="rounded-lg border border-border bg-gradient-to-br from-primary/5 to-muted/40 p-3">
+                      <p className="text-xs font-medium text-muted-foreground">Best Deals</p>
+                      <p className="font-semibold text-foreground mt-0.5">Free Materials</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="card-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Lightbulb className="h-4 w-4 text-yellow-500" />
-                    Quick tips
+              <Card className="card-shadow bg-gradient-to-br from-yellow-50/50 to-background border-yellow-200/40">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                    <Lightbulb className="h-4 w-4 text-yellow-600" />
+                    Pro Tips
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex gap-2">
-                      <span className="text-primary">•</span>
-                      <span>Widen radius for more options</span>
+                  <ul className="space-y-2.5 text-sm text-muted-foreground">
+                    <li className="flex gap-2.5 items-start">
+                      <span className="text-primary text-lg leading-none mt-0.5">•</span>
+                      <span>Increase radius to see more materials</span>
                     </li>
-                    <li className="flex gap-2">
-                      <span className="text-primary">•</span>
-                      <span>Filter by category to narrow down</span>
+                    <li className="flex gap-2.5 items-start">
+                      <span className="text-primary text-lg leading-none mt-0.5">•</span>
+                      <span>Use category filters for specific items</span>
                     </li>
-                    <li className="flex gap-2">
-                      <span className="text-primary">•</span>
+                    <li className="flex gap-2.5 items-start">
+                      <span className="text-primary text-lg leading-none mt-0.5">•</span>
                       <span>Contact sellers during business hours</span>
                     </li>
                   </ul>
@@ -479,100 +479,101 @@ const MaterialsFind = () => {
               </Card>
 
               <Card className="card-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Users className="h-4 w-4 text-blue-500" />
-                    Marketplace stats
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                    <Users className="h-4 w-4 text-blue-600" />
+                    Market Stats
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="grid gap-3">
-                  <div className="rounded-lg border border-border bg-muted/40 p-3">
-                    <p className="text-xs text-muted-foreground">Total listings</p>
-                    <p className="text-2xl font-bold text-foreground">{listings.length}</p>
+                <CardContent className="grid gap-2.5">
+                  <div className="rounded-lg border border-border bg-gradient-to-br from-blue-50/50 to-muted/40 p-3.5">
+                    <p className="text-xs font-medium text-muted-foreground">Total Listings</p>
+                    <p className="text-2xl font-bold text-foreground mt-1">{listings.length}</p>
                   </div>
-                  <div className="rounded-lg border border-border bg-muted/40 p-3">
-                    <p className="text-xs text-muted-foreground">Active locations</p>
-                    <p className="text-2xl font-bold text-foreground">{new Set(listings.map((l) => l.locationName)).size}</p>
+                  <div className="rounded-lg border border-border bg-gradient-to-br from-green-50/50 to-muted/40 p-3.5">
+                    <p className="text-xs font-medium text-muted-foreground">Active Locations</p>
+                    <p className="text-2xl font-bold text-foreground mt-1">{new Set(listings.map((l) => l.locationName)).size}</p>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="card-shadow bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Upload className="h-4 w-4 text-primary" />
-                    List your materials
+              <Card className="card-shadow bg-gradient-to-br from-primary/10 via-accent/5 to-muted border-primary/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                    <Upload className="h-5 w-5 text-primary" />
+                    Sell Your Materials
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Have surplus construction materials? Share them with local builders and earn money.
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Got surplus construction materials? List them and connect with local builders.
                   </p>
-                  <Button asChild className="w-full">
+                  <Button asChild className="w-full shadow-sm" size="lg">
                     <Link to="/materials/list">
                       <Upload className="mr-2 h-4 w-4" />
-                      Start selling
+                      Start Listing
                     </Link>
                   </Button>
                 </CardContent>
               </Card>
             </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             {listings.map((listing) => (
-              <Card key={listing.id} className="card-shadow">
-                <CardHeader className="space-y-2">
-                    <div className="overflow-hidden rounded-2xl border border-border bg-muted/40">
+              <Card key={listing.id} className="card-shadow hover:card-shadow-hover transition-all duration-200 border-border/70">
+                <CardHeader className="space-y-3 pb-4">
+                    <div className="overflow-hidden rounded-xl border border-border bg-muted/40">
                     <img
                       src={listing.imageUrl}
                       alt={listing.name}
-                        className="block h-52 w-full object-cover"
+                        className="block h-56 w-full object-cover transition-transform duration-300 hover:scale-105"
                       loading="lazy"
                     />
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle className="text-lg">{listing.name}</CardTitle>
-                    <Badge variant="outline">
-                      {listing.distance.toFixed(1)} mi away
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <CardTitle className="text-lg font-bold leading-tight">{listing.name}</CardTitle>
+                    <Badge variant="outline" className="flex-shrink-0">
+                      📍 {listing.distance.toFixed(1)} mi
                     </Badge>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary">
+                    <Badge variant="secondary" className="px-3 py-1">
                       {materialCategoryLabels[listing.category]}
                     </Badge>
-                    <Badge variant="secondary">
+                    <Badge variant="secondary" className="px-3 py-1">
                       {materialConditionLabels[listing.condition]}
                     </Badge>
                     {listing.isFree ? (
-                      <Badge>Free</Badge>
+                      <Badge className="bg-green-600 hover:bg-green-700 px-3 py-1">🎁 Free</Badge>
                     ) : (
-                      <Badge variant="outline" className="gap-2">
-                        <CircleDollarSign className="h-3 w-3" />
-                        <span className="text-base font-semibold">NPR</span>
-                        <span className="text-base font-semibold">{listing.price}</span>
+                      <Badge variant="outline" className="gap-1.5 px-3 py-1 border-primary/30">
+                        <CircleDollarSign className="h-3.5 w-3.5" />
+                        <span className="text-sm font-bold">NPR {listing.price}</span>
                       </Badge>
                     )}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    {listing.locationName}
+                <CardContent className="space-y-4 pt-0">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 rounded-lg p-2.5">
+                    <MapPin className="h-4 w-4 flex-shrink-0" />
+                    <span className="font-medium">{listing.locationName}</span>
                   </div>
                   {listing.notes && (
-                    <p className="text-sm text-muted-foreground">{listing.notes}</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{listing.notes}</p>
                   )}
-                  <Button className="w-full" onClick={() => handleOpenDialog(listing)}>
-                    Purchase
+                  <Button className="w-full shadow-sm" size="lg" onClick={() => handleOpenDialog(listing)}>
+                    View & Purchase
                   </Button>
                 </CardContent>
               </Card>
             ))}
 
             {listings.length === 0 && (
-              <Card>
-                <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                  No listings match your radius. Try widening the search.
+              <Card className="card-shadow border-dashed">
+                <CardContent className="py-16 text-center">
+                  <Package className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-base font-medium text-foreground mb-2">No materials found</p>
+                  <p className="text-sm text-muted-foreground">Try increasing your search radius or changing the category filter.</p>
                 </CardContent>
               </Card>
             )}
@@ -583,34 +584,36 @@ const MaterialsFind = () => {
       <Footer />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Coordinate pickup</DialogTitle>
-            <DialogDescription>
-              Reach out to confirm availability and pickup time.
+            <DialogTitle className="text-xl font-bold">Purchase Material</DialogTitle>
+            <DialogDescription className="text-sm">
+              Coordinate pickup details and payment with the seller below.
             </DialogDescription>
           </DialogHeader>
           {selected && (
-            <div className="space-y-4">
-              <div className="overflow-hidden rounded-lg border border-border bg-muted/40 p-3">
+            <div className="space-y-5">
+              <div className="overflow-hidden rounded-xl border border-border bg-muted/40 shadow-sm">
                 <img
                   src={selected.imageUrl}
                   alt={selected.name}
-                  className="block w-full max-h-64 object-contain"
+                  className="block w-full max-h-72 object-contain py-4"
                   loading="lazy"
                 />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Item</p>
-                <p className="font-semibold text-foreground">{selected.name}</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Item</p>
+                  <p className="font-semibold text-foreground text-base">{selected.name}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Contact</p>
+                  <p className="font-semibold text-foreground text-base">{selected.contactName}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Contact</p>
-                <p className="font-semibold text-foreground">{selected.contactName}</p>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                {selected.contactPhone}
+              <div className="flex items-center gap-2 text-sm bg-muted/40 rounded-lg p-3">
+                <Phone className="h-4 w-4 text-primary flex-shrink-0" />
+                <span className="font-medium">{selected.contactPhone}</span>
               </div>
               
               {/* Item History Timeline */}
@@ -689,22 +692,23 @@ const MaterialsFind = () => {
                 </div>
               )}
               
-              <div className="border-t border-border pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-semibold text-foreground">Pricing</label>
-                  <span className="text-lg font-bold text-foreground">NPR {selected.price}</span>
+              <div className="border-t border-border pt-5\">
+                <div className="flex items-center justify-between mb-4\">
+                  <label className="text-sm font-semibold text-foreground\">Pricing</label>
+                  <span className="text-2xl font-bold text-primary\">NPR {selected.price}</span>
                 </div>
                 
                 {!showOfferMode ? (
-                  <div className="grid gap-2">
+                  <div className="grid gap-3">
                     <Button 
                       variant="default" 
-                      className="w-full"
+                      className="w-full shadow-sm"
+                      size="lg"
                       onClick={() => setShowOfferMode(true)}
                     >
-                      Make an Offer
+                      💰 Make an Offer
                     </Button>
-                    <p className="text-xs text-muted-foreground text-center">Or negotiate the price</p>
+                    <p className="text-xs text-muted-foreground text-center">Or proceed with listed price</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -790,74 +794,76 @@ const MaterialsFind = () => {
                 )}
               </div>
 
-              <div className="border-t border-border pt-4">
-                <label className="text-sm text-muted-foreground">Pickup location</label>
+              <div className="border-t border-border pt-5">
+                <label className="text-sm font-semibold text-foreground block mb-3">Pickup Location</label>
                 <Select value={selectedPickupLocation} onValueChange={setSelectedPickupLocation}>
-                  <SelectTrigger className="mt-2">
+                  <SelectTrigger className="h-11">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {kathmandu_locations.map((loc) => (
                       <SelectItem key={loc.label} value={loc.label}>
-                        {loc.label}
+                        📍 {loc.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <label className="text-sm text-muted-foreground">Payment method</label>
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-foreground block">Payment Method</label>
                 <Select value={paymentMethod} onValueChange={(val) => setPaymentMethod(val as "cod" | "advance")}>
-                  <SelectTrigger className="mt-2">
+                  <SelectTrigger className="h-11">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cod">Cash on Delivery (COD)</SelectItem>
-                    <SelectItem value="advance">Advance Payment</SelectItem>
+                    <SelectItem value="cod">💵 Cash on Delivery (COD)</SelectItem>
+                    <SelectItem value="advance">💳 Advance Payment</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {paymentMethod === "advance" && (
-                <div className="border-t border-border pt-4">
-                  <p className="text-sm font-semibold text-foreground mb-3">Choose payment gateway</p>
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start" onClick={() => handlePaymentGateway("khalti")}>
-                      <span className="text-base font-bold text-purple-600 mr-2">₭</span>
-                      Pay with Khalti
+                <div className="border-t border-border pt-5 space-y-4">
+                  <p className="text-sm font-semibold text-foreground">Choose Payment Gateway</p>
+                  <div className="space-y-2.5">
+                    <Button variant="outline" className="w-full justify-start h-12 hover:border-purple-400" onClick={() => handlePaymentGateway("khalti")}>
+                      <span className="text-lg font-bold text-purple-600 mr-3">₭</span>
+                      <span className="font-medium">Pay with Khalti</span>
                     </Button>
-                    <Button variant="outline" className="w-full justify-start" onClick={() => handlePaymentGateway("esewa")}>
-                      <span className="text-base font-bold text-green-600 mr-2">e</span>
-                      Pay with eSewa
+                    <Button variant="outline" className="w-full justify-start h-12 hover:border-green-400" onClick={() => handlePaymentGateway("esewa")}>
+                      <span className="text-lg font-bold text-green-600 mr-3">e</span>
+                      <span className="font-medium">Pay with eSewa</span>
                     </Button>
-                    <Button variant="outline" className="w-full justify-start" onClick={() => handlePaymentGateway("bank")}>
-                      <span className="text-base font-bold text-blue-600 mr-2">🏦</span>
-                      Bank Transfer
+                    <Button variant="outline" className="w-full justify-start h-12 hover:border-blue-400" onClick={() => handlePaymentGateway("bank")}>
+                      <span className="text-lg mr-3">🏦</span>
+                      <span className="font-medium">Bank Transfer</span>
                     </Button>
                   </div>
-                  <div className="mt-3 p-3 bg-muted/40 rounded-lg border border-border">
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-semibold">Account:</span> Nepal Builder's Bank, Branch: Thamel
+                  <div className="mt-4 p-4 bg-muted/60 rounded-lg border border-border">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <span className="font-semibold text-foreground">Bank:</span> Nepal Builder's Bank, Thamel Branch
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-semibold">Account No:</span> 123456789
+                    <p className="text-xs text-muted-foreground mt-1">
+                      <span className="font-semibold text-foreground">Account:</span> 123456789
                     </p>
                   </div>
                 </div>
               )}
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             {selected && (
-              <Button variant="outline" asChild>
+              <Button variant="outline" asChild size="lg">
                 <a href={`tel:${selected.contactPhone.replace(/\s+/g, "")}`}>
                   <Phone className="mr-2 h-4 w-4" />
-                  Call
+                  Call Seller
                 </a>
               </Button>
             )}
-            <Button onClick={handlePurchase}>Purchase</Button>
+            <Button onClick={handlePurchase} size="lg" className="shadow-sm">
+              ✓ Confirm Purchase
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

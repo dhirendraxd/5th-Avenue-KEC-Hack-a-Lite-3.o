@@ -162,40 +162,42 @@ const MaterialsList = () => {
     <div className="min-h-screen bg-background relative">
       <BackgroundIllustrations variant="marketplace" />
       <Navbar />
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 relative materials-shell">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 relative materials-shell">
         <div className="materials-ambient" aria-hidden="true" />
         <div className="relative z-10">
           <PageHeader
-            title="List It"
-            description="Share unused construction materials with nearby builders."
+            title="Builder's Bazaar - List Materials"
+            description="Share surplus construction materials with nearby builders. List for free in minutes."
             actions={
-              <Button asChild variant="outline">
-                <Link to="/materials/find">Find materials</Link>
+              <Button asChild variant="outline" size="default" size="default">
+                <Link to="/materials/find">🔍 Find Materials</Link>
               </Button>
             }
           />
 
-          <Card className="max-w-3xl">
-          <CardHeader>
-            <CardTitle>Material details</CardTitle>
+          <Card className="max-w-3xl mx-auto card-shadow border-border/70">
+          <CardHeader className="pb-5">
+            <CardTitle className="text-xl font-bold">Material Details</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">Fill in the information below to list your material</p>
           </CardHeader>
           <CardContent className="relative">
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-              <form className="order-2 grid gap-5 lg:order-1" onSubmit={handleSubmit}>
-              <div className="grid gap-2">
-                <label className="text-sm font-medium">Item Name</label>
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
+              <form className="order-2 grid gap-6 lg:order-1" onSubmit={handleSubmit}>
+              <div className="grid gap-2.5.5">
+                <label className="text-sm font-semibold">Item Name *</label>
                 <Input
-                  placeholder="Ex: Cement bags, TMT rods"
+                  placeholder="e.g., TMT Steel Rods, Cement Bags, Plywood Sheets"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
+                  className="h-11"
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Category</label>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="grid gap-2.5">
+                  <label className="text-sm font-semibold">Category *</label>
                   <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -206,10 +208,10 @@ const MaterialsList = () => {
                   </Select>
                 </div>
 
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Condition</label>
+                <div className="grid gap-2.5">
+                  <label className="text-sm font-semibold">Condition *</label>
                   <Select value={condition} onValueChange={setCondition}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11">
                       <SelectValue placeholder="Select condition" />
                     </SelectTrigger>
                     <SelectContent>
@@ -221,53 +223,58 @@ const MaterialsList = () => {
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Price</label>
+              <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+                <div className="grid gap-2.5">
+                  <label className="text-sm font-semibold">Price (NPR) *</label>
                   <Input
                     type="number"
                     min="0"
-                    placeholder={isFree ? "Free" : "Enter price"}
+                    placeholder={isFree ? "Item is marked as free" : "Enter price in NPR"}
                     value={isFree ? "" : price}
                     onChange={(event) => setPrice(event.target.value)}
                     disabled={isFree}
+                    className="h-11"
                   />
                 </div>
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex items-center gap-2.5 text-sm font-medium pb-2.5">
                   <Checkbox
                     checked={isFree}
                     onCheckedChange={(value) => setIsFree(Boolean(value))}
                   />
-                  Free
+                  Mark as Free
                 </label>
               </div>
 
-              <div className="grid gap-2">
-                <label className="text-sm font-medium">Location</label>
-                <div className="flex flex-col gap-2 sm:flex-row">
+              <div className="grid gap-2.5">
+                <label className="text-sm font-semibold">Location *</label>
+                <div className="flex flex-col gap-2.5 sm:flex-row">
                   <Input
-                    placeholder="Neighborhood or GPS location"
+                    placeholder="Enter neighborhood or use GPS"
                     value={location}
                     onChange={(event) => setLocation(event.target.value)}
+                    className="h-11"
                   />
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handleUseLocation}
                     disabled={isLocating}
+                    className="h-11 flex-shrink-0"
                   >
-                    {isLocating ? "Locating..." : "Use current location"}
+                    {isLocating ? "Getting location..." : "📍 Use GPS"}
                   </Button>
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <Button type="submit">Publish listing</Button>
+              <div className="flex justify-end pt-4">
+                <Button type="submit" size="lg" className="px-8 shadow-sm">
+                  🚀 Publish Listing
+                </Button>
               </div>
               </form>
 
-              <div className="order-1 space-y-3 lg:order-2">
-                <div className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-4">
+              <div className="order-1 space-y-4 lg:order-2">
+                <div className="rounded-xl border-2 border-dashed border-border bg-gradient-to-br from-muted/30 to-muted/10 p-5 hover:border-primary/40 transition-colors">
                   <label className="cursor-pointer">
                     <input
                       type="file"
@@ -276,29 +283,33 @@ const MaterialsList = () => {
                       onChange={handlePhotoUpload}
                       className="hidden"
                     />
-                    <div className="flex flex-col items-center justify-center gap-2 py-6">
-                      <Camera className="h-8 w-8 text-muted-foreground" />
+                    <div className="flex flex-col items-center justify-center gap-3 py-7">
+                      <div className="p-3 rounded-full bg-primary/10">
+                        <Camera className="h-7 w-7 text-primary" />
+                      </div>
                       <div className="text-center">
-                        <p className="font-medium text-foreground">Add photos</p>
-                        <p className="text-xs text-muted-foreground">Click to upload ({uploadedPhotos.length}/4)</p>
+                        <p className="font-semibold text-foreground text-base">Upload Photos</p>
+                        <p className="text-xs text-muted-foreground mt-1">Click to add images ({uploadedPhotos.length}/4)</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Max 4 photos</p>
                       </div>
                     </div>
                   </label>
                 </div>
 
                 {uploadedPhotos.length > 0 && (
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     {uploadedPhotos.map((photo, idx) => (
-                      <div key={idx} className="relative overflow-hidden rounded-lg border border-border bg-muted/40">
+                      <div key={idx} className="relative overflow-hidden rounded-lg border border-border bg-muted/40 group">
                         <img
                           src={photo}
                           alt={`Uploaded photo ${idx + 1}`}
-                          className="block max-h-28 w-full object-cover"
+                          className="block h-32 w-full object-cover"
                         />
                         <button
                           type="button"
                           onClick={() => removePhoto(idx)}
-                          className="absolute right-1 top-1 rounded bg-red-500/80 p-1 hover:bg-red-600"
+                          className="absolute right-2 top-2 rounded-md bg-destructive/90 p-1.5 hover:bg-destructive transition-colors shadow-sm opacity-0 group-hover:opacity-100"
+                          aria-label="Remove photo"
                         >
                           <X className="h-4 w-4 text-white" />
                         </button>
@@ -308,39 +319,42 @@ const MaterialsList = () => {
                 )}
 
                 {uploadedPhotos.length === 0 && (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                    <div className="overflow-hidden rounded-lg border border-border bg-muted/40 p-2 shadow-sm fade-up">
+                  <div className="space-y-2.5">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Example Materials</p>
+                    <div className="grid gap-3 grid-cols-2">
+                    <div className="overflow-hidden rounded-lg border border-border bg-muted/40 p-2 shadow-sm hover:shadow-md transition-shadow">
                       <img
                         src={materialImages.cement}
                         alt="Cement bags"
-                        className="block max-h-28 w-full object-contain"
+                        className="block h-24 w-full object-contain"
                         loading="lazy"
                       />
                     </div>
-                    <div className="overflow-hidden rounded-lg border border-border bg-muted/40 shadow-sm fade-up">
+                    <div className="overflow-hidden rounded-lg border border-border bg-muted/40 p-2 shadow-sm hover:shadow-md transition-shadow">
                       <img
                         src={materialImages.rod}
                         alt="TMT steel rods"
-                        className="block max-h-28 w-full object-contain"
+                        className="block h-24 w-full object-contain"
                         loading="lazy"
                       />
                     </div>
-                    <div className="overflow-hidden rounded-lg border border-border bg-muted/40 shadow-sm fade-up">
+                    <div className="overflow-hidden rounded-lg border border-border bg-muted/40 p-2 shadow-sm hover:shadow-md transition-shadow">
                       <img
                         src={materialImages.plywood}
                         alt="Plywood sheets"
-                        className="block max-h-28 w-full object-contain"
+                        className="block h-24 w-full object-contain"
                         loading="lazy"
                       />
                     </div>
-                    <div className="overflow-hidden rounded-lg border border-border bg-muted/40 shadow-sm fade-up">
+                    <div className="overflow-hidden rounded-lg border border-border bg-muted/40 p-2 shadow-sm hover:shadow-md transition-shadow">
                       <img
                         src={materialImages.redOxide}
                         alt="Red oxide floor coat"
-                        className="block max-h-28 w-full object-contain"
+                        className="block h-24 w-full object-contain"
                         loading="lazy"
                       />
                     </div>
+                  </div>
                   </div>
                 )}
               </div>
