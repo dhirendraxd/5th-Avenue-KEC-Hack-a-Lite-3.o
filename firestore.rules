@@ -6,6 +6,14 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function rentalDoc(rentalId) {
+      return get(/databases/$(database)/documents/rentals/$(rentalId));
+    }
+
     match /equipment/{equipmentId} {
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
@@ -13,13 +21,38 @@ service cloud.firestore {
     }
 
     match /businessProfiles/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      allow read, write: if isSelf(userId);
     }
 
     match /rentals/{rentalId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.renterId == request.auth.uid;
       allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || resource.data.renterId == request.auth.uid);
+    }
+
+    match /materials/{materialId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.sellerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.sellerId == request.auth.uid;
+    }
+
+    match /materialRequests/{requestId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.sellerId == request.auth.uid;
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && resource.data.recipientId == request.auth.uid;
+      allow create: if isSignedIn()
+                    && request.resource.data.type == "rental_request"
+                    && request.resource.data.read == false
+                    && request.resource.data.recipientId is string
+                    && request.resource.data.data.rentalId is string
+                    && exists(/databases/$(database)/documents/rentals/$(request.resource.data.data.rentalId))
+                    && rentalDoc(request.resource.data.data.rentalId).data.ownerId == request.resource.data.recipientId
+                    && rentalDoc(request.resource.data.data.rentalId).data.renterId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.recipientId == request.auth.uid;
     }
 
     match /{document=**} {

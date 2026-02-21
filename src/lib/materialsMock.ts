@@ -1,7 +1,13 @@
-import cementImg from "@/assets/cement.jpg";
-import rodImg from "@/assets/rod.jpg";
-import plyImg from "@/assets/ply.jpg";
-import redOxideImg from "@/assets/585fceae9563cc39701441b724a3b88a.jpg";
+const placeholderImage = (label: string, from: string, to: string) =>
+  `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 500'>
+      <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='${from}'/><stop offset='100%' stop-color='${to}'/></linearGradient></defs>
+      <rect width='800' height='500' fill='url(#g)'/>
+      <circle cx='140' cy='110' r='86' fill='white' fill-opacity='.08'/>
+      <circle cx='670' cy='390' r='120' fill='white' fill-opacity='.12'/>
+      <text x='400' y='270' text-anchor='middle' fill='white' fill-opacity='.9' font-family='Arial' font-size='42' font-weight='700'>${label}</text>
+    </svg>`,
+  )}`;
 
 export type MaterialCategory = "wood" | "metal" | "concrete";
 
@@ -59,10 +65,10 @@ export const pickRandomCondition = (): MaterialCondition =>
   conditionPool[Math.floor(Math.random() * conditionPool.length)];
 
 export const materialImages = {
-  cement: cementImg,
-  rod: rodImg,
-  plywood: plyImg,
-  redOxide: redOxideImg,
+  cement: placeholderImage("Cement", "#6b7280", "#334155"),
+  rod: placeholderImage("TMT Rods", "#64748b", "#1f2937"),
+  plywood: placeholderImage("Plywood", "#a16207", "#78350f"),
+  redOxide: placeholderImage("Floor Paint", "#991b1b", "#7f1d1d"),
 } as const;
 
 const baseMaterialListings: Array<Omit<MaterialListing, "condition">> = [

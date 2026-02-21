@@ -331,6 +331,26 @@ const sampleReviews: Review[] = [
   },
 ];
 
+const equipmentImagePlaceholder = (label: string, from: string, to: string) =>
+  `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 640'>
+      <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='${from}'/><stop offset='100%' stop-color='${to}'/></linearGradient></defs>
+      <rect width='1024' height='640' fill='url(#g)'/>
+      <circle cx='210' cy='160' r='120' fill='white' fill-opacity='.08'/>
+      <circle cx='860' cy='500' r='170' fill='white' fill-opacity='.12'/>
+      <text x='512' y='350' text-anchor='middle' fill='white' fill-opacity='.9' font-family='Arial' font-size='52' font-weight='700'>${label}</text>
+    </svg>`,
+  )}`;
+
+const equipmentImages = {
+  excavator: equipmentImagePlaceholder("Excavator", "#1f2937", "#334155"),
+  forklift: equipmentImagePlaceholder("Forklift", "#0f766e", "#155e75"),
+  generator: equipmentImagePlaceholder("Generator", "#374151", "#1f2937"),
+  event: equipmentImagePlaceholder("Event Package", "#4338ca", "#1d4ed8"),
+  cnc: equipmentImagePlaceholder("CNC Machine", "#111827", "#4b5563"),
+  washer: equipmentImagePlaceholder("Pressure Washer", "#0c4a6e", "#0369a1"),
+} as const;
+
 export const mockEquipment: Equipment[] = [
   {
     id: "e1",
@@ -338,7 +358,7 @@ export const mockEquipment: Equipment[] = [
     description:
       "Heavy-duty hydraulic excavator perfect for earthmoving, trenching, and demolition projects. Well-maintained with low hours.",
     category: "construction",
-    images: ["/equipment-excavator.jpg"],
+    images: [equipmentImages.excavator],
     pricePerDay: 850,
     securityDeposit: 5000,
     serviceFeePercent: 10,
@@ -368,7 +388,7 @@ export const mockEquipment: Equipment[] = [
     description:
       "Reliable 5,000 lb capacity forklift ideal for warehouse and loading dock operations. Excellent fuel efficiency.",
     category: "logistics",
-    images: ["/equipment-forklift.jpg"],
+    images: [equipmentImages.forklift],
     pricePerDay: 275,
     securityDeposit: 2000,
     serviceFeePercent: 10,
@@ -398,7 +418,7 @@ export const mockEquipment: Equipment[] = [
     description:
       "Commercial-grade portable generator for construction sites, events, and emergency backup. Ultra-quiet operation.",
     category: "events",
-    images: ["/equipment-generator.jpg"],
+    images: [equipmentImages.generator],
     pricePerDay: 425,
     securityDeposit: 3000,
     serviceFeePercent: 10,
@@ -433,7 +453,7 @@ export const mockEquipment: Equipment[] = [
     description:
       "Complete lighting and sound system for corporate events, conferences, and productions. Includes setup guide.",
     category: "events",
-    images: ["/equipment-event.jpg"],
+    images: [equipmentImages.event],
     pricePerDay: 650,
     securityDeposit: 4000,
     serviceFeePercent: 10,
@@ -463,7 +483,7 @@ export const mockEquipment: Equipment[] = [
     description:
       "Precision vertical machining center for prototyping and small batch production. Includes tool library.",
     category: "manufacturing",
-    images: ["/equipment-cnc.jpg"],
+    images: [equipmentImages.cnc],
     pricePerDay: 1200,
     securityDeposit: 10000,
     serviceFeePercent: 10,
@@ -497,7 +517,7 @@ export const mockEquipment: Equipment[] = [
     description:
       "Industrial-grade hot water pressure washer for deep cleaning, surface preparation, and maintenance.",
     category: "cleaning",
-    images: ["/equipment-pressure-washer.jpg"],
+    images: [equipmentImages.washer],
     pricePerDay: 185,
     securityDeposit: 800,
     serviceFeePercent: 10,
