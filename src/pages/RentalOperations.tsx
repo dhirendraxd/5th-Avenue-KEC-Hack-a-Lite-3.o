@@ -210,7 +210,7 @@ const RentalOperations = () => {
     }
     toast({
       title: "Rental Completed",
-      description: "Thank you for using 5th Avenue. Please leave a review.",
+      description: "Thank you for using Upayog. Please leave a review.",
     });
   };
 
@@ -755,59 +755,117 @@ const RentalOperations = () => {
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>Pay for Extension</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl">Pay for Extension</DialogTitle>
+            <DialogDescription className="text-base">
               Complete your payment to extend the rental period.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            <div className="rounded-lg border border-border/60 p-3">
-              <div className="space-y-1 text-sm">
-                <p className="font-semibold text-foreground">Extension Details</p>
-                <p className="text-muted-foreground">
-                  Additional {extensionRequest?.additionalDays} days
-                </p>
-                <p className="text-muted-foreground">
-                  New end date: {extensionRequest?.newEndDate && format(extensionRequest.newEndDate, "MMM d, yyyy")}
-                </p>
-                <p className="text-lg font-bold text-foreground mt-2">
-                  Amount: NPR {extensionRequest?.additionalCost.toLocaleString()}
-                </p>
+          <div className="space-y-6 py-4">
+            <div className="rounded-lg border border-border/60 bg-muted/50 p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                  <p className="text-lg font-semibold text-foreground">Extension Details</p>
+                </div>
+                
+                {/* Extension Period */}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Additional Period</span>
+                  <span className="font-medium">{extensionRequest?.additionalDays} {extensionRequest?.additionalDays === 1 ? 'day' : 'days'}</span>
+                </div>
+                
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">New End Date</span>
+                  <span className="font-medium">{extensionRequest?.newEndDate && format(extensionRequest.newEndDate, "MMM d, yyyy")}</span>
+                </div>
+                
+                {/* Base Extension Cost */}
+                {extensionRequest && rental && (
+                  <>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        Equipment Rate ({extensionRequest.additionalDays} × NPR {rental.equipment.pricePerDay.toLocaleString()})
+                      </span>
+                      <span className="font-medium">
+                        NPR {(extensionRequest.additionalDays * rental.equipment.pricePerDay).toLocaleString()}
+                      </span>
+                    </div>
+                    
+                    {/* Operator Fee for Extension (if applicable) */}
+                    {rental.operatorRequested && rental.equipment.operatorPricePerDay && rental.equipment.operatorPricePerDay > 0 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Operator Service ({extensionRequest.additionalDays} × NPR {rental.equipment.operatorPricePerDay.toLocaleString()})
+                        </span>
+                        <span className="font-medium">
+                          NPR {(extensionRequest.additionalDays * rental.equipment.operatorPricePerDay).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Service Fee for Extension */}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        Platform Service Fee ({rental.equipment.serviceFeePercent}%)
+                      </span>
+                      <span className="font-medium">
+                        NPR {(() => {
+                          const baseExtension = extensionRequest.additionalDays * rental.equipment.pricePerDay;
+                          const operatorExtension = rental.operatorRequested && rental.equipment.operatorPricePerDay 
+                            ? extensionRequest.additionalDays * rental.equipment.operatorPricePerDay 
+                            : 0;
+                          const subtotal = baseExtension + operatorExtension;
+                          const serviceFee = Math.round(subtotal * (rental.equipment.serviceFeePercent / 100));
+                          return serviceFee.toLocaleString();
+                        })()}
+                      </span>
+                    </div>
+                  </>
+                )}
+                
+                {/* Total Extension Cost */}
+                <div className="flex items-center justify-between pt-3 border-t-2 border-primary/30">
+                  <span className="text-base font-semibold text-foreground">Total Extension Cost</span>
+                  <span className="text-2xl font-bold text-primary">
+                    NPR {extensionRequest?.additionalCost.toLocaleString()}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Payment Method</label>
-                <div className="rounded-lg border border-border bg-muted/30 p-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
-                      <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-3.86-.95-7-5.14-7-9V8.3l7-3.11 7 3.11V11c0 3.86-3.14 8.05-7 9z"/>
-                      </svg>
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-foreground">Payment Method</label>
+                <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-white p-2 shadow-sm">
+                      <img 
+                        src="/esewa-seeklogo.png" 
+                        alt="eSewa" 
+                        className="h-full w-full object-contain"
+                      />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-foreground">eSewa</p>
-                      <p className="text-xs text-muted-foreground">Digital wallet payment</p>
+                      <p className="text-base font-semibold text-foreground">eSewa</p>
+                      <p className="text-sm text-muted-foreground">Digital wallet payment</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="extension-payment-id" className="text-sm font-medium">eSewa Payment ID</label>
+              <div className="space-y-3">
+                <label htmlFor="extension-payment-id" className="text-sm font-semibold text-foreground">eSewa Payment ID</label>
                 <Input
                   id="extension-payment-id"
                   placeholder="Enter your eSewa payment/transaction ID"
                   value={extensionPaymentId}
                   onChange={(e) => setExtensionPaymentId(e.target.value)}
                   disabled={isProcessingExtensionPayment}
-                  className="font-mono"
+                  className="font-mono text-base h-11"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Complete payment via eSewa and enter the transaction ID as proof.
                 </p>
               </div>

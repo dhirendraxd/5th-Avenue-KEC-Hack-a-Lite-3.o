@@ -17,7 +17,7 @@ interface AuthContextType {
   hasPermission: (permission: Permission) => boolean;
   isLoading: boolean;
   hasAcceptedTerms: boolean;
-  acceptTerms: () => Promise<void>;
+  acceptTerms: (signature: string) => Promise<void>;
 }
 
 type Permission =
@@ -158,8 +158,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return rolePermissions[user.role].includes(permission);
   };
 
-  const acceptTerms = async (): Promise<void> => {
+  const acceptTerms = async (signature: string): Promise<void> => {
+    const acceptanceData = {
+      accepted: true,
+      signature: signature,
+      timestamp: new Date().toISOString(),
+    };
     localStorage.setItem('gearshift_terms_accepted', 'true');
+    localStorage.setItem('gearshift_terms_signature', JSON.stringify(acceptanceData));
     setHasAcceptedTerms(true);
   };
 

@@ -84,7 +84,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <Package className="h-5 w-5 text-foreground/80" />
-            <span className="text-lg font-semibold text-foreground">5th Avenue</span>
+            <span className="text-lg font-semibold text-foreground">Upayog</span>
           </Link>
 
           {/* Desktop Navigation */}

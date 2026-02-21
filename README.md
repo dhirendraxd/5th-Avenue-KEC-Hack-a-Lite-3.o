@@ -1,4 +1,4 @@
-# 🏗️ 5th Avenue
+# 🏗️ Upayog
 
 > *Because your excavator deserves a side hustle too.*
 
@@ -13,7 +13,7 @@ A refreshingly simple B2B equipment rental marketplace that treats rental agreem
 
 ## 🎯 What's This All About?
 
-**5th Avenue** is an equipment rental platform that makes sharing heavy machinery as easy as ordering pizza—except you can't eat a concrete mixer (trust us, we checked). We're connecting equipment owners with businesses that need tools, scaffolding, and machinery for short-term projects.
+**Upayog** is an equipment rental platform that makes sharing heavy machinery as easy as ordering pizza—except you can't eat a concrete mixer (trust us, we checked). We're connecting equipment owners with businesses that need tools, scaffolding, and machinery for short-term projects.
 
 Think of it as Airbnb, but for things that weigh several tons and have absolutely zero aesthetic appeal.
 
@@ -237,8 +237,8 @@ rentals/
 
 ## 🤔 FAQs
 
-### Why "5th Avenue"?
-Because we wanted a name that sounds prestigious but is actually just a street. Equipment deserves nice addresses too.
+### Why "Upayog"?
+Because "Upayog" means "use" or "utilization" in Sanskrit/Nepali—perfectly fitting for a platform about utilizing idle equipment. Plus, it sounds way cooler than "Rent-A-Thing".
 
 ### Is this production-ready?
 It's hackathon-ready, which is like production-ready but with more energy drinks and fewer tests.
@@ -295,7 +295,7 @@ MIT License - Do whatever you want with this code. Build empires. Rent excavator
 
 Built with ❤️ and excessive attention to underline animations.
 
-**Team:** 5th Avenue  
+**Team:** Upayog  
 **Event:** KEC Hack-a-Lite 3.0  
 **Repo:** [github.com/dhirendraxd/5th-Avenue-KEC-Hack-a-Lite-3.o](https://github.com/dhirendraxd/5th-Avenue-KEC-Hack-a-Lite-3.o)
 

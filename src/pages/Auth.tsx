@@ -31,7 +31,7 @@ const Auth = () => {
       }
       toast({
         title: 'Signed in with Google',
-        description: 'Welcome to 5th Avenue.',
+        description: 'Welcome to Upayog.',
       });
       navigate('/dashboard');
     } catch (error) {
@@ -55,7 +55,7 @@ const Auth = () => {
       if (success) {
         toast({
           title: isCreating ? 'Account ready' : 'Signed in',
-          description: 'Welcome to 5th Avenue.',
+          description: 'Welcome to Upayog.',
         });
         navigate('/dashboard');
         return;
@@ -171,7 +171,7 @@ const Auth = () => {
           <div className="absolute inset-x-0 bottom-7 flex justify-center px-8">
             <div className="w-full max-w-[520px] rounded-2xl border border-border/60 bg-background/95 p-4 shadow-2xl backdrop-blur">
               <p className="text-sm leading-relaxed text-foreground">
-                Describe your task and 5th Avenue suggests the closest equipment match instantly.
+                Describe your task and Upayog suggests the closest equipment match instantly.
               </p>
               <div className="mt-3 flex items-center gap-2">
                 <Button size="icon" variant="outline" className="h-8 w-8 rounded-full">
@@ -191,7 +191,7 @@ const Auth = () => {
                   </Button>
                 </div>
               </div>
-              <p className="mt-3 text-center text-xs text-muted-foreground">Try 5th Avenue Assistant</p>
+              <p className="mt-3 text-center text-xs text-muted-foreground">Try Upayog Assistant</p>
             </div>
           </div>
         </div>

@@ -1,13 +1,13 @@
-# 5th Avenue - Equipment Rental Platform
+# Upayog - Equipment Rental Platform
 ## Comprehensive Website Description
 
 ---
 
 ## 📋 Executive Summary
 
-**5th Avenue** is a comprehensive B2B equipment rental marketplace that connects heavy machinery and construction equipment owners with businesses that need them for short-term projects. Built for KEC Hack-a-Lite 3.0, the platform addresses the inefficiency of expensive construction equipment sitting idle while simultaneously providing affordable access to machinery for businesses that can't justify purchasing equipment outright.
+**Upayog** is a comprehensive B2B equipment rental marketplace that connects heavy machinery and construction equipment owners with businesses that need them for short-term projects. Built for KEC Hack-a-Lite 3.0, the platform addresses the inefficiency of expensive construction equipment sitting idle while simultaneously providing affordable access to machinery for businesses that can't justify purchasing equipment outright.
 
-**Project Name:** 5th Avenue  
+**Project Name:** Upayog  
 **Repository:** https://github.com/dhirendraxd/5th-Avenue-KEC-Hack-a-Lite-3.o  
 **Event:** KEC Hack-a-Lite 3.0  
 **Technology Stack:** React 18 + TypeScript + Vite + Firebase + Tailwind CSS  
@@ -22,7 +22,7 @@
 - **Sustainability:** Excessive manufacturing and duplication of equipment when existing machinery could be shared efficiently
 
 ### The Solution
-5th Avenue creates a trusted marketplace platform that:
+Upayog creates a trusted marketplace platform that:
 - Enables equipment owners to monetize idle assets and offset depreciation costs
 - Provides renters with affordable, on-demand access to verified equipment
 - Reduces environmental impact through shared economy principles
@@ -371,7 +371,19 @@
 - **Mandatory Acceptance:** All users must accept comprehensive platform terms before listing or renting equipment
 - **First-Time Dashboard Gate:** Terms agreement dialog automatically appears on first dashboard visit after login
 - **Non-Dismissible Dialog:** Users cannot bypass the agreement - must accept all terms to continue
-- **Three-Part Acceptance:**
+- **Fully Responsive Design:**
+  - Mobile-optimized: 95% viewport width on phones, proper scaling on tablets and desktops
+  - Dynamic font sizes: Smaller text (text-xs/text-base) on mobile, larger (text-sm/text-lg) on desktop
+  - Flexible ScrollArea: Adapts height (40vh mobile → 50vh tablet → 500px desktop)
+  - Responsive spacing: Reduced padding and gaps on mobile for better content density
+  - Adaptive button text: Shortened "Accept & Continue" on mobile, full text on desktop
+  - Touch-friendly checkboxes and inputs with proper alignment on all screen sizes
+- **Digital Signature Requirement:**
+  - Users must enter their full name as a digital signature/consent
+  - Signature field is mandatory and must be filled before acceptance
+  - Legally binds users to the terms through electronic signature
+  - Signature stored with timestamp in localStorage for record-keeping
+- **Three-Part Checkbox Acceptance:**
   1. **Terms of Service:** Platform rules, obligations, payment terms, and account policies
   2. **Safety & Compliance Requirements:** Equipment standards, operator certifications, maintenance obligations
   3. **Liability & Insurance:** Damage responsibility, injury coverage, dispute resolution processes
@@ -386,8 +398,8 @@
   - Redirected to dashboard from equipment listing page
   - Blocked from submitting rental requests
   - Shown explanatory toast messages
-- **Persistent Storage:** Agreement acceptance stored in localStorage and tracked in AuthContext
-- **Logout Reset:** Terms acceptance cleared on logout, requiring re-acceptance on next login
+- **Persistent Storage:** Agreement acceptance, signature, and timestamp stored in localStorage and tracked in AuthContext
+- **Logout Reset:** Terms acceptance cleared on logout, requiring re-acceptance and new signature on next login
 
 #### Verification System
 - **Business Verification:** Verified checkmarks for confirmed businesses
@@ -899,7 +911,7 @@
 
 ## 📞 Contact & Support
 
-**Development Team:** 5th Avenue  
+**Development Team:** Upayog  
 **Event:** KEC Hack-a-Lite 3.0  
 **Repository:** https://github.com/dhirendraxd/5th-Avenue-KEC-Hack-a-Lite-3.o  
 **License:** MIT License  
@@ -914,7 +926,7 @@
 
 ## 📝 Summary
 
-5th Avenue is a comprehensive, production-ready equipment rental platform that successfully addresses real-world inefficiencies in construction equipment utilization. With its dual marketplace for equipment rentals and materials trading, transparent workflows, secure payment processing, and professional design, the platform provides significant value to both equipment owners and renters.
+Upayog is a comprehensive, production-ready equipment rental platform that successfully addresses real-world inefficiencies in construction equipment utilization. With its dual marketplace for equipment rentals and materials trading, transparent workflows, secure payment processing, and professional design, the platform provides significant value to both equipment owners and renters.
 
 The technical implementation demonstrates modern best practices with React 18, TypeScript, Firebase, and Tailwind CSS, resulting in a fast, accessible, and scalable application. The attention to user experience details—from subtle animations to comprehensive condition logging—creates a professional platform that inspires trust and encourages adoption.
 

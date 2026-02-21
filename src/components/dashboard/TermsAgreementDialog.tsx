@@ -10,12 +10,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShieldCheck, AlertTriangle } from "lucide-react";
+import { ShieldCheck, AlertTriangle, PenLine } from "lucide-react";
 
 interface TermsAgreementDialogProps {
   open: boolean;
-  onAccept: () => void;
+  onAccept: (signature: string) => void;
 }
 
 export default function TermsAgreementDialog({
@@ -25,45 +26,46 @@ export default function TermsAgreementDialog({
   const [hasReadTerms, setHasReadTerms] = useState(false);
   const [hasReadSafety, setHasReadSafety] = useState(false);
   const [hasReadLiability, setHasReadLiability] = useState(false);
+  const [signature, setSignature] = useState("");
 
-  const canAccept = hasReadTerms && hasReadSafety && hasReadLiability;
+  const canAccept = hasReadTerms && hasReadSafety && hasReadLiability && signature.trim().length > 0;
 
   const handleAccept = () => {
     if (canAccept) {
-      onAccept();
+      onAccept(signature);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-3xl max-h-[90vh] p-0" hideCloseButton>
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <ShieldCheck className="w-6 h-6 text-blue-600" />
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-3xl max-h-[95vh] sm:max-h-[90vh] p-0" hideCloseButton>
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
+              <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
-            <div>
-              <DialogTitle className="text-2xl">
+            <div className="min-w-0">
+              <DialogTitle className="text-lg sm:text-xl md:text-2xl leading-tight">
                 Platform Agreement & Safety Terms
               </DialogTitle>
-              <DialogDescription className="mt-1">
-                Please read and accept all terms before using 5th Avenue
+              <DialogDescription className="mt-1 text-xs sm:text-sm">
+                Please read and accept all terms before using Upayog
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6 py-4 max-h-[500px]">
-          <div className="space-y-6 pr-4">
+        <ScrollArea className="flex-1 px-4 sm:px-6 py-3 sm:py-4 max-h-[40vh] sm:max-h-[50vh] md:max-h-[500px]">
+          <div className="space-y-4 sm:space-y-6 pr-2 sm:pr-4">
             {/* Terms of Service */}
             <section>
-              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-blue-600" />
-                Terms of Service
+              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+                <span>Terms of Service</span>
               </h3>
               <div className="space-y-2 text-sm text-muted-foreground leading-relaxed">
                 <p>
-                  By using 5th Avenue, you agree to comply with all applicable
+                  By using Upayog, you agree to comply with all applicable
                   laws and regulations regarding equipment rental and materials
                   trading. You acknowledge that:
                 </p>
@@ -85,7 +87,7 @@ export default function TermsAgreementDialog({
                     Platform fees and service charges apply to all transactions
                   </li>
                   <li>
-                    5th Avenue reserves the right to suspend accounts violating
+                    Upayog reserves the right to suspend accounts violating
                     these terms
                   </li>
                 </ul>
@@ -94,9 +96,9 @@ export default function TermsAgreementDialog({
 
             {/* Safety & Compliance */}
             <section>
-              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
-                Safety & Compliance Requirements
+              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 flex-shrink-0" />
+                <span>Safety & Compliance Requirements</span>
               </h3>
               <div className="space-y-2 text-sm text-muted-foreground leading-relaxed">
                 <p className="font-medium text-foreground">
@@ -146,7 +148,7 @@ export default function TermsAgreementDialog({
 
             {/* Liability & Insurance */}
             <section>
-              <h3 className="text-lg font-semibold mb-3">
+              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">
                 Liability & Insurance
               </h3>
               <div className="space-y-2 text-sm text-muted-foreground leading-relaxed">
@@ -164,7 +166,7 @@ export default function TermsAgreementDialog({
                   maintain appropriate liability insurance coverage.
                 </p>
                 <p>
-                  <strong>Platform Limitation:</strong> 5th Avenue acts as a
+                  <strong>Platform Limitation:</strong> Upayog acts as a
                   marketplace facilitator only. We are not liable for equipment
                   condition, rental disputes, or incidents arising from equipment
                   use. All transactions are between owners and renters.
@@ -179,7 +181,7 @@ export default function TermsAgreementDialog({
 
             {/* Prohibited Activities */}
             <section>
-              <h3 className="text-lg font-semibold mb-3 text-red-600">
+              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-red-600">
                 Prohibited Activities & Violations
               </h3>
               <div className="space-y-2 text-sm text-muted-foreground leading-relaxed">
@@ -218,12 +220,12 @@ export default function TermsAgreementDialog({
 
             {/* Payment & Fees */}
             <section>
-              <h3 className="text-lg font-semibold mb-3">
+              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">
                 Payment Terms & Fees
               </h3>
               <div className="space-y-2 text-sm text-muted-foreground leading-relaxed">
                 <p>
-                  <strong>Service Fees:</strong> 5th Avenue charges 8-12%
+                  <strong>Service Fees:</strong> Upayog charges 8-12%
                   service fees on rental transactions. This fee covers payment
                   processing, platform maintenance, insurance protection, and
                   customer support.
@@ -249,7 +251,7 @@ export default function TermsAgreementDialog({
 
             {/* Data Privacy */}
             <section>
-              <h3 className="text-lg font-semibold mb-3">
+              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">
                 Privacy & Data Protection
               </h3>
               <div className="space-y-2 text-sm text-muted-foreground leading-relaxed">
@@ -269,64 +271,92 @@ export default function TermsAgreementDialog({
           </div>
         </ScrollArea>
 
-        <DialogFooter className="flex-col sm:flex-col gap-4 px-6 py-4 border-t bg-muted/30">
-          <div className="space-y-3 w-full">
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="terms"
-                checked={hasReadTerms}
-                onCheckedChange={(checked) =>
-                  setHasReadTerms(checked as boolean)
-                }
-              />
-              <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
-                I have read and agree to the <strong>Terms of Service</strong>{" "}
-                and understand my obligations as a platform user
+        <DialogFooter className="flex-col sm:flex-col gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 border-t bg-muted/30">
+          <div className="space-y-3 sm:space-y-4 w-full">
+            {/* Signature Field */}
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="signature" className="text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2">
+                <PenLine className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span>Digital Signature (Full Name) *</span>
               </Label>
+              <Input
+                id="signature"
+                type="text"
+                placeholder="Enter your full name as consent"
+                value={signature}
+                onChange={(e) => setSignature(e.target.value)}
+                className="font-medium text-sm sm:text-base"
+              />
+              <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">
+                By entering your name, you electronically sign and agree to be legally bound by these terms
+              </p>
             </div>
 
-            <div className="flex items-start gap-3">
+            {/* Agreement Checkboxes */}
+            <div className="space-y-2.5 sm:space-y-3 pt-2 border-t">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <Checkbox
+                  id="terms"
+                  checked={hasReadTerms}
+                  onCheckedChange={(checked) =>
+                    setHasReadTerms(checked as boolean)
+                  }
+                  className="mt-0.5"
+                />
+                <Label htmlFor="terms" className="text-xs sm:text-sm leading-relaxed cursor-pointer">
+                  I have read and agree to the <strong>Terms of Service</strong>{" "}
+                  and understand my obligations as a platform user
+                </Label>
+              </div>
+
+            <div className="flex items-start gap-2 sm:gap-3">
               <Checkbox
                 id="safety"
                 checked={hasReadSafety}
                 onCheckedChange={(checked) =>
                   setHasReadSafety(checked as boolean)
                 }
+                className="mt-0.5"
               />
-              <Label htmlFor="safety" className="text-sm leading-relaxed cursor-pointer">
+              <Label htmlFor="safety" className="text-xs sm:text-sm leading-relaxed cursor-pointer">
                 I acknowledge the <strong>Safety & Compliance Requirements</strong>{" "}
                 and will operate/list equipment responsibly and legally
               </Label>
             </div>
 
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="liability"
-                checked={hasReadLiability}
-                onCheckedChange={(checked) =>
-                  setHasReadLiability(checked as boolean)
-                }
-              />
-              <Label htmlFor="liability" className="text-sm leading-relaxed cursor-pointer">
-                I understand the <strong>Liability & Insurance</strong> terms
-                and accept responsibility for equipment damage and safety
-              </Label>
+              <div className="flex items-start gap-2 sm:gap-3">
+                <Checkbox
+                  id="liability"
+                  checked={hasReadLiability}
+                  onCheckedChange={(checked) =>
+                    setHasReadLiability(checked as boolean)
+                  }
+                  className="mt-0.5"
+                />
+                <Label htmlFor="liability" className="text-xs sm:text-sm leading-relaxed cursor-pointer">
+                  I understand the <strong>Liability & Insurance</strong> terms
+                  and accept responsibility for equipment damage and safety
+                </Label>
+              </div>
             </div>
           </div>
 
           <Button
             onClick={handleAccept}
             disabled={!canAccept}
-            className="w-full"
+            className="w-full text-sm sm:text-base"
             size="lg"
           >
-            <ShieldCheck className="w-4 h-4 mr-2" />
-            Accept Terms & Continue to Dashboard
+            <ShieldCheck className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span className="hidden sm:inline">Accept Terms & Continue to Dashboard</span>
+            <span className="sm:hidden">Accept & Continue</span>
           </Button>
 
           {!canAccept && (
-            <p className="text-xs text-muted-foreground text-center">
-              You must accept all terms to use the platform
+            <p className="text-[10px] sm:text-xs text-muted-foreground text-center leading-tight">
+              {signature.trim().length === 0
+                ? "Please enter your name and accept all terms to continue"
+                : "You must accept all terms to use the platform"}
             </p>
           )}
         </DialogFooter>

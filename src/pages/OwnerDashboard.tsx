@@ -926,66 +926,6 @@ const OwnerDashboard = () => {
           </Card>
         </div>
 
-        {/* Notifications - small list for owner */}
-        <div className="mb-8">
-            <Card>
-              <CardHeader className="pb-2 flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <Inbox className="h-4 w-4 text-primary" />
-                  Notifications
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={async () => {
-                      const unread = notifications.filter((n) => !n.read);
-                      if (unread.length === 0) {
-                        toast({ title: "No unread notifications", description: "You're all caught up." });
-                        return;
-                      }
-
-                      // Optimistic update
-                      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-
-                      try {
-                        await Promise.all(
-                          unread.map((n) => updateDocument("notifications", n.id, { read: true }))
-                        );
-                        toast({ title: "Marked read", description: `Marked ${unread.length} notifications as read.` });
-                      } catch (err) {
-                        console.error("Failed to mark notifications read:", err);
-                        toast({ title: "Action failed", description: "Could not mark all notifications as read.", variant: "destructive" });
-                        // Revert optimistic update on failure: refetching will arrive via subscription; as fallback, mark unread back
-                        setNotifications((prev) => prev.map((n) => ({ ...n, read: n.read || false })));
-                      }
-                    }}
-                  >
-                    Mark all read
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {notifications.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No notifications</p>
-                ) : (
-                  <div className="space-y-2">
-                    {notifications.slice(0, 6).map((n) => (
-                      <div key={n.id} className={`flex items-start justify-between gap-3 p-3 rounded-lg ${n.read ? 'bg-card/50' : 'bg-primary/5'}`}>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{n.title}</p>
-                          <p className="text-xs text-muted-foreground truncate">{n.message}</p>
-                          <p className="text-xs text-muted-foreground/60 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
-                        </div>
-                        {!n.read && <Badge variant="secondary">New</Badge>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-        </div>
-
         {/* Priority Alerts - Cleaner design with better grouping */}
         {(urgentRequests.length > 0 || extensionRequests.length > 0) && (
           <div className="mb-10 space-y-4">
@@ -1795,59 +1735,120 @@ const OwnerDashboard = () => {
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>Payment Gateway</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl">Payment Gateway</DialogTitle>
+            <DialogDescription className="text-base">
               Complete your payment to continue with {paymentDialog.type === "equipment" ? "equipment rental" : "material purchase"}.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            <div className="rounded-lg border border-border/60 p-3">
-              {paymentDialog.type === "equipment" && paymentDialog.rental && (
-                <div className="space-y-1 text-sm">
-                  <p className="font-semibold text-foreground">{paymentDialog.rental.equipment.name}</p>
-                  <p className="text-muted-foreground">Amount: NPR {paymentDialog.rental.totalPrice.toLocaleString()}</p>
+          <div className="space-y-6 py-4">
+            {/* Cost Breakdown */}
+            {paymentDialog.type === "equipment" && paymentDialog.rental && (
+              <div className="space-y-4">
+                <div className="rounded-lg border border-border/60 bg-muted/50 p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                      <p className="text-lg font-semibold text-foreground">{paymentDialog.rental.equipment.name}</p>
+                    </div>
+                    
+                    {/* Rental Duration */}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Rental Period</span>
+                      <span className="font-medium">{paymentDialog.rental.totalDays} {paymentDialog.rental.totalDays === 1 ? 'day' : 'days'}</span>
+                    </div>
+                    
+                    {/* Base Rental Cost */}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        Equipment Rate ({paymentDialog.rental.totalDays} × NPR {paymentDialog.rental.equipment.pricePerDay.toLocaleString()})
+                      </span>
+                      <span className="font-medium">NPR {paymentDialog.rental.rentalFee.toLocaleString()}</span>
+                    </div>
+                    
+                    {/* Operator Fee (if applicable) */}
+                    {paymentDialog.rental.operatorRequested && paymentDialog.rental.operatorFee && paymentDialog.rental.operatorFee > 0 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Operator Service ({paymentDialog.rental.totalDays} × NPR {paymentDialog.rental.equipment.operatorPricePerDay?.toLocaleString() || 0})
+                        </span>
+                        <span className="font-medium">NPR {paymentDialog.rental.operatorFee.toLocaleString()}</span>
+                      </div>
+                    )}
+                    
+                    {/* Service Fee */}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        Platform Service Fee ({paymentDialog.rental.equipment.serviceFeePercent}%)
+                      </span>
+                      <span className="font-medium">NPR {paymentDialog.rental.serviceFee.toLocaleString()}</span>
+                    </div>
+                    
+                    {/* Security Deposit */}
+                    {paymentDialog.rental.equipment.securityDeposit > 0 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Security Deposit <span className="text-xs">(refundable)</span>
+                        </span>
+                        <span className="font-medium">NPR {paymentDialog.rental.equipment.securityDeposit.toLocaleString()}</span>
+                      </div>
+                    )}
+                    
+                    {/* Total */}
+                    <div className="flex items-center justify-between pt-3 border-t-2 border-primary/30">
+                      <span className="text-base font-semibold text-foreground">Total Amount</span>
+                      <span className="text-2xl font-bold text-primary">NPR {paymentDialog.rental.totalPrice.toLocaleString()}</span>
+                    </div>
+                  </div>
                 </div>
-              )}
-              {paymentDialog.type === "material" && paymentDialog.materialRequest && (
-                <div className="space-y-1 text-sm">
-                  <p className="font-semibold text-foreground">{paymentDialog.materialRequest.materialName}</p>
-                  <p className="text-muted-foreground">Seller: {paymentDialog.materialRequest.sellerName}</p>
+              </div>
+            )}
+            
+            {paymentDialog.type === "material" && paymentDialog.materialRequest && (
+              <div className="rounded-lg border border-border/60 bg-muted/50 p-4">
+                <div className="space-y-2">
+                  <p className="text-lg font-semibold text-foreground">{paymentDialog.materialRequest.materialName}</p>
+                  <p className="text-sm text-muted-foreground">Seller: {paymentDialog.materialRequest.sellerName}</p>
+                  <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                    <span className="text-base font-semibold text-foreground">Total Amount</span>
+                    <span className="text-2xl font-bold text-primary">NPR {paymentDialog.materialRequest.totalPrice?.toLocaleString() || 0}</span>
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Payment Method</label>
-                <div className="rounded-lg border border-border bg-muted/30 p-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
-                      <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-3.86-.95-7-5.14-7-9V8.3l7-3.11 7 3.11V11c0 3.86-3.14 8.05-7 9z"/>
-                      </svg>
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-foreground">Payment Method</label>
+                <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-white p-2 shadow-sm">
+                      <img 
+                        src="/esewa-seeklogo.png" 
+                        alt="eSewa" 
+                        className="h-full w-full object-contain"
+                      />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-foreground">eSewa</p>
-                      <p className="text-xs text-muted-foreground">Digital wallet payment</p>
+                      <p className="text-base font-semibold text-foreground">eSewa</p>
+                      <p className="text-sm text-muted-foreground">Digital wallet payment</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="payment-id" className="text-sm font-medium">eSewa Payment ID</label>
+              <div className="space-y-3">
+                <label htmlFor="payment-id" className="text-sm font-semibold text-foreground">eSewa Payment ID</label>
                 <Input
                   id="payment-id"
                   placeholder="Enter your eSewa payment/transaction ID"
                   value={paymentId}
                   onChange={(e) => setPaymentId(e.target.value)}
                   disabled={isProcessingPayment}
-                  className="font-mono"
+                  className="font-mono text-base h-11"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Complete payment via eSewa and enter the transaction ID as proof.
                 </p>
               </div>
@@ -1886,10 +1887,10 @@ const OwnerDashboard = () => {
       {/* Terms Agreement Dialog */}
       <TermsAgreementDialog
         open={!hasAcceptedTerms}
-        onAccept={async () => {
-          await acceptTerms();
+        onAccept={async (signature: string) => {
+          await acceptTerms(signature);
           toast({
-            title: "Welcome to 5th Avenue!",
+            title: "Welcome to Upayog!",
             description: "You can now list equipment and rent from other users.",
           });
         }}
