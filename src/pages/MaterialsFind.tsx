@@ -292,6 +292,15 @@ const MaterialsFind = () => {
   const handlePublish = async (event: FormEvent) => {
     event.preventDefault();
 
+    if (!user?.id) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to publish a material listing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!name.trim() || !category || !condition || !listLocation.trim() || uploadedPhotos.length === 0) {
       toast({
         title: "Missing fields",
@@ -329,9 +338,9 @@ const MaterialsFind = () => {
         locationMapUrl: locationMapUrl.trim() || undefined,
         latitude: listCoordinates?.latitude ?? DEFAULT_COORDINATES.latitude,
         longitude: listCoordinates?.longitude ?? DEFAULT_COORDINATES.longitude,
-        contactName: user?.name || "Builder",
+        contactName: user.name || "Builder",
         contactPhone: "+977 9800000000",
-        sellerId: user?.id,
+        sellerId: user.id,
       });
 
       toast({
@@ -350,10 +359,13 @@ const MaterialsFind = () => {
       setUploadedPhotos([]);
       setListCoordinates(null);
       switchTab("browse");
-    } catch {
+    } catch (error) {
       toast({
         title: "Publish failed",
-        description: "Could not save listing. Please try again.",
+        description:
+          error instanceof Error && error.message
+            ? error.message
+            : "Could not save listing. Please try again.",
         variant: "destructive",
       });
     } finally {

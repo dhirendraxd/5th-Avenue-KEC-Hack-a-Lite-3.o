@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import BackgroundIllustrations from "@/components/layout/BackgroundIllustrations";
@@ -45,6 +45,10 @@ import RenterProfileCard from "@/components/dashboard/RenterProfileCard";
 import AvailabilityControls from "@/components/dashboard/AvailabilityControls";
 import ApproveWithConditionsDialog from "@/components/dashboard/ApproveWithConditionsDialog";
 import BusinessProfileSection from "@/components/dashboard/BusinessProfileSection";
+import EarningsChart from "@/components/finance/EarningsChart";
+import TransactionHistory from "@/components/finance/TransactionHistory";
+import PayoutSummary from "@/components/finance/PayoutSummary";
+import UsageAnalytics from "@/components/analytics/UsageAnalytics";
 import { useAuth } from "@/contexts/AuthContext";
 import { subscribeFirebaseEquipment } from "@/lib/firebase/equipment";
 import { subscribeFirebaseRentals, updateFirebaseRentalStatus } from "@/lib/firebase/rentals";
@@ -90,8 +94,10 @@ import {
   Pencil,
   ArrowUpRight,
   ArrowDownRight,
+  BarChart3,
+  Activity,
 } from "lucide-react";
-import { format, isToday, isTomorrow, differenceInDays } from "date-fns";
+import { format, isToday, isTomorrow, differenceInDays, startOfMonth, subMonths } from "date-fns";
 
 interface DashboardNotification {
   id: string;
@@ -254,6 +260,185 @@ const OwnerDashboard = () => {
   const totalEarnings = rentalEarnings + materialSalesValue;
   const materialInCount = myMaterials.length;
   const materialOutCount = completedMaterialRequests.length;
+
+  const getRentalRevenue = (rental: RentalRequest) => {
+    if (typeof rental.rentalFee === "number") return rental.rentalFee;
+    if (typeof rental.totalPrice === "number" && typeof rental.serviceFee === "number") {
+      return Math.max(0, rental.totalPrice - rental.serviceFee);
+    }
+    return typeof rental.totalPrice === "number" ? rental.totalPrice : 0;
+  };
+
+  const getRentalServiceFee = (rental: RentalRequest) =>
+    typeof rental.serviceFee === "number" ? rental.serviceFee : 0;
+
+  const realizedRentals = useMemo(
+    () => requests.filter((r) => r.status === "approved" || r.status === "active" || r.status === "completed"),
+    [requests],
+  );
+
+  const pendingFinanceRentals = useMemo(
+    () => requests.filter((r) => r.status === "requested" || r.status === "extension_requested"),
+    [requests],
+  );
+
+  const financeSummary = useMemo(() => {
+    const totalEarningsValue = realizedRentals.reduce((sum, rental) => sum + getRentalRevenue(rental), 0);
+    const thisMonthEarnings = realizedRentals
+      .filter((rental) => rental.startDate >= startOfMonth(new Date()))
+      .reduce((sum, rental) => sum + getRentalRevenue(rental), 0);
+    const pendingPayouts = pendingFinanceRentals.reduce((sum, rental) => sum + getRentalRevenue(rental), 0);
+    const averageRentalValue = realizedRentals.length
+      ? realizedRentals.reduce((sum, rental) => sum + (rental.totalPrice ?? getRentalRevenue(rental)), 0) /
+        realizedRentals.length
+      : 0;
+
+    return {
+      totalEarnings: totalEarningsValue,
+      thisMonthEarnings,
+      pendingPayouts,
+      averageRentalValue,
+    };
+  }, [realizedRentals, pendingFinanceRentals]);
+
+  const monthlyEarnings = useMemo(() => {
+    const months = Array.from({ length: 6 }, (_, index) => startOfMonth(subMonths(new Date(), 5 - index)));
+    return months.map((monthStart) => {
+      const monthRentals = realizedRentals.filter(
+        (rental) => format(rental.startDate, "yyyy-MM") === format(monthStart, "yyyy-MM"),
+      );
+      const revenue = monthRentals.reduce((sum, rental) => sum + (rental.totalPrice ?? getRentalRevenue(rental)), 0);
+      const fees = monthRentals.reduce((sum, rental) => sum + getRentalServiceFee(rental), 0);
+      const net = monthRentals.reduce((sum, rental) => sum + getRentalRevenue(rental), 0);
+
+      return { month: format(monthStart, "MMM"), revenue, payouts: net, fees, net };
+    });
+  }, [realizedRentals]);
+
+  const transactions = useMemo(() => {
+    const items: Array<{
+      id: string;
+      type: "rental_income" | "service_fee";
+      amount: number;
+      description: string;
+      date: Date;
+      status: "completed" | "processing" | "pending";
+      rentalId: string;
+      equipmentName?: string;
+    }> = [];
+
+    requests
+      .filter((rental) => rental.status !== "declined")
+      .forEach((rental) => {
+        const revenue = getRentalRevenue(rental);
+        const fees = getRentalServiceFee(rental);
+        const transactionStatus =
+          rental.status === "completed"
+            ? "completed"
+            : rental.status === "approved" || rental.status === "active"
+              ? "processing"
+              : "pending";
+
+        if (revenue > 0) {
+          items.push({
+            id: `${rental.id}-income`,
+            type: "rental_income",
+            amount: revenue,
+            description: `${rental.equipment.name} - ${rental.totalDays} day rental`,
+            date: rental.startDate,
+            status: transactionStatus,
+            rentalId: rental.id,
+            equipmentName: rental.equipment.name,
+          });
+        }
+
+        if (fees > 0) {
+          items.push({
+            id: `${rental.id}-fee`,
+            type: "service_fee",
+            amount: fees,
+            description: "Platform service fee",
+            date: rental.startDate,
+            status: transactionStatus,
+            rentalId: rental.id,
+          });
+        }
+      });
+
+    return items.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 30);
+  }, [requests]);
+
+  const equipmentAnalytics = useMemo(() => {
+    const rentalsByEquipment = requests.reduce((map, rental) => {
+      const key = rental.equipment.id;
+      const current = map.get(key) ?? [];
+      current.push(rental);
+      map.set(key, current);
+      return map;
+    }, new Map<string, RentalRequest[]>());
+
+    return myEquipment.map((item) => {
+      const itemRentals = rentalsByEquipment.get(item.id) ?? [];
+      const totalRentalsCount = itemRentals.length;
+      const totalRevenue = itemRentals.reduce((sum, rental) => sum + getRentalRevenue(rental), 0);
+      const daysRented = itemRentals.reduce((sum, rental) => sum + rental.totalDays, 0);
+      const daysIdle = Math.max(0, 30 - daysRented);
+      const utilizationRate = daysRented + daysIdle > 0 ? (daysRented / (daysRented + daysIdle)) * 100 : 0;
+      const averageRentalDuration = totalRentalsCount > 0 ? daysRented / totalRentalsCount : 0;
+      const lastRented = itemRentals.length
+        ? itemRentals.reduce(
+            (latest, rental) => (rental.endDate > latest ? rental.endDate : latest),
+            itemRentals[0].endDate,
+          )
+        : null;
+
+      return {
+        equipmentId: item.id,
+        equipmentName: item.name,
+        locationId: item.locationId || item.owner.id,
+        locationName: item.locationName || item.owner.location,
+        totalRentals: totalRentalsCount,
+        totalRevenue,
+        daysRented,
+        daysIdle,
+        utilizationRate,
+        averageRentalDuration,
+        lastRented,
+      };
+    });
+  }, [myEquipment, requests]);
+
+  const locationAnalytics = useMemo(() => {
+    const equipmentByLocation = myEquipment.reduce((map, item) => {
+      const key = item.locationId || item.owner.id;
+      const current = map.get(key) ?? [];
+      current.push(item);
+      map.set(key, current);
+      return map;
+    }, new Map<string, Equipment[]>());
+
+    return Array.from(equipmentByLocation.entries()).map(([locationId, items]) => {
+      const analyticsAtLocation = equipmentAnalytics.filter((entry) => entry.locationId === locationId);
+      const totalRentalsCount = analyticsAtLocation.reduce((sum, entry) => sum + entry.totalRentals, 0);
+      const totalRevenue = analyticsAtLocation.reduce((sum, entry) => sum + entry.totalRevenue, 0);
+      const averageUtilization =
+        items.length > 0
+          ? analyticsAtLocation.reduce((sum, entry) => sum + entry.utilizationRate, 0) / items.length
+          : 0;
+      const topEquipment =
+        analyticsAtLocation.sort((a, b) => b.totalRentals - a.totalRentals)[0]?.equipmentName || "N/A";
+
+      return {
+        locationId,
+        locationName: items[0]?.locationName || items[0]?.owner.location || "Location",
+        equipmentCount: items.length,
+        totalRentals: totalRentalsCount,
+        totalRevenue,
+        averageUtilization,
+        topEquipment,
+      };
+    });
+  }, [myEquipment, equipmentAnalytics]);
 
   // Categorize by urgency
   const urgentRequests = pendingRequests.filter((r) => {
@@ -496,10 +681,6 @@ const OwnerDashboard = () => {
               <Button onClick={() => navigate("/dashboard/add-equipment")} size="default" className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Equipment
-              </Button>
-              <Button variant="outline" onClick={() => navigate("/analytics")} className="w-full sm:w-auto">
-                <TrendingUp className="mr-2 h-4 w-4" />
-                Analytics
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -759,6 +940,14 @@ const OwnerDashboard = () => {
               <Building2 className="h-4 w-4" />
               <span className="hidden sm:inline">Business Info</span>
             </TabsTrigger>
+            <TabsTrigger value="finance" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Finance</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <Activity className="h-4 w-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
           </TabsList>
 
           <p className="text-sm text-muted-foreground">
@@ -766,6 +955,8 @@ const OwnerDashboard = () => {
             {activeTab === "requests" && "Review incoming requests, approve quickly, and keep bookings moving."}
             {activeTab === "listings" && "Manage your equipment catalog, pricing, and availability settings."}
             {activeTab === "business" && "Add your business details so other users can verify your listing profile."}
+            {activeTab === "finance" && "Review earnings, payouts, and transaction history without leaving dashboard."}
+            {activeTab === "analytics" && "Track usage and utilization insights across your equipment portfolio."}
           </p>
 
           {/* Timeline Tab */}
@@ -1168,6 +1359,28 @@ const OwnerDashboard = () => {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="finance" className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <EarningsChart data={monthlyEarnings} chartType="bar" />
+              </div>
+              <div>
+                <PayoutSummary
+                  totalEarnings={financeSummary.totalEarnings}
+                  thisMonthEarnings={financeSummary.thisMonthEarnings}
+                  pendingPayouts={financeSummary.pendingPayouts}
+                  averageRentalValue={financeSummary.averageRentalValue}
+                />
+              </div>
+            </div>
+
+            <TransactionHistory transactions={transactions} />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <UsageAnalytics equipmentAnalytics={equipmentAnalytics} locationAnalytics={locationAnalytics} />
           </TabsContent>
         </Tabs>
       </main>

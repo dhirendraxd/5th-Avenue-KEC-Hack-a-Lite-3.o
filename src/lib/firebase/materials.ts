@@ -91,15 +91,22 @@ export const createFirebaseMaterial = async (
     price: input.isFree ? 0 : input.price,
     isFree: input.isFree,
     locationName: input.locationName,
-    locationMapUrl: input.locationMapUrl,
     latitude: input.latitude,
     longitude: input.longitude,
     contactName: input.contactName,
     contactPhone: input.contactPhone,
-    notes: input.notes,
-    sellerId: input.sellerId,
     createdAt: new Date().toISOString(),
   };
+
+  if (input.locationMapUrl !== undefined) {
+    document.locationMapUrl = input.locationMapUrl;
+  }
+  if (input.notes !== undefined) {
+    document.notes = input.notes;
+  }
+  if (input.sellerId !== undefined) {
+    document.sellerId = input.sellerId;
+  }
 
   await createDocument(MATERIALS_COLLECTION, materialId, document);
   return toMaterialListing(materialId, document);
