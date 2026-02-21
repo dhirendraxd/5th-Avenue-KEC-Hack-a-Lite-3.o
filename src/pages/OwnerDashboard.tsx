@@ -51,7 +51,11 @@ import PayoutSummary from "@/components/finance/PayoutSummary";
 import UsageAnalytics from "@/components/analytics/UsageAnalytics";
 import { useAuth } from "@/contexts/AuthContext";
 import { subscribeFirebaseEquipment } from "@/lib/firebase/equipment";
-import { subscribeFirebaseRentals, updateFirebaseRentalStatus } from "@/lib/firebase/rentals";
+import {
+  completeFirebaseRentalPayment,
+  subscribeFirebaseRentals,
+  updateFirebaseRentalStatus,
+} from "@/lib/firebase/rentals";
 import { subscribeDocuments, updateDocument } from "@/lib/firebase/firestore";
 import { where, orderBy } from "firebase/firestore";
 import { subscribeBusinessProfile } from "@/lib/firebase/businessProfile";
@@ -60,6 +64,7 @@ import {
   updateFirebaseMaterial,
 } from "@/lib/firebase/materials";
 import {
+  completeFirebaseMaterialRequestPayment,
   MaterialRequest,
   subscribeFirebaseMaterialRequests,
   updateFirebaseMaterialRequestStatus,
@@ -112,6 +117,7 @@ const OwnerDashboard = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const [requests, setRequests] = useState<RentalRequest[]>([]);
+  const [myRentalRequests, setMyRentalRequests] = useState<RentalRequest[]>([]);
   const [activeTab, setActiveTab] = useState("timeline");
   const [approveDialog, setApproveDialog] = useState<{
     open: boolean;
@@ -122,6 +128,7 @@ const OwnerDashboard = () => {
   const [myEquipment, setMyEquipment] = useState<Equipment[]>([]);
   const [myMaterials, setMyMaterials] = useState<MaterialListing[]>([]);
   const [materialRequests, setMaterialRequests] = useState<MaterialRequest[]>([]);
+  const [myMaterialRequests, setMyMaterialRequests] = useState<MaterialRequest[]>([]);
   const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
   const [materialEditor, setMaterialEditor] = useState<{
     open: boolean;
@@ -136,6 +143,14 @@ const OwnerDashboard = () => {
     notes: "",
   });
   const [isSavingMaterial, setIsSavingMaterial] = useState(false);
+  const [paymentDialog, setPaymentDialog] = useState<{
+    open: boolean;
+    type: "equipment" | "material";
+    rental?: RentalRequest;
+    materialRequest?: MaterialRequest;
+  }>({ open: false, type: "equipment" });
+  const [paymentMethodMode, setPaymentMethodMode] = useState<"card" | "wallet" | "bank">("card");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -162,7 +177,13 @@ const OwnerDashboard = () => {
             rental.equipment.owner.id === user.id ||
             rental.equipment.owner.name === user.name
         );
+        const requesterRentals = firebaseRentals.filter(
+          (rental) =>
+            rental.renter.id === user.id ||
+            rental.renter.name === user.name,
+        );
         setRequests(ownerRentals);
+        setMyRentalRequests(requesterRentals);
       },
       (error) => {
         console.error("Failed to load rentals from Firebase:", error);
@@ -198,7 +219,12 @@ const OwnerDashboard = () => {
           (request) =>
             request.sellerId === user.id || request.sellerName === user.name,
         );
+        const requesterRequests = allRequests.filter(
+          (request) =>
+            request.requesterId === user.id || request.requesterName === user.name,
+        );
         setMaterialRequests(sellerRequests);
+        setMyMaterialRequests(requesterRequests);
       },
       (error) => {
         console.error("Failed to load builder bazaar requests:", error);
@@ -228,6 +254,18 @@ const OwnerDashboard = () => {
   }, [user]);
 
   const pendingRequests = requests.filter((r) => r.status === "requested");
+  const approvedMyRequests = myRentalRequests.filter(
+    (request) => request.status === "approved" && request.paymentStatus !== "paid",
+  );
+  const pendingMyRequests = myRentalRequests.filter(
+    (request) => request.status === "requested" || request.status === "extension_requested",
+  );
+  const approvedMyMaterialRequests = myMaterialRequests.filter(
+    (request) => request.status === "approved" && request.paymentStatus !== "paid",
+  );
+  const pendingMyMaterialRequests = myMaterialRequests.filter(
+    (request) => request.status === "requested",
+  );
   const activeRentals = requests.filter(
     (r) => r.status === "approved" || r.status === "active"
   );
@@ -536,6 +574,96 @@ const OwnerDashboard = () => {
 
   const handleRentalClick = (rental: RentalRequest) => {
     navigate(`/rental/${rental.id}`);
+  };
+
+  const handlePayForApprovedRequest = async (rentalId: string, paymentReference: string) => {
+    try {
+      await completeFirebaseRentalPayment(rentalId, paymentReference);
+      setMyRentalRequests((prev) =>
+        prev.map((request) =>
+          request.id === rentalId
+            ? {
+                ...request,
+                status: "active",
+                paymentStatus: "paid",
+                paymentReference,
+                paymentPaidAt: new Date(),
+              }
+            : request,
+        ),
+      );
+      toast({
+        title: "Payment successful",
+        description: "Your rental is now active. You can continue in rental operations.",
+      });
+    } catch (error) {
+      console.error("Failed to complete payment:", error);
+      toast({
+        title: "Payment failed",
+        description:
+          error instanceof Error && error.message
+            ? error.message
+            : "Could not process payment right now.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePayForApprovedMaterialRequest = async (
+    materialRequestId: string,
+    paymentReference: string,
+  ) => {
+    try {
+      await completeFirebaseMaterialRequestPayment(materialRequestId, paymentReference);
+      setMyMaterialRequests((prev) =>
+        prev.map((request) =>
+          request.id === materialRequestId
+            ? {
+                ...request,
+                status: "completed",
+                paymentStatus: "paid",
+                paymentReference,
+                paymentPaidAt: new Date(),
+              }
+            : request,
+        ),
+      );
+      toast({
+        title: "Payment successful",
+        description: "Your material purchase is confirmed and marked completed.",
+      });
+    } catch (error) {
+      console.error("Failed to complete material payment:", error);
+      toast({
+        title: "Payment failed",
+        description:
+          error instanceof Error && error.message
+            ? error.message
+            : "Could not process material payment right now.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    if (isProcessingPayment) return;
+
+    const paymentReference = `${paymentMethodMode.toUpperCase()}-${Date.now()}`;
+    setIsProcessingPayment(true);
+    try {
+      if (paymentDialog.type === "equipment" && paymentDialog.rental) {
+        await handlePayForApprovedRequest(paymentDialog.rental.id, paymentReference);
+      }
+      if (paymentDialog.type === "material" && paymentDialog.materialRequest) {
+        await handlePayForApprovedMaterialRequest(
+          paymentDialog.materialRequest.id,
+          paymentReference,
+        );
+      }
+      setPaymentDialog({ open: false, type: "equipment" });
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   const handleLogout = () => {
@@ -936,6 +1064,15 @@ const OwnerDashboard = () => {
               <Package className="h-4 w-4" />
               <span className="hidden sm:inline">Listings</span>
             </TabsTrigger>
+            <TabsTrigger value="my-requests" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <ClipboardCheck className="h-4 w-4" />
+              <span className="hidden sm:inline">My Requests</span>
+              {approvedMyRequests.length > 0 && (
+                <Badge variant="warning" className="ml-1 h-5 min-w-5 px-1.5">
+                  {approvedMyRequests.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="business" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
               <Building2 className="h-4 w-4" />
               <span className="hidden sm:inline">Business Info</span>
@@ -954,6 +1091,7 @@ const OwnerDashboard = () => {
             {activeTab === "timeline" && "See upcoming and active rentals in chronological order."}
             {activeTab === "requests" && "Review incoming requests, approve quickly, and keep bookings moving."}
             {activeTab === "listings" && "Manage your equipment catalog, pricing, and availability settings."}
+            {activeTab === "my-requests" && "Track your own rental requests, pay approved ones, and review request details."}
             {activeTab === "business" && "Add your business details so other users can verify your listing profile."}
             {activeTab === "finance" && "Review earnings, payouts, and transaction history without leaving dashboard."}
             {activeTab === "analytics" && "Track usage and utilization insights across your equipment portfolio."}
@@ -1346,6 +1484,153 @@ const OwnerDashboard = () => {
             )}
           </TabsContent>
 
+          <TabsContent value="my-requests" className="space-y-4">
+            {myRentalRequests.length === 0 ? (
+              <Card className="border-border/50">
+                <CardContent className="py-8">
+                  <EmptyState
+                    icon={ClipboardCheck}
+                    title="No rental requests yet"
+                    description="Your sent requests will appear here once you request equipment."
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {approvedMyRequests.length > 0 && (
+                  <Card className="border-border/50">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg font-semibold">Approved Requests - Payment Pending</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {approvedMyRequests.map((request) => (
+                        <div key={request.id} className="rounded-lg border border-border/60 p-4">
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="space-y-2 min-w-0">
+                              <p className="font-semibold text-foreground truncate">{request.equipment.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                Owner: {request.equipment.owner.name} • {format(request.startDate, "MMM d")} - {format(request.endDate, "MMM d")}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Total to pay: <span className="font-semibold text-foreground">NPR {request.totalPrice.toLocaleString()}</span>
+                              </p>
+                              {request.ownerNotes && (
+                                <p className="text-sm text-muted-foreground">Owner note: {request.ownerNotes}</p>
+                              )}
+                              {(request.purpose || request.destination || request.notes) && (
+                                <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground space-y-1">
+                                  {request.purpose && <p>Purpose: {request.purpose}</p>}
+                                  {request.destination && <p>Destination: {request.destination}</p>}
+                                  {request.notes && <p>Your notes: {request.notes}</p>}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex w-full gap-2 lg:w-auto">
+                              <Button
+                                className="w-full lg:w-auto"
+                                onClick={() =>
+                                  setPaymentDialog({
+                                    open: true,
+                                    type: "equipment",
+                                    rental: request,
+                                  })
+                                }
+                              >
+                                Pay Now
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="w-full lg:w-auto"
+                                onClick={() => handleRentalClick(request)}
+                              >
+                                View Details
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {pendingMyRequests.length > 0 && (
+                  <Card className="border-border/50">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg font-semibold">Pending Requests</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {pendingMyRequests.map((request) => (
+                        <div key={request.id} className="rounded-lg border border-border/60 p-4 flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground truncate">{request.equipment.name}</p>
+                            <p className="text-sm text-muted-foreground">Waiting for owner approval</p>
+                          </div>
+                          <StatusIndicator status="pending">Pending</StatusIndicator>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {approvedMyMaterialRequests.length > 0 && (
+                  <Card className="border-border/50">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg font-semibold">Approved Material Requests - Payment Pending</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {approvedMyMaterialRequests.map((request) => (
+                        <div key={request.id} className="rounded-lg border border-border/60 p-4">
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="space-y-2 min-w-0">
+                              <p className="font-semibold text-foreground truncate">{request.materialName}</p>
+                              <p className="text-sm text-muted-foreground">
+                                Seller: {request.sellerName} • Pickup: {request.pickupLocation}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Payment mode: <span className="font-semibold text-foreground uppercase">{request.paymentMethod}</span>
+                              </p>
+                            </div>
+                            <Button
+                              className="w-full lg:w-auto"
+                              onClick={() =>
+                                setPaymentDialog({
+                                  open: true,
+                                  type: "material",
+                                  materialRequest: request,
+                                })
+                              }
+                            >
+                              Pay Now
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {pendingMyMaterialRequests.length > 0 && (
+                  <Card className="border-border/50">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg font-semibold">Pending Material Requests</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {pendingMyMaterialRequests.map((request) => (
+                        <div key={request.id} className="rounded-lg border border-border/60 p-4 flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground truncate">{request.materialName}</p>
+                            <p className="text-sm text-muted-foreground">Waiting for seller approval</p>
+                          </div>
+                          <StatusIndicator status="pending">Pending</StatusIndicator>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+          </TabsContent>
+
           <TabsContent value="business">
             {user ? (
               <BusinessProfileSection
@@ -1472,6 +1757,65 @@ const OwnerDashboard = () => {
             </Button>
             <Button onClick={handleSaveMaterial} disabled={isSavingMaterial}>
               {isSavingMaterial ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={paymentDialog.open}
+        onOpenChange={(open) => {
+          if (!isProcessingPayment) {
+            setPaymentDialog((prev) => ({ ...prev, open }));
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Payment Gateway</DialogTitle>
+            <DialogDescription>
+              Complete your payment to continue with {paymentDialog.type === "equipment" ? "equipment rental" : "material purchase"}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg border border-border/60 p-3">
+              {paymentDialog.type === "equipment" && paymentDialog.rental && (
+                <div className="space-y-1 text-sm">
+                  <p className="font-semibold text-foreground">{paymentDialog.rental.equipment.name}</p>
+                  <p className="text-muted-foreground">Amount: NPR {paymentDialog.rental.totalPrice.toLocaleString()}</p>
+                </div>
+              )}
+              {paymentDialog.type === "material" && paymentDialog.materialRequest && (
+                <div className="space-y-1 text-sm">
+                  <p className="font-semibold text-foreground">{paymentDialog.materialRequest.materialName}</p>
+                  <p className="text-muted-foreground">Seller: {paymentDialog.materialRequest.sellerName}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Payment Method</label>
+              <Tabs value={paymentMethodMode} onValueChange={(v) => setPaymentMethodMode(v as "card" | "wallet" | "bank")}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="card" className="flex-1">Card</TabsTrigger>
+                  <TabsTrigger value="wallet" className="flex-1">Wallet</TabsTrigger>
+                  <TabsTrigger value="bank" className="flex-1">Bank</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPaymentDialog({ open: false, type: "equipment" })}
+              disabled={isProcessingPayment}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmPayment} disabled={isProcessingPayment}>
+              {isProcessingPayment ? "Processing..." : "Pay Securely"}
             </Button>
           </DialogFooter>
         </DialogContent>

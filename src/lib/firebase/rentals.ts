@@ -44,6 +44,9 @@ interface FirestoreRentalDocument {
   pickupChecklist?: ChecklistItem[];
   returnChecklist?: ChecklistItem[];
   extensionRequest?: RentalRequest["extensionRequest"];
+  paymentStatus?: "pending" | "paid";
+  paymentPaidAt?: string;
+  paymentReference?: string;
   createdAt?: string;
 }
 
@@ -146,6 +149,13 @@ const toRental = (id: string, doc: FirestoreRentalDocument): RentalRequest => {
     pickupChecklist: doc.pickupChecklist,
     returnChecklist: doc.returnChecklist,
     extensionRequest: doc.extensionRequest,
+    paymentStatus:
+      doc.paymentStatus ||
+      (doc.status === "active" || doc.status === "completed"
+        ? "paid"
+        : "pending"),
+    paymentPaidAt: doc.paymentPaidAt ? toDate(doc.paymentPaidAt) : undefined,
+    paymentReference: doc.paymentReference,
     purpose: doc.purpose,
     destination: doc.destination,
     notes: doc.notes,
@@ -196,6 +206,7 @@ export const createFirebaseRentalRequest = async (
     serviceFee,
     totalPrice,
     status: "requested",
+    paymentStatus: "pending",
     createdAt: new Date().toISOString(),
     purpose: input.purpose,
     destination: input.destination,
@@ -247,6 +258,18 @@ export const updateFirebaseRentalStatus = async (
     rentalId,
     payload,
   );
+};
+
+export const completeFirebaseRentalPayment = async (
+  rentalId: string,
+  paymentReference: string,
+) => {
+  await updateDocument<FirestoreRentalDocument>(RENTALS_COLLECTION, rentalId, {
+    status: "active",
+    paymentStatus: "paid",
+    paymentPaidAt: new Date().toISOString(),
+    paymentReference,
+  });
 };
 
 export const getFirebaseRentals = async (): Promise<RentalRequest[]> => {

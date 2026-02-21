@@ -33,10 +33,10 @@ type ConditionRating = 'excellent' | 'good' | 'fair' | 'damaged';
  * - Standardize condition assessment process
  * 
  * Requirements:
- * - Minimum 2 photos (visual evidence)
+ * - Photos are optional (recommended for better transparency)
  * - Condition rating selection
  * - Signature/acknowledgment
- * - Optional damage reporting with description
+ * - Optional notes and optional damage reporting
  * 
  * @param type - "pickup" or "return" to determine context
  * @param rentalId - Associates log with specific rental transaction
@@ -84,9 +84,8 @@ const ConditionLogForm = ({
   const [damageDescription, setDamageDescription] = useState('');
   const [acknowledged, setAcknowledged] = useState(false);  // Digital signature
 
-  // Validation: Require minimum photos and acknowledgment
-  const hasRequiredPhotos = photos.length >= 2;
-  const canSubmit = hasRequiredPhotos && acknowledged && (!damageReported || damageDescription.trim());
+  // Validation: acknowledgment required; photos and general notes are optional
+  const canSubmit = acknowledged && (!damageReported || damageDescription.trim());
 
   /**
    * Submit condition log to store
@@ -188,16 +187,14 @@ const ConditionLogForm = ({
           type={type}
           maxPhotos={6}
         />
-        {!hasRequiredPhotos && (
-          <p className="text-sm text-warning flex items-center gap-1">
-            <AlertTriangle className="h-4 w-4" />
-            At least 2 photos are required
-          </p>
-        )}
+        <p className="text-sm text-muted-foreground flex items-center gap-1">
+          <AlertTriangle className="h-4 w-4" />
+          Photos are optional but recommended for transparency.
+        </p>
 
         {/* Notes */}
         <div className="space-y-2">
-          <Label htmlFor="notes">Condition Notes</Label>
+          <Label htmlFor="notes">Condition Notes (Optional)</Label>
           <Textarea
             id="notes"
             placeholder="Describe the overall condition, any scratches, wear patterns, or other observations..."

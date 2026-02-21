@@ -119,6 +119,9 @@ export interface RentalRequest {
     additionalCost: number;
     status: "pending" | "approved" | "declined";
   };
+  paymentStatus?: "pending" | "paid";
+  paymentPaidAt?: Date;
+  paymentReference?: string;
   purpose?: string;
   destination?: string;
   notes?: string;
@@ -128,6 +131,7 @@ export interface ChecklistItem {
   id: string;
   label: string;
   checked: boolean;
+  assessment?: "pass" | "attention" | "critical";
   notes?: string;
 }
 

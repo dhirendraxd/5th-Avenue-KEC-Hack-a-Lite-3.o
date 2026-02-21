@@ -7,14 +7,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import PickupReturnChecklist from "@/components/rental/PickupReturnChecklist";
 import ExtensionRequestDialog from "@/components/rental/ExtensionRequestDialog";
 import ConditionLogForm from "@/components/rental/ConditionLogForm";
 import { TaskFlagDialog } from "@/components/rental/TaskFlagging";
 import { useLogsForRental } from "@/lib/conditionLogStore";
-import { ChecklistItem, RentalRequest } from "@/lib/mockData";
+import {
+  ChecklistItem,
+  RentalRequest,
+  defaultPickupChecklist,
+  defaultReturnChecklist,
+} from "@/lib/mockData";
 import { statusColors } from "@/lib/constants";
-import { subscribeFirebaseRentalById } from "@/lib/firebase/rentals";
+import { subscribeFirebaseRentalById, updateFirebaseRentalStatus } from "@/lib/firebase/rentals";
 import {
   ArrowLeft,
   Calendar,
@@ -27,6 +33,7 @@ import {
   AlertCircle,
   FileText,
   Camera,
+  Star,
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 
@@ -34,8 +41,11 @@ const RentalOperations = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [rental, setRental] = useState<RentalRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const createDefaultChecklist = (items: ChecklistItem[]) =>
+    items.map((item) => ({ ...item, checked: false, notes: undefined }));
 
   useEffect(() => {
     if (!id) {
@@ -60,29 +70,49 @@ const RentalOperations = () => {
   
   const [extensionDialogOpen, setExtensionDialogOpen] = useState(false);
   const [pickupChecklist, setPickupChecklist] = useState<ChecklistItem[]>(
-    rental?.pickupChecklist || []
+    createDefaultChecklist(defaultPickupChecklist)
   );
   const [returnChecklist, setReturnChecklist] = useState<ChecklistItem[]>(
-    rental?.returnChecklist || []
+    createDefaultChecklist(defaultReturnChecklist)
   );
   const [extensionRequest, setExtensionRequest] = useState(rental?.extensionRequest);
   const [pickupLogCompleted, setPickupLogCompleted] = useState(false);
   const [returnLogCompleted, setReturnLogCompleted] = useState(false);
+  const [reviewRating, setReviewRating] = useState<number>(0);
+  const [reviewFeedback, setReviewFeedback] = useState("");
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
   
   const conditionLogs = useLogsForRental(id || '');
 
   useEffect(() => {
     if (!rental) return;
-    if (pickupChecklist.length === 0 && rental.pickupChecklist?.length) {
-      setPickupChecklist(rental.pickupChecklist);
+    setPickupChecklist(
+      rental.pickupChecklist?.length
+        ? rental.pickupChecklist
+        : createDefaultChecklist(defaultPickupChecklist),
+    );
+    setReturnChecklist(
+      rental.returnChecklist?.length
+        ? rental.returnChecklist
+        : createDefaultChecklist(defaultReturnChecklist),
+    );
+    setExtensionRequest(rental.extensionRequest);
+  }, [rental?.id]);
+
+  useEffect(() => {
+    if (!rental?.id) return;
+    try {
+      const key = `gearshift_rental_review_${rental.id}`;
+      const raw = localStorage.getItem(key);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { rating?: number; feedback?: string; submitted?: boolean };
+      setReviewRating(parsed.rating ?? 0);
+      setReviewFeedback(parsed.feedback ?? "");
+      setReviewSubmitted(!!parsed.submitted);
+    } catch {
+      // ignore malformed local cache
     }
-    if (returnChecklist.length === 0 && rental.returnChecklist?.length) {
-      setReturnChecklist(rental.returnChecklist);
-    }
-    if (!extensionRequest && rental.extensionRequest) {
-      setExtensionRequest(rental.extensionRequest);
-    }
-  }, [rental, pickupChecklist.length, returnChecklist.length, extensionRequest]);
+  }, [rental?.id]);
 
   if (isLoading) {
     return (
@@ -118,6 +148,20 @@ const RentalOperations = () => {
   const isActive = rental.status === "active";
   const isApproved = rental.status === "approved";
   const isCompleted = rental.status === "completed";
+  const hasPaymentCompleted = rental.paymentStatus === "paid";
+  const isRenter =
+    (user?.id && rental.renter.id === user.id) ||
+    (user?.name && rental.renter.name === user.name);
+  const effectiveEndDate =
+    extensionRequest?.status === "approved"
+      ? extensionRequest.newEndDate
+      : rental.endDate;
+  const hasReachedReturnDate = today.getTime() >= effectiveEndDate.getTime();
+  const canViewPickupSection = isRenter && hasPaymentCompleted;
+  const canViewReturnSection = isRenter && hasPaymentCompleted && (hasReachedReturnDate || isCompleted);
+  const canReportPickup = isRenter && hasPaymentCompleted && (isApproved || isActive) && !isCompleted;
+  const canReportReturn =
+    isRenter && hasPaymentCompleted && isActive && hasReachedReturnDate && !isCompleted;
   const pickupCompleted = pickupChecklist.every((item) => item.checked);
   const returnCompleted = returnChecklist.every((item) => item.checked);
 
@@ -125,8 +169,20 @@ const RentalOperations = () => {
     setPickupChecklist(items);
   };
 
-  const handleReturnComplete = (items: ChecklistItem[]) => {
+  const handleReturnComplete = async (items: ChecklistItem[]) => {
     setReturnChecklist(items);
+    try {
+      await updateFirebaseRentalStatus(rental.id, "completed");
+      setRental((prev) => (prev ? { ...prev, status: "completed" } : prev));
+    } catch (error) {
+      console.error("Failed to mark rental completed:", error);
+      toast({
+        title: "Status update failed",
+        description: "Return was logged but rental status could not be completed.",
+        variant: "destructive",
+      });
+      return;
+    }
     toast({
       title: "Rental Completed",
       description: "Thank you for using 5th Avenue. Please leave a review.",
@@ -150,6 +206,41 @@ const RentalOperations = () => {
         newEndDate,
         "MMM d, yyyy"
       )} has been sent to the owner.`,
+    });
+  };
+
+  const handleSubmitReview = () => {
+    if (!reviewRating) {
+      toast({
+        title: "Rating required",
+        description: "Please select a rating before submitting feedback.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!rental?.id) return;
+
+    const reviewPayload = {
+      rating: reviewRating,
+      feedback: reviewFeedback.trim(),
+      submitted: true,
+      submittedAt: new Date().toISOString(),
+    };
+
+    try {
+      localStorage.setItem(
+        `gearshift_rental_review_${rental.id}`,
+        JSON.stringify(reviewPayload),
+      );
+    } catch {
+      // ignore local persistence failure
+    }
+
+    setReviewSubmitted(true);
+    toast({
+      title: "Review submitted",
+      description: "Thanks for sharing your equipment feedback.",
     });
   };
 
@@ -319,17 +410,21 @@ const RentalOperations = () => {
                   <Camera className="h-4 w-4" />
                   Condition
                 </TabsTrigger>
-                <TabsTrigger value="pickup" className="flex-1 gap-2">
-                  {pickupCompleted && <CheckCircle className="h-4 w-4 text-success" />}
-                  Pickup
-                </TabsTrigger>
-                <TabsTrigger value="return" className="flex-1 gap-2">
-                  {returnCompleted && <CheckCircle className="h-4 w-4 text-success" />}
-                  Return
-                </TabsTrigger>
+                {canViewPickupSection && (
+                  <TabsTrigger value="pickup" className="flex-1 gap-2">
+                    {pickupCompleted && <CheckCircle className="h-4 w-4 text-success" />}
+                    Pickup
+                  </TabsTrigger>
+                )}
+                {canViewReturnSection && (
+                  <TabsTrigger value="return" className="flex-1 gap-2">
+                    {returnCompleted && <CheckCircle className="h-4 w-4 text-success" />}
+                    Return
+                  </TabsTrigger>
+                )}
               </TabsList>
               <TabsContent value="condition" className="mt-4 space-y-4">
-                {(isApproved || isActive) && !pickupLogCompleted && conditionLogs.filter(l => l.type === 'pickup').length === 0 && (
+                {canReportPickup && !pickupLogCompleted && conditionLogs.filter(l => l.type === 'pickup').length === 0 && (
                   <ConditionLogForm
                     type="pickup"
                     rentalId={rental.id}
@@ -349,7 +444,7 @@ const RentalOperations = () => {
                     </CardContent>
                   </Card>
                 )}
-                {isActive && !returnLogCompleted && conditionLogs.filter(l => l.type === 'return').length === 0 && (
+                {canReportReturn && !returnLogCompleted && conditionLogs.filter(l => l.type === 'return').length === 0 && (
                   <ConditionLogForm
                     type="return"
                     rentalId={rental.id}
@@ -369,23 +464,101 @@ const RentalOperations = () => {
                     </CardContent>
                   </Card>
                 )}
+                {!isRenter && (
+                  <Card className="bg-muted/40 border-border">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">
+                        Pickup and return reporting must be completed by the renter.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+                {isRenter && !hasPaymentCompleted && (
+                  <Card className="bg-muted/40 border-border">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">
+                        Complete payment first to unlock pickup and return checklists.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
-              <TabsContent value="pickup" className="mt-4">
-                <PickupReturnChecklist
-                  type="pickup"
-                  items={pickupChecklist}
-                  onComplete={handlePickupComplete}
-                  isCompleted={pickupCompleted || isCompleted}
-                />
-              </TabsContent>
-              <TabsContent value="return" className="mt-4">
-                <PickupReturnChecklist
-                  type="return"
-                  items={returnChecklist}
-                  onComplete={handleReturnComplete}
-                  isCompleted={returnCompleted || isCompleted}
-                />
-              </TabsContent>
+              {canViewPickupSection && (
+                <TabsContent value="pickup" className="mt-4">
+                  <PickupReturnChecklist
+                    type="pickup"
+                    items={pickupChecklist}
+                    onComplete={handlePickupComplete}
+                    isCompleted={pickupCompleted || isCompleted}
+                    canEdit={canReportPickup}
+                  />
+                </TabsContent>
+              )}
+              {canViewReturnSection && (
+                <TabsContent value="return" className="mt-4">
+                  <PickupReturnChecklist
+                    type="return"
+                    items={returnChecklist}
+                    onComplete={handleReturnComplete}
+                    isCompleted={returnCompleted || isCompleted}
+                    canEdit={canReportReturn}
+                  />
+
+                  {isRenter && (returnCompleted || returnLogCompleted || isCompleted) && (
+                    <Card className="mt-4">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                          <Star className="h-5 w-5 text-primary" />
+                          Review & Feedback
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                          Submit your feedback after return for {rental.equipment.name} to improve transparency for future renters.
+                        </p>
+
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((value) => (
+                            <button
+                              key={value}
+                              type="button"
+                              aria-label={`Rate ${value} star${value > 1 ? "s" : ""}`}
+                              onClick={() => !reviewSubmitted && setReviewRating(value)}
+                              className={`rounded p-1 ${reviewSubmitted ? "cursor-default" : "hover:bg-muted"}`}
+                              disabled={reviewSubmitted}
+                            >
+                              <Star
+                                className={`h-5 w-5 ${
+                                  value <= reviewRating ? "fill-warning text-warning" : "text-muted-foreground"
+                                }`}
+                              />
+                            </button>
+                          ))}
+                        </div>
+
+                        <textarea
+                          value={reviewFeedback}
+                          onChange={(e) => setReviewFeedback(e.target.value)}
+                          disabled={reviewSubmitted}
+                          placeholder="Write feedback about condition, performance, and handoff experience..."
+                          className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        />
+
+                        <div className="flex items-center justify-between">
+                          {reviewSubmitted ? (
+                            <Badge variant="success">Feedback recorded</Badge>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">Your feedback helps keep rentals transparent.</p>
+                          )}
+                          {!reviewSubmitted && (
+                            <Button onClick={handleSubmitReview}>Submit Review</Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+              )}
             </Tabs>
 
             {/* Owner notes */}
@@ -402,6 +575,7 @@ const RentalOperations = () => {
                 </CardContent>
               </Card>
             )}
+
           </div>
 
           {/* Right column - Cost & Policy */}

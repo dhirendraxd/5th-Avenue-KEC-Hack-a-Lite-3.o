@@ -23,6 +23,9 @@ export interface MaterialRequest {
   requesterName: string;
   pickupLocation: string;
   paymentMethod: "cod" | "advance";
+  paymentStatus?: "pending" | "paid";
+  paymentPaidAt?: Date;
+  paymentReference?: string;
   status: MaterialRequestStatus;
   createdAt: Date;
 }
@@ -37,6 +40,9 @@ interface FirestoreMaterialRequestDocument {
   requesterName: string;
   pickupLocation: string;
   paymentMethod: "cod" | "advance";
+  paymentStatus?: "pending" | "paid";
+  paymentPaidAt?: string;
+  paymentReference?: string;
   status: MaterialRequestStatus;
   createdAt: string;
 }
@@ -67,6 +73,9 @@ const toMaterialRequest = (
   requesterName: doc.requesterName,
   pickupLocation: doc.pickupLocation,
   paymentMethod: doc.paymentMethod,
+  paymentStatus: doc.paymentStatus || "pending",
+  paymentPaidAt: doc.paymentPaidAt ? new Date(doc.paymentPaidAt) : undefined,
+  paymentReference: doc.paymentReference,
   status: doc.status,
   createdAt: new Date(doc.createdAt),
 });
@@ -86,6 +95,7 @@ export const createFirebaseMaterialRequest = async (
     requesterName: input.requesterName,
     pickupLocation: input.pickupLocation,
     paymentMethod: input.paymentMethod,
+    paymentStatus: "pending",
     status: "requested",
     createdAt: new Date().toISOString(),
   };
@@ -116,5 +126,21 @@ export const updateFirebaseMaterialRequestStatus = async (
     MATERIAL_REQUESTS_COLLECTION,
     requestId,
     { status },
+  );
+};
+
+export const completeFirebaseMaterialRequestPayment = async (
+  requestId: string,
+  paymentReference: string,
+) => {
+  await updateDocument<FirestoreMaterialRequestDocument>(
+    MATERIAL_REQUESTS_COLLECTION,
+    requestId,
+    {
+      paymentStatus: "paid",
+      paymentPaidAt: new Date().toISOString(),
+      paymentReference,
+      status: "completed",
+    },
   );
 };
