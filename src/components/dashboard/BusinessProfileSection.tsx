@@ -21,13 +21,18 @@ interface BusinessProfileSectionProps {
   businessNameFallback?: string;
 }
 
+const buildBitmojiOption = (emoji: string, bg: string, hair: string) => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 128"><rect width="96" height="128" rx="18" fill="${bg}"/><ellipse cx="48" cy="36" rx="18" ry="16" fill="#f6c9a5"/><path d="M30 36c0-12 8-20 18-20s18 8 18 20v6H30z" fill="${hair}"/><rect x="33" y="54" width="30" height="42" rx="10" fill="#ffffff"/><rect x="39" y="96" width="8" height="16" rx="3" fill="#f6c9a5"/><rect x="49" y="96" width="8" height="16" rx="3" fill="#f6c9a5"/><text x="48" y="86" text-anchor="middle" font-size="20">${emoji}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
+
 const DEFAULT_BITMOJI_OPTIONS = [
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Ava",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Milo",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Nova",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Luna",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Kai",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Riya",
+  buildBitmojiOption("👋", "#f8f4ff", "#2f1b12"),
+  buildBitmojiOption("✨", "#eef8ff", "#4a2c1d"),
+  buildBitmojiOption("😎", "#fff3e8", "#1f1f1f"),
+  buildBitmojiOption("🎉", "#f0fff5", "#3a2a20"),
+  buildBitmojiOption("✅", "#f5f7ff", "#31201a"),
+  buildBitmojiOption("🚀", "#fff7fb", "#2a1d17"),
 ];
 
 const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessProfileSectionProps) => {
@@ -254,7 +259,8 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
                           src={optionUrl}
                           alt="Bitmoji option"
                           className="h-full w-full object-contain"
-                          loading="lazy"
+                          loading="eager"
+                          decoding="async"
                         />
                       </button>
                     );
