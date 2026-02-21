@@ -9,17 +9,42 @@ interface EquipmentMiniCardProps {
   equipmentId: string;
 }
 
+/**
+ * Equipment Mini Card Component
+ * 
+ * Renders a compact, clickable equipment card shown in chat messages
+ * When AI assistant recommends equipment, it includes [EQUIP:e123] tags
+ * that get replaced with these interactive cards
+ * 
+ * Features:
+ * - Loads equipment data from Firebase by ID
+ * - Displays thumbnail, name, price, rating, and condition
+ * - Links to full equipment detail page
+ * - Hover effects for better UX
+ */
 const EquipmentMiniCard = ({ equipmentId }: EquipmentMiniCardProps) => {
   const [equipment, setEquipment] = useState<Equipment | null>(null);
 
+  /**
+   * Load equipment data from Firebase when component mounts or ID changes
+   * 
+   * Uses cleanup pattern to prevent state updates on unmounted component:
+   * - isMounted flag tracks if component is still mounted
+   * - Return cleanup function sets flag to false
+   * - Only update state if component is still mounted
+   */
   useEffect(() => {
     let isMounted = true;
 
     const loadEquipment = async () => {
       try {
+        // Fetch all equipment from Firebase
         const equipmentList = await getFirebaseEquipment();
+        
+        // Check if component unmounted during fetch
         if (!isMounted) return;
 
+        // Find matching equipment by ID
         const item = equipmentList.find((entry) => entry.id === equipmentId) || null;
         setEquipment(item);
       } catch (error) {
@@ -29,13 +54,20 @@ const EquipmentMiniCard = ({ equipmentId }: EquipmentMiniCardProps) => {
 
     loadEquipment();
 
+    // Cleanup: prevent state update on unmounted component
     return () => {
       isMounted = false;
     };
   }, [equipmentId]);
 
+  // Don't render anything if equipment not found or still loading
   if (!equipment) return null;
 
+  /**
+   * Calculate average rating from all reviews
+   * Returns null if no reviews exist
+   * Formatted to 1 decimal place for display
+   */
   const avgRating =
     equipment.reviews.length > 0
       ? (equipment.reviews.reduce((a, r) => a + r.rating, 0) / equipment.reviews.length).toFixed(1)

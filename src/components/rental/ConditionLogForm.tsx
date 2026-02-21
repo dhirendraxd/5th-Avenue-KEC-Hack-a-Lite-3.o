@@ -17,8 +17,34 @@ import {
   Camera,
 } from "lucide-react";
 
+/** Equipment condition rating scale */
 type ConditionRating = 'excellent' | 'good' | 'fair' | 'damaged';
 
+/**
+ * Condition Log Form Component
+ * 
+ * Critical documentation system for equipment rental transactions
+ * Used at both pickup and return to create verifiable condition records
+ * 
+ * Purpose:
+ * - Protect both parties from false damage claims
+ * - Create audit trail for insurance/disputes
+ * - Track equipment deterioration over time
+ * - Standardize condition assessment process
+ * 
+ * Requirements:
+ * - Minimum 2 photos (visual evidence)
+ * - Condition rating selection
+ * - Signature/acknowledgment
+ * - Optional damage reporting with description
+ * 
+ * @param type - "pickup" or "return" to determine context
+ * @param rentalId - Associates log with specific rental transaction
+ * @param equipmentId - Which equipment is being documented
+ * @param equipmentName - Display name for user context
+ * @param onComplete - Callback fired after successful submission
+ * @param isCompleted - Whether log has already been completed (shows success state)
+ */
 interface ConditionLogFormProps {
   type: "pickup" | "return";
   rentalId: string;
@@ -28,6 +54,10 @@ interface ConditionLogFormProps {
   isCompleted?: boolean;
 }
 
+/**
+ * Predefined condition rating options with descriptions
+ * Helps users make consistent assessments across different equipment
+ */
 const conditionOptions: { value: ConditionRating; label: string; description: string; color: string }[] = [
   { value: 'excellent', label: 'Excellent', description: 'Like new, no visible wear', color: 'text-success' },
   { value: 'good', label: 'Good', description: 'Minor wear, fully functional', color: 'text-primary' },
@@ -46,16 +76,23 @@ const ConditionLogForm = ({
   const { toast } = useToast();
   const addLog = useConditionLogStore((state) => state.addLog);
   
-  const [condition, setCondition] = useState<ConditionRating>('good');
+  // Form state
+  const [condition, setCondition] = useState<ConditionRating>('good');  // Default to "good"
   const [notes, setNotes] = useState('');
   const [photos, setPhotos] = useState<ConditionPhoto[]>([]);
   const [damageReported, setDamageReported] = useState(false);
   const [damageDescription, setDamageDescription] = useState('');
-  const [acknowledged, setAcknowledged] = useState(false);
+  const [acknowledged, setAcknowledged] = useState(false);  // Digital signature
 
+  // Validation: Require minimum photos and acknowledgment
   const hasRequiredPhotos = photos.length >= 2;
   const canSubmit = hasRequiredPhotos && acknowledged && (!damageReported || damageDescription.trim());
 
+  /**
+   * Submit condition log to store
+   * Saves to localStorage via Zustand store
+   * In production, would also sync to backend database
+   */
   const handleSubmit = () => {
     addLog({
       rentalId,
@@ -64,7 +101,7 @@ const ConditionLogForm = ({
       condition,
       notes,
       photos,
-      verifiedBy: 'Current User', // In real app, get from auth
+      verifiedBy: 'Current User', // In real app, get from auth context
       damageReported,
       damageDescription: damageReported ? damageDescription : undefined,
     });
@@ -77,6 +114,10 @@ const ConditionLogForm = ({
     onComplete();
   };
 
+  /**
+   * Success state: Show when log has already been completed
+   * Prevents duplicate logging and provides visual confirmation
+   */
   if (isCompleted) {
     return (
       <Card className="bg-success/5 border-success/20">
