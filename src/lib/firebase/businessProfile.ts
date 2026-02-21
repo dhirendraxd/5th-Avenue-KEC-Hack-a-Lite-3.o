@@ -6,6 +6,7 @@ export interface BusinessProfile {
   userId: string;
   businessName: string;
   legalBusinessName: string;
+  bitmojiUrl: string;
   citizenshipNumber: string;
   citizenshipDocumentImage: string;
   nidNumber: string;
@@ -51,21 +52,25 @@ const KYC_REQUIRED_FIELDS: Array<keyof BusinessProfileInput> = [
 const getStorageKey = (userId: string) =>
   `gearshift_business_profile_${userId}`;
 
+const normalizeValue = (value: unknown): string =>
+  typeof value === "string" ? value.trim() : "";
+
 const normalizeInput = (input: BusinessProfileInput): BusinessProfileInput => ({
-  businessName: input.businessName.trim(),
-  legalBusinessName: input.legalBusinessName.trim(),
-  citizenshipNumber: input.citizenshipNumber.trim(),
-  citizenshipDocumentImage: input.citizenshipDocumentImage.trim(),
-  nidNumber: input.nidNumber.trim(),
-  nidDocumentImage: input.nidDocumentImage.trim(),
-  registrationNumber: input.registrationNumber.trim(),
-  panNumber: input.panNumber.trim(),
-  contactPhone: input.contactPhone.trim(),
-  businessAddress: input.businessAddress.trim(),
-  city: input.city.trim(),
-  website: input.website.trim(),
-  verificationDocumentUrl: input.verificationDocumentUrl.trim(),
-  aboutBusiness: input.aboutBusiness.trim(),
+  businessName: normalizeValue(input.businessName),
+  legalBusinessName: normalizeValue(input.legalBusinessName),
+  bitmojiUrl: normalizeValue(input.bitmojiUrl),
+  citizenshipNumber: normalizeValue(input.citizenshipNumber),
+  citizenshipDocumentImage: normalizeValue(input.citizenshipDocumentImage),
+  nidNumber: normalizeValue(input.nidNumber),
+  nidDocumentImage: normalizeValue(input.nidDocumentImage),
+  registrationNumber: normalizeValue(input.registrationNumber),
+  panNumber: normalizeValue(input.panNumber),
+  contactPhone: normalizeValue(input.contactPhone),
+  businessAddress: normalizeValue(input.businessAddress),
+  city: normalizeValue(input.city),
+  website: normalizeValue(input.website),
+  verificationDocumentUrl: normalizeValue(input.verificationDocumentUrl),
+  aboutBusiness: normalizeValue(input.aboutBusiness),
 });
 
 const isProfileInputComplete = (input: BusinessProfileInput): boolean => {
@@ -174,6 +179,7 @@ export const getDefaultBusinessProfileInput = (
 ): BusinessProfileInput => ({
   businessName: fallbackBusinessName,
   legalBusinessName: "",
+  bitmojiUrl: "",
   citizenshipNumber: "",
   citizenshipDocumentImage: "",
   nidNumber: "",

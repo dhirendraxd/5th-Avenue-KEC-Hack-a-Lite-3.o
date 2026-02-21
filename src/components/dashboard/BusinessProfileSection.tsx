@@ -21,12 +21,22 @@ interface BusinessProfileSectionProps {
   businessNameFallback?: string;
 }
 
+const DEFAULT_BITMOJI_OPTIONS = [
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Ava",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Milo",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Nova",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Luna",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Kai",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Riya",
+];
+
 const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessProfileSectionProps) => {
   const { toast } = useToast();
   const citizenshipImageInputRef = useRef<HTMLInputElement>(null);
   const nidImageInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [bitmojiSaveState, setBitmojiSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [formData, setFormData] = useState<BusinessProfileInput>(
     getDefaultBusinessProfileInput(businessNameFallback),
   );
@@ -44,6 +54,7 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
         const {
           businessName,
           legalBusinessName,
+          bitmojiUrl,
           citizenshipNumber,
           citizenshipDocumentImage,
           nidNumber,
@@ -61,6 +72,7 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
         setFormData({
           businessName,
           legalBusinessName,
+          bitmojiUrl: bitmojiUrl ?? "",
           citizenshipNumber,
           citizenshipDocumentImage,
           nidNumber,
@@ -142,6 +154,29 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
     }
   };
 
+  const handleBitmojiSelect = async (bitmojiUrl: string) => {
+    const nextFormData = { ...formData, bitmojiUrl };
+    setFormData(nextFormData);
+    setBitmojiSaveState("saving");
+
+    try {
+      await saveBusinessProfile(userId, nextFormData);
+      setBitmojiSaveState("saved");
+      toast({
+        title: "Done",
+        description: "Bitmoji selection saved.",
+      });
+    } catch (error) {
+      console.error("Failed to auto-save Bitmoji selection:", error);
+      setBitmojiSaveState("error");
+      toast({
+        title: "Bitmoji save failed",
+        description: "Could not save selected Bitmoji. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="border-border/50">
@@ -185,6 +220,69 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
               onChange={(e) => handleChange("legalBusinessName", e.target.value)}
               placeholder="Registered legal entity name"
             />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <label className="text-sm font-medium">Profile Bitmoji (optional)</label>
+            <div className="overflow-hidden rounded-lg border border-border bg-muted/40 p-3">
+              <div className="flex flex-col gap-4">
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-border bg-background">
+                  {formData.bitmojiUrl ? (
+                    <img
+                      src={formData.bitmojiUrl}
+                      alt="Selected bitmoji"
+                      className="h-full w-full object-contain"
+                    />
+                  ) : null}
+                </div>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                  {DEFAULT_BITMOJI_OPTIONS.map((optionUrl) => {
+                    const isSelected = formData.bitmojiUrl === optionUrl;
+                    return (
+                      <button
+                        key={optionUrl}
+                        type="button"
+                        onClick={() => handleBitmojiSelect(optionUrl)}
+                        disabled={bitmojiSaveState === "saving"}
+                        className={`flex h-14 w-12 items-center justify-center overflow-hidden rounded-lg border bg-background transition-all ${
+                          isSelected
+                            ? "border-primary ring-2 ring-primary/20"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                        aria-label="Select Bitmoji"
+                      >
+                        <img
+                          src={optionUrl}
+                          alt="Bitmoji option"
+                          className="h-full w-full object-contain"
+                          loading="lazy"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+                {formData.bitmojiUrl && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-fit"
+                    onClick={() => handleBitmojiSelect("")}
+                    disabled={bitmojiSaveState === "saving"}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Clear selection
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {bitmojiSaveState === "saving"
+                    ? "Saving Bitmoji..."
+                    : bitmojiSaveState === "saved"
+                      ? "Done"
+                      : bitmojiSaveState === "error"
+                        ? "Save failed"
+                        : "Selecting a Bitmoji auto-saves instantly."}
+                </p>
+              </div>
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Citizenship Number *</label>

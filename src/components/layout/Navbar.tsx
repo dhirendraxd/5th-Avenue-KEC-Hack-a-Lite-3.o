@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { roleLabels } from "@/lib/constants";
+import { subscribeBusinessProfile } from "@/lib/firebase/businessProfile";
 import { Package, Home, LayoutDashboard, Search, Menu, X, User, DollarSign, Hammer } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -8,6 +9,8 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const configuredBitmoji = import.meta.env.VITE_BITMOJI_URL;
+  const [profileBitmoji, setProfileBitmoji] = useState<string>("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
 
@@ -49,6 +52,27 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (!user?.id) {
+      setProfileBitmoji("");
+      return;
+    }
+
+    const unsubscribe = subscribeBusinessProfile(
+      user.id,
+      (profile) => {
+        setProfileBitmoji(profile?.bitmojiUrl ?? "");
+      },
+      () => {
+        setProfileBitmoji("");
+      },
+    );
+
+    return () => unsubscribe();
+  }, [user?.id]);
+
+  const avatarSource = profileBitmoji || configuredBitmoji || user?.avatar || "";
+
   return (
     <>
       <nav
@@ -88,10 +112,22 @@ const Navbar = () => {
                 <button
                   aria-label="Go to dashboard"
                   onClick={() => navigate("/dashboard")}
-                  className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className="inline-flex h-11 w-9 items-center justify-center overflow-hidden rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  <User className="h-4 w-4" />
-                  Dashboard
+                  {avatarSource ? (
+                    <img
+                      src={avatarSource}
+                      alt={`${user.name} bitmoji`}
+                      className="h-full w-full object-contain"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <span className="text-xs font-semibold text-foreground">
+                      {user.name.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                  <span className="sr-only">Dashboard</span>
                 </button>
               </>
             ) : (

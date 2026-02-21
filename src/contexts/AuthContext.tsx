@@ -51,7 +51,7 @@ const rolePermissions: Record<UserRole, Permission[]> = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const mapAuthUserToCurrentUser = (authUser: { uid: string; email: string | null; displayName: string | null }): CurrentUser => {
+const mapAuthUserToCurrentUser = (authUser: { uid: string; email: string | null; displayName: string | null; photoURL: string | null }): CurrentUser => {
   const role: UserRole = 'owner';
   const baseName = authUser.displayName || authUser.email?.split('@')[0] || 'User';
 
@@ -62,6 +62,7 @@ const mapAuthUserToCurrentUser = (authUser: { uid: string; email: string | null;
     role,
     businessId: authUser.uid,
     businessName: `${baseName} Business`,
+    avatar: authUser.photoURL || undefined,
     locationAccess: [],
   };
 };

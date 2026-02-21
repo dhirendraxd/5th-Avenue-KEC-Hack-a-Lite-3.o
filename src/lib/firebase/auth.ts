@@ -15,6 +15,7 @@ export interface AuthUser {
   uid: string;
   email: string | null;
   displayName: string | null;
+  photoURL: string | null;
 }
 
 // Set persistence for auth only if Firebase is available
@@ -91,6 +92,7 @@ export const getCurrentUser = (): AuthUser | null => {
     uid: user.uid,
     email: user.email,
     displayName: user.displayName,
+    photoURL: user.photoURL,
   };
 };
 
@@ -110,6 +112,7 @@ export const onAuthChange = (callback: (user: AuthUser | null) => void) => {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName,
+        photoURL: user.photoURL,
       });
     } else {
       callback(null);
