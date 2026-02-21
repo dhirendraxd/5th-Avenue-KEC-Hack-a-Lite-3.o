@@ -398,8 +398,8 @@ const MaterialsFind = () => {
       });
 
       toast({
-        title: "Request sent",
-        description: "Your request has been submitted to the seller.",
+        title: "Buy request sent",
+        description: "Your purchase request has been sent to the seller for approval.",
       });
       setRequestDialogOpen(false);
     } catch {
@@ -623,7 +623,7 @@ const MaterialsFind = () => {
                             {listing.isFree ? "Free" : `NPR ${listing.price}`}
                           </p>
                           <Button className="w-full sm:w-auto" onClick={() => openRequestDialog(listing)}>
-                            Request Material
+                            Send Buy Request
                           </Button>
                         </CardContent>
                       </div>
@@ -780,9 +780,9 @@ const MaterialsFind = () => {
       <Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Submit Request</DialogTitle>
+            <DialogTitle>Submit Purchase Request</DialogTitle>
             <DialogDescription>
-              Confirm pickup and payment method to send your request.
+              Send a buy request to the seller. They will review and approve/reject your request.
             </DialogDescription>
           </DialogHeader>
           {selectedListing && (

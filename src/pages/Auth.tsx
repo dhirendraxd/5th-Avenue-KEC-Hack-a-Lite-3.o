@@ -18,7 +18,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate('/');
     }
   }, [isAuthenticated, navigate]);
 
@@ -31,9 +31,9 @@ const Auth = () => {
       }
       toast({
         title: 'Signed in with Google',
-        description: 'Welcome to Upayog.',
+        description: 'Welcome to Upyog.',
       });
-      navigate('/dashboard');
+      navigate('/');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Please try again.';
       toast({
@@ -55,9 +55,9 @@ const Auth = () => {
       if (success) {
         toast({
           title: isCreating ? 'Account ready' : 'Signed in',
-          description: 'Welcome to Upayog.',
+          description: 'Welcome to Upyog.',
         });
-        navigate('/dashboard');
+        navigate('/');
         return;
       }
 
@@ -171,7 +171,7 @@ const Auth = () => {
           <div className="absolute inset-x-0 bottom-7 flex justify-center px-8">
             <div className="w-full max-w-[520px] rounded-2xl border border-border/60 bg-background/95 p-4 shadow-2xl backdrop-blur">
               <p className="text-sm leading-relaxed text-foreground">
-                Describe your task and Upayog suggests the closest equipment match instantly.
+                Describe your task and Upyog suggests the closest equipment match instantly.
               </p>
               <div className="mt-3 flex items-center gap-2">
                 <Button size="icon" variant="outline" className="h-8 w-8 rounded-full">
@@ -191,7 +191,7 @@ const Auth = () => {
                   </Button>
                 </div>
               </div>
-              <p className="mt-3 text-center text-xs text-muted-foreground">Try Upayog Assistant</p>
+              <p className="mt-3 text-center text-xs text-muted-foreground">Try Upyog Assistant</p>
             </div>
           </div>
         </div>

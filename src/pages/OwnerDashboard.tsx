@@ -1051,9 +1051,9 @@ const OwnerDashboard = () => {
 
           <p className="text-sm text-muted-foreground">
             {activeTab === "timeline" && "See upcoming and active rentals in chronological order."}
-            {activeTab === "requests" && "Review incoming requests, approve quickly, and keep bookings moving."}
+            {activeTab === "requests" && "Review incoming equipment rental and material purchase requests. Approve or decline to keep transactions moving."}
             {activeTab === "listings" && "Manage your equipment catalog, pricing, and availability settings."}
-            {activeTab === "my-requests" && "Track your own rental requests, pay approved ones, and review request details."}
+            {activeTab === "my-requests" && "Track your equipment rental and material purchase requests. Pay approved ones and monitor request status."}
             {activeTab === "business" && "Add your business details so other users can verify your listing profile."}
             {activeTab === "finance" && "Review earnings, payouts, and transaction history without leaving dashboard."}
             {activeTab === "analytics" && "Track usage and utilization insights across your equipment portfolio."}
@@ -1094,8 +1094,8 @@ const OwnerDashboard = () => {
                 <CardContent className="py-8">
                   <EmptyState
                     icon={Inbox}
-                    title="No rental requests yet"
-                    description="When businesses request your equipment, they'll appear here for your review."
+                    title="No requests yet"
+                    description="When businesses request your equipment or materials, they'll appear here for your review."
                   />
                 </CardContent>
               </Card>
@@ -1106,7 +1106,7 @@ const OwnerDashboard = () => {
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg font-semibold flex items-center gap-2">
                         <Hammer className="h-5 w-5 text-primary" />
-                        Builder's Bazaar Requests
+                        Material Purchase Requests
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
@@ -1537,7 +1537,7 @@ const OwnerDashboard = () => {
                 {approvedMyMaterialRequests.length > 0 && (
                   <Card className="border-border/50">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-lg font-semibold">Approved Material Requests - Payment Pending</CardTitle>
+                      <CardTitle className="text-lg font-semibold">Approved Material Purchase Requests - Payment Pending</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {approvedMyMaterialRequests.map((request) => (
@@ -1574,7 +1574,7 @@ const OwnerDashboard = () => {
                 {pendingMyMaterialRequests.length > 0 && (
                   <Card className="border-border/50">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-lg font-semibold">Pending Material Requests</CardTitle>
+                      <CardTitle className="text-lg font-semibold">Pending Material Purchase Requests</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {pendingMyMaterialRequests.map((request) => (
@@ -1890,7 +1890,7 @@ const OwnerDashboard = () => {
         onAccept={async (signature: string) => {
           await acceptTerms(signature);
           toast({
-            title: "Welcome to Upayog!",
+            title: "Welcome to Upyog!",
             description: "You can now list equipment and rent from other users.",
           });
         }}

@@ -31,8 +31,6 @@ export type BusinessProfileInput = Omit<
 const REQUIRED_FIELDS: Array<keyof BusinessProfileInput> = [
   "businessName",
   "legalBusinessName",
-  "citizenshipNumber",
-  "citizenshipDocumentImage",
   "nidNumber",
   "nidDocumentImage",
   "registrationNumber",
@@ -43,8 +41,6 @@ const REQUIRED_FIELDS: Array<keyof BusinessProfileInput> = [
 ];
 
 const KYC_REQUIRED_FIELDS: Array<keyof BusinessProfileInput> = [
-  "citizenshipNumber",
-  "citizenshipDocumentImage",
   "nidNumber",
   "nidDocumentImage",
 ];

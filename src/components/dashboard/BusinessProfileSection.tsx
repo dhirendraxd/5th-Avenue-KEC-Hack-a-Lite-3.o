@@ -200,7 +200,7 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
               Business Information
             </CardTitle>
             <CardDescription>
-              Complete KYC details (Citizenship and NID) to become a trusted user and allow listing/renting.
+              Complete KYC details (National ID) to become a trusted user and allow listing/renting.
             </CardDescription>
           </div>
           <Badge variant={isReady ? "success" : "warning"}>
@@ -292,7 +292,7 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Citizenship Number *</label>
+            <label className="text-sm font-medium">Citizenship Number (Optional)</label>
             <Input
               value={formData.citizenshipNumber}
               onChange={(e) => handleChange("citizenshipNumber", e.target.value)}
@@ -308,7 +308,7 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Citizenship Image *</label>
+            <label className="text-sm font-medium">Citizenship Image (Optional)</label>
             <input
               ref={citizenshipImageInputRef}
               type="file"

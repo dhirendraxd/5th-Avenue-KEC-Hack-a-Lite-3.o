@@ -16,7 +16,7 @@ import EquipmentMiniCard from "./EquipmentMiniCard";
 const WELCOME_MESSAGE: ChatMessage = {
   role: "assistant",
   content:
-    "Welcome to Upayog. I'm your equipment advisor. Share your project requirements and I will recommend suitable equipment options.\n\nExamples:\n- *\"I need to dig a foundation for a 2-story house\"*\n- *\"We are organizing a 500-person outdoor event\"*\n- *\"My warehouse floor needs deep cleaning\"*",
+    "Welcome to Upyog. I'm your equipment advisor. Share your project requirements and I will recommend suitable equipment options.\n\nExamples:\n- *\"I need to dig a foundation for a 2-story house\"*\n- *\"We are organizing a 500-person outdoor event\"*\n- *\"My warehouse floor needs deep cleaning\"*",
 };
 
 /**

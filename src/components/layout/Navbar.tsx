@@ -12,7 +12,6 @@ const Navbar = () => {
   const configuredBitmoji = import.meta.env.VITE_BITMOJI_URL;
   const [profileBitmoji, setProfileBitmoji] = useState<string>("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
 
   const publicNavLinks = [
     { href: "/", label: "Home", icon: Home },
@@ -29,27 +28,6 @@ const Navbar = () => {
     : publicNavLinks;
 
   const isActive = (path: string) => location.pathname === path;
-
-  useEffect(() => {
-    let lastScrollY = window.scrollY;
-
-    const handleScroll = () => {
-      const currentY = window.scrollY;
-
-      if (currentY <= 8) {
-        setIsVisible(true);
-      } else if (currentY > lastScrollY) {
-        setIsVisible(false);
-      } else {
-        setIsVisible(true);
-      }
-
-      lastScrollY = currentY;
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   useEffect(() => {
     if (!user?.id) {
@@ -74,17 +52,13 @@ const Navbar = () => {
 
   return (
     <>
-      <nav
-        className={`fixed left-0 right-0 top-0 z-50 bg-transparent shadow-none transition-transform duration-300 ${
-          isVisible || mobileMenuOpen ? "translate-y-0" : "-translate-y-full"
-        }`}
-      >
+      <nav className="fixed left-0 right-0 top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
         <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <Package className="h-5 w-5 text-foreground/80" />
-            <span className="text-lg font-semibold text-foreground">Upayog</span>
+            <span className="text-lg font-semibold text-foreground">Upyog</span>
           </Link>
 
           {/* Desktop Navigation */}

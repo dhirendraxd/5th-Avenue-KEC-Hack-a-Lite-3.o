@@ -49,7 +49,7 @@ export default function TermsAgreementDialog({
                 Platform Agreement & Safety Terms
               </DialogTitle>
               <DialogDescription className="mt-1 text-xs sm:text-sm">
-                Please read and accept all terms before using Upayog
+                Please read and accept all terms before using Upyog
               </DialogDescription>
             </div>
           </div>
@@ -65,7 +65,7 @@ export default function TermsAgreementDialog({
               </h3>
               <div className="space-y-2 text-sm text-muted-foreground leading-relaxed">
                 <p>
-                  By using Upayog, you agree to comply with all applicable
+                  By using Upyog, you agree to comply with all applicable
                   laws and regulations regarding equipment rental and materials
                   trading. You acknowledge that:
                 </p>
@@ -87,7 +87,7 @@ export default function TermsAgreementDialog({
                     Platform fees and service charges apply to all transactions
                   </li>
                   <li>
-                    Upayog reserves the right to suspend accounts violating
+                    Upyog reserves the right to suspend accounts violating
                     these terms
                   </li>
                 </ul>
@@ -166,7 +166,7 @@ export default function TermsAgreementDialog({
                   maintain appropriate liability insurance coverage.
                 </p>
                 <p>
-                  <strong>Platform Limitation:</strong> Upayog acts as a
+                  <strong>Platform Limitation:</strong> Upyog acts as a
                   marketplace facilitator only. We are not liable for equipment
                   condition, rental disputes, or incidents arising from equipment
                   use. All transactions are between owners and renters.
@@ -225,7 +225,7 @@ export default function TermsAgreementDialog({
               </h3>
               <div className="space-y-2 text-sm text-muted-foreground leading-relaxed">
                 <p>
-                  <strong>Service Fees:</strong> Upayog charges 8-12%
+                  <strong>Service Fees:</strong> Upyog charges 8-12%
                   service fees on rental transactions. This fee covers payment
                   processing, platform maintenance, insurance protection, and
                   customer support.

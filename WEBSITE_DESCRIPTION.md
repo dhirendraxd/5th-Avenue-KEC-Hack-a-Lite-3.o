@@ -1,13 +1,13 @@
-# Upayog - Equipment Rental Platform
+# Upyog - Equipment Rental Platform
 ## Comprehensive Website Description
 
 ---
 
 ## 📋 Executive Summary
 
-**Upayog** is a comprehensive B2B equipment rental marketplace that connects heavy machinery and construction equipment owners with businesses that need them for short-term projects. Built for KEC Hack-a-Lite 3.0, the platform addresses the inefficiency of expensive construction equipment sitting idle while simultaneously providing affordable access to machinery for businesses that can't justify purchasing equipment outright.
+**Upyog** is a comprehensive B2B equipment rental marketplace that connects heavy machinery and construction equipment owners with businesses that need them for short-term projects. Built for KEC Hack-a-Lite 3.0, the platform addresses the inefficiency of expensive construction equipment sitting idle while simultaneously providing affordable access to machinery for businesses that can't justify purchasing equipment outright.
 
-**Project Name:** Upayog  
+**Project Name:** Upyog  
 **Repository:** https://github.com/dhirendraxd/5th-Avenue-KEC-Hack-a-Lite-3.o  
 **Event:** KEC Hack-a-Lite 3.0  
 **Technology Stack:** React 18 + TypeScript + Vite + Firebase + Tailwind CSS  
@@ -22,7 +22,7 @@
 - **Sustainability:** Excessive manufacturing and duplication of equipment when existing machinery could be shared efficiently
 
 ### The Solution
-Upayog creates a trusted marketplace platform that:
+Upyog creates a trusted marketplace platform that:
 - Enables equipment owners to monetize idle assets and offset depreciation costs
 - Provides renters with affordable, on-demand access to verified equipment
 - Reduces environmental impact through shared economy principles
@@ -911,7 +911,7 @@ Upayog creates a trusted marketplace platform that:
 
 ## 📞 Contact & Support
 
-**Development Team:** Upayog  
+**Development Team:** Upyog  
 **Event:** KEC Hack-a-Lite 3.0  
 **Repository:** https://github.com/dhirendraxd/5th-Avenue-KEC-Hack-a-Lite-3.o  
 **License:** MIT License  
@@ -926,7 +926,7 @@ Upayog creates a trusted marketplace platform that:
 
 ## 📝 Summary
 
-Upayog is a comprehensive, production-ready equipment rental platform that successfully addresses real-world inefficiencies in construction equipment utilization. With its dual marketplace for equipment rentals and materials trading, transparent workflows, secure payment processing, and professional design, the platform provides significant value to both equipment owners and renters.
+Upyog is a comprehensive, production-ready equipment rental platform that successfully addresses real-world inefficiencies in construction equipment utilization. With its dual marketplace for equipment rentals and materials trading, transparent workflows, secure payment processing, and professional design, the platform provides significant value to both equipment owners and renters.
 
 The technical implementation demonstrates modern best practices with React 18, TypeScript, Firebase, and Tailwind CSS, resulting in a fast, accessible, and scalable application. The attention to user experience details—from subtle animations to comprehensive condition logging—creates a professional platform that inspires trust and encourages adoption.
 

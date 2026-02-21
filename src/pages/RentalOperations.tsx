@@ -210,7 +210,7 @@ const RentalOperations = () => {
     }
     toast({
       title: "Rental Completed",
-      description: "Thank you for using Upayog. Please leave a review.",
+      description: "Thank you for using Upyog. Please leave a review.",
     });
   };
 
