@@ -38,8 +38,8 @@ export default function TermsAgreementDialog({
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-3xl max-h-[95vh] sm:max-h-[90vh] p-0" hideCloseButton>
-        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-3xl h-[95vh] sm:h-[90vh] p-0 gap-0 flex flex-col overflow-hidden" hideCloseButton>
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b shrink-0">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
               <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
@@ -55,7 +55,7 @@ export default function TermsAgreementDialog({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-4 sm:px-6 py-3 sm:py-4 max-h-[40vh] sm:max-h-[50vh] md:max-h-[500px]">
+        <ScrollArea className="flex-1 px-4 sm:px-6 py-3 sm:py-4 overflow-y-auto">
           <div className="space-y-4 sm:space-y-6 pr-2 sm:pr-4">
             {/* Terms of Service */}
             <section>
@@ -271,10 +271,10 @@ export default function TermsAgreementDialog({
           </div>
         </ScrollArea>
 
-        <DialogFooter className="flex-col sm:flex-col gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 border-t bg-muted/30">
-          <div className="space-y-3 sm:space-y-4 w-full">
+        <DialogFooter className="flex-col sm:flex-col gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 border-t bg-muted/30 shrink-0">
+          <div className="space-y-2.5 sm:space-y-3 w-full">
             {/* Signature Field */}
-            <div className="space-y-1.5 sm:space-y-2">
+            <div className="space-y-1 sm:space-y-2">
               <Label htmlFor="signature" className="text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2">
                 <PenLine className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span>Digital Signature (Full Name) *</span>
@@ -285,7 +285,7 @@ export default function TermsAgreementDialog({
                 placeholder="Enter your full name as consent"
                 value={signature}
                 onChange={(e) => setSignature(e.target.value)}
-                className="font-medium text-sm sm:text-base"
+                className="font-medium text-sm sm:text-base h-9 sm:h-10"
               />
               <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">
                 By entering your name, you electronically sign and agree to be legally bound by these terms
@@ -293,7 +293,7 @@ export default function TermsAgreementDialog({
             </div>
 
             {/* Agreement Checkboxes */}
-            <div className="space-y-2.5 sm:space-y-3 pt-2 border-t">
+            <div className="space-y-2 sm:space-y-2.5 pt-1 sm:pt-2 border-t">
               <div className="flex items-start gap-2 sm:gap-3">
                 <Checkbox
                   id="terms"
@@ -301,9 +301,9 @@ export default function TermsAgreementDialog({
                   onCheckedChange={(checked) =>
                     setHasReadTerms(checked as boolean)
                   }
-                  className="mt-0.5"
+                  className="mt-0.5 shrink-0"
                 />
-                <Label htmlFor="terms" className="text-xs sm:text-sm leading-relaxed cursor-pointer">
+                <Label htmlFor="terms" className="text-xs sm:text-sm leading-snug sm:leading-relaxed cursor-pointer">
                   I have read and agree to the <strong>Terms of Service</strong>{" "}
                   and understand my obligations as a platform user
                 </Label>
@@ -316,9 +316,9 @@ export default function TermsAgreementDialog({
                 onCheckedChange={(checked) =>
                   setHasReadSafety(checked as boolean)
                 }
-                className="mt-0.5"
+                className="mt-0.5 shrink-0"
               />
-              <Label htmlFor="safety" className="text-xs sm:text-sm leading-relaxed cursor-pointer">
+              <Label htmlFor="safety" className="text-xs sm:text-sm leading-snug sm:leading-relaxed cursor-pointer">
                 I acknowledge the <strong>Safety & Compliance Requirements</strong>{" "}
                 and will operate/list equipment responsibly and legally
               </Label>
@@ -331,9 +331,9 @@ export default function TermsAgreementDialog({
                   onCheckedChange={(checked) =>
                     setHasReadLiability(checked as boolean)
                   }
-                  className="mt-0.5"
+                  className="mt-0.5 shrink-0"
                 />
-                <Label htmlFor="liability" className="text-xs sm:text-sm leading-relaxed cursor-pointer">
+                <Label htmlFor="liability" className="text-xs sm:text-sm leading-snug sm:leading-relaxed cursor-pointer">
                   I understand the <strong>Liability & Insurance</strong> terms
                   and accept responsibility for equipment damage and safety
                 </Label>
@@ -341,24 +341,26 @@ export default function TermsAgreementDialog({
             </div>
           </div>
 
-          <Button
-            onClick={handleAccept}
-            disabled={!canAccept}
-            className="w-full text-sm sm:text-base"
-            size="lg"
-          >
-            <ShieldCheck className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span className="hidden sm:inline">Accept Terms & Continue to Dashboard</span>
-            <span className="sm:hidden">Accept & Continue</span>
-          </Button>
+          <div className="w-full space-y-2">
+            <Button
+              onClick={handleAccept}
+              disabled={!canAccept}
+              className="w-full text-sm sm:text-base h-10 sm:h-11"
+              size="lg"
+            >
+              <ShieldCheck className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="hidden sm:inline">Accept Terms & Continue to Dashboard</span>
+              <span className="sm:hidden">Accept & Continue</span>
+            </Button>
 
-          {!canAccept && (
-            <p className="text-[10px] sm:text-xs text-muted-foreground text-center leading-tight">
-              {signature.trim().length === 0
-                ? "Please enter your name and accept all terms to continue"
-                : "You must accept all terms to use the platform"}
-            </p>
-          )}
+            {!canAccept && (
+              <p className="text-[10px] sm:text-xs text-muted-foreground text-center leading-tight">
+                {signature.trim().length === 0
+                  ? "Please enter your name and accept all terms to continue"
+                  : "You must accept all terms to use the platform"}
+              </p>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
