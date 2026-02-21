@@ -59,7 +59,7 @@ export const materialConditionLabels: Record<MaterialCondition, string> = {
   used: "Used",
 };
 
-const conditionPool: MaterialCondition[] = ["new", "used"];
+const conditionPool: MaterialCondition[] = ["sealed", "new", "used"];
 
 export const pickRandomCondition = (): MaterialCondition =>
   conditionPool[Math.floor(Math.random() * conditionPool.length)];

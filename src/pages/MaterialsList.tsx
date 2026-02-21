@@ -23,7 +23,7 @@ const MaterialsList = () => {
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [category, setCategory] = useState<string>("");
-  const [condition, setCondition] = useState<string>(() => pickRandomCondition());
+  const [condition, setCondition] = useState<string>("new");
   const [price, setPrice] = useState<string>("");
   const [isFree, setIsFree] = useState(false);
   const [location, setLocation] = useState("");
@@ -152,6 +152,17 @@ const MaterialsList = () => {
     // Build error object
     const newErrors: Record<string, string> = {};
     
+    // Log current form state
+    console.log("Form state on submit:", {
+      name: name?.trim(),
+      category,
+      condition,
+      price,
+      isFree,
+      location: location?.trim(),
+      photosCount: uploadedPhotos.length,
+    });
+    
     // Check all required fields
     if (!name.trim()) {
       newErrors.name = "Item name is required";
@@ -172,8 +183,10 @@ const MaterialsList = () => {
     }
 
     // Validate price if not free
-    if (!isFree && (!price || Number(price) <= 0)) {
-      newErrors.price = "Add a valid price or mark as free";
+    if (!isFree) {
+      if (!price || price.trim() === "" || isNaN(Number(price)) || Number(price) < 0) {
+        newErrors.price = "Please enter a valid price or mark as free";
+      }
     }
     
     if (uploadedPhotos.length === 0) {
@@ -183,6 +196,10 @@ const MaterialsList = () => {
     // If there are errors, show them and stop
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      
+      // Log errors for debugging
+      console.error("Form validation errors:", newErrors);
+      
       toast({
         title: "Validation errors",
         description: "Please fix the errors and try again.",
@@ -206,7 +223,7 @@ const MaterialsList = () => {
       // Reset all form fields and photos
       setName("");
       setCategory("");
-      setCondition(pickRandomCondition());
+      setCondition("new");
       setPrice("");
       setIsFree(false);
       setLocation("");
