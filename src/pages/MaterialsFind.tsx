@@ -77,6 +77,7 @@ const MaterialsFind = () => {
   const { toast } = useToast();
   const [radius, setRadius] = useState("10");
   const [category, setCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [location, setLocation] = useState(DEFAULT_LOCATION);
   const [locationStatus, setLocationStatus] = useState<"idle" | "loading" | "error">("idle");
   const [selected, setSelected] = useState<MaterialListing | null>(null);
@@ -88,6 +89,16 @@ const MaterialsFind = () => {
   const [offerAmount, setOfferAmount] = useState("");
   const [offerStatus, setOfferStatus] = useState<"idle" | "sent" | "accepted" | "rejected" | "counter">("idle");
   const [counterOfferAmount, setCounterOfferAmount] = useState<number | null>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+
+  // Simulate initial data loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -130,8 +141,17 @@ const MaterialsFind = () => {
       }))
       .filter((listing) => listing.distance <= maxDistance)
       .filter((listing) => category === "all" || listing.category === category)
+      .filter((listing) => {
+        if (!searchQuery.trim()) return true;
+        const query = searchQuery.toLowerCase();
+        return (
+          listing.name.toLowerCase().includes(query) ||
+          listing.locationName.toLowerCase().includes(query) ||
+          listing.notes?.toLowerCase().includes(query)
+        );
+      })
       .sort((a, b) => a.distance - b.distance);
-  }, [radius, category, location]);
+  }, [radius, category, location, searchQuery]);
 
   /**
    * Calculate area insights for sidebar
@@ -184,22 +204,37 @@ const MaterialsFind = () => {
   const handlePurchase = () => {
     if (!selected) return;
     
-    if (paymentMethod === "cod") {
-      toast({
-        title: "Order Confirmed! ✓",
-        description: `${selected.name} - Pickup at ${selectedPickupLocation}\nPayment: Cash on Delivery\n\nCalling ${selected.contactName}...`,
-        duration: 5000,
-      });
-    } else {
-      toast({
-        title: "Proceed to Payment",
-        description: `${selected.name}\nAmount: NPR ${selected.price}\n\nSelect payment method above`,
-        duration: 4000,
-      });
-      return;
-    }
+    setIsPurchasing(true);
     
-    setDialogOpen(false);
+    // Simulate processing time for better UX
+    setTimeout(() => {
+      if (paymentMethod === "cod") {
+        toast({
+          title: "Order Confirmed! ✓",
+          description: `${selected.name} - Pickup at ${selectedPickupLocation}\nPayment: Cash on Delivery\n\nCalling ${selected.contactName}...`,
+          duration: 5000,
+        });
+        setIsPurchasing(false);
+        setDialogOpen(false);
+      } else {
+        if (!selectedGateway) {
+          toast({
+            title: "Select Payment Gateway",
+            description: "Please choose a payment method below to proceed.",
+            variant: "destructive",
+          });
+          setIsPurchasing(false);
+          return;
+        }
+        toast({
+          title: "Processing Payment",
+          description: `Redirecting to payment gateway...`,
+          duration: 3000,
+        });
+        setIsPurchasing(false);
+        setDialogOpen(false);
+      }
+    }, 600);
   };
 
   const handlePaymentGateway = (gateway: "khalti" | "esewa" | "bank") => {
@@ -340,6 +375,7 @@ const MaterialsFind = () => {
                   <SelectContent>
                     <SelectItem value="5">Within 5 miles</SelectItem>
                     <SelectItem value="10">Within 10 miles</SelectItem>
+                    <SelectItem value="15">Within 15 miles</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={category} onValueChange={setCategory}>
@@ -348,14 +384,29 @@ const MaterialsFind = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All categories</SelectItem>
-                    <SelectItem value="wood">Wood</SelectItem>
-                    <SelectItem value="metal">Metal</SelectItem>
-                    <SelectItem value="concrete">Concrete</SelectItem>
+                    <SelectItem value="wood">🪵 Wood</SelectItem>
+                    <SelectItem value="metal">🔩 Metal</SelectItem>
+                    <SelectItem value="concrete">🏗️ Concrete</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             }
           />
+
+          {/* Search Bar */}
+          <div className="mb-6 max-w-2xl">
+            <Input
+              placeholder="🔍 Search materials by name or location..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-12 text-base"
+            />
+            {searchQuery && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Found {listings.length} {listings.length === 1 ? 'result' : 'results'} matching "{searchQuery}"
+              </p>
+            )}
+          </div>
 
           <div className="grid gap-6 lg:gap-8 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
             <div className="space-y-5">
@@ -519,8 +570,54 @@ const MaterialsFind = () => {
             </div>
 
           <div className="space-y-5">
-            {listings.map((listing) => (
-              <Card key={listing.id} className="card-shadow hover:card-shadow-hover transition-all duration-200 border-border/70">
+            {isInitialLoading ? (
+              // Skeleton loader for initial load
+              Array.from({ length: 3 }).map((_, index) => (
+                <Card key={index} className="card-shadow animate-pulse">
+                  <CardHeader className="space-y-3 pb-4">
+                    <div className="h-56 bg-muted rounded-xl" />
+                    <div className="flex justify-between">
+                      <div className="h-6 bg-muted rounded w-1/2" />
+                      <div className="h-5 bg-muted rounded w-20" />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="h-6 bg-muted rounded w-20" />
+                      <div className="h-6 bg-muted rounded w-24" />
+                      <div className="h-6 bg-muted rounded w-24" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-0">
+                    <div className="h-10 bg-muted rounded" />
+                    <div className="h-12 bg-muted rounded" />
+                  </CardContent>
+                </Card>
+              ))
+            ) : listings.length === 0 ? (
+              <Card className="card-shadow border-dashed">
+                <CardContent className="py-16 text-center">
+                  <Package className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-base font-medium text-foreground mb-2">
+                    {searchQuery ? 'No materials match your search' : 'No materials found'}
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {searchQuery 
+                      ? 'Try different keywords or clear the search' 
+                      : 'Try increasing your search radius or changing the category filter.'}
+                  </p>
+                  {searchQuery && (
+                    <Button variant="outline" onClick={() => setSearchQuery("")}>
+                      Clear Search
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              listings.map((listing, index) => (
+              <Card 
+                key={listing.id} 
+                className="card-shadow hover:card-shadow-hover transition-all duration-200 border-border/70 animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
                 <CardHeader className="space-y-3 pb-4">
                     <div className="overflow-hidden rounded-xl border border-border bg-muted/40">
                     <img
@@ -561,21 +658,18 @@ const MaterialsFind = () => {
                   {listing.notes && (
                     <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{listing.notes}</p>
                   )}
-                  <Button className="w-full shadow-sm" size="lg" onClick={() => handleOpenDialog(listing)}>
+                  <Button 
+                    className="w-full shadow-sm group" 
+                    size="lg" 
+                    onClick={() => handleOpenDialog(listing)}
+                  >
                     View & Purchase
+                    <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
                   </Button>
                 </CardContent>
               </Card>
             ))}
 
-            {listings.length === 0 && (
-              <Card className="card-shadow border-dashed">
-                <CardContent className="py-16 text-center">
-                  <Package className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-base font-medium text-foreground mb-2">No materials found</p>
-                  <p className="text-sm text-muted-foreground">Try increasing your search radius or changing the category filter.</p>
-                </CardContent>
-              </Card>
             )}
           </div>
           </div>
@@ -861,8 +955,22 @@ const MaterialsFind = () => {
                 </a>
               </Button>
             )}
-            <Button onClick={handlePurchase} size="lg" className="shadow-sm">
-              ✓ Confirm Purchase
+            <Button 
+              onClick={handlePurchase} 
+              size="lg" 
+              className="shadow-sm"
+              disabled={isPurchasing || (paymentMethod === "advance" && !selectedGateway)}
+            >
+              {isPurchasing ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  ✓ Confirm Purchase
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

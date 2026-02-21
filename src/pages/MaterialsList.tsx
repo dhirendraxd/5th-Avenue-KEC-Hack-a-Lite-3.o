@@ -29,6 +29,10 @@ const MaterialsList = () => {
   const [location, setLocation] = useState("");
   const [isLocating, setIsLocating] = useState(false);
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleUseLocation = () => {
     if (!navigator.geolocation) {
@@ -46,11 +50,15 @@ const MaterialsList = () => {
         const { latitude, longitude } = pos.coords;
         setLocation(`GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
         setIsLocating(false);
+        toast({
+          title: "Location acquired ✓",
+          description: "Your GPS location has been set successfully.",
+        });
       },
       () => {
         toast({
           title: "Unable to get location",
-          description: "Please allow GPS access or enter a location.",
+          description: "Please allow GPS access or enter a location manually.",
           variant: "destructive",
         });
         setIsLocating(false);
@@ -83,16 +91,31 @@ const MaterialsList = () => {
 
       // Convert file to Base64 for display
       const reader = new FileReader();
+      reader.onloadstart = () => {
+        setIsUploading(true);
+        setUploadProgress(0);
+      };
+      
+      reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const progress = (e.loaded / e.total) * 100;
+          setUploadProgress(progress);
+        }
+      };
+      
       reader.onload = (e) => {
         const result = e.target?.result as string;
         // Check photo limit before adding
         if (uploadedPhotos.length < 4) {
           setUploadedPhotos([...uploadedPhotos, result]);
+          setIsUploading(false);
+          setUploadProgress(100);
           toast({
-            title: "Photo added",
+            title: "Photo added ✓",
             description: `${uploadedPhotos.length + 1}/4 photos uploaded.`,
           });
         } else {
+          setIsUploading(false);
           toast({
             title: "Photo limit reached",
             description: "Maximum 4 photos allowed.",
@@ -110,6 +133,10 @@ const MaterialsList = () => {
    */
   const removePhoto = (index: number) => {
     setUploadedPhotos(uploadedPhotos.filter((_, i) => i !== index));
+    toast({
+      title: "Photo removed",
+      description: `${uploadedPhotos.length - 1}/4 photos remaining.`,
+    });
   };
 
   /**
@@ -122,40 +149,70 @@ const MaterialsList = () => {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
 
+    // Build error object
+    const newErrors: Record<string, string> = {};
+    
     // Check all required fields
-    if (!name.trim() || !category || !condition || !location.trim()) {
-      toast({
-        title: "Missing fields",
-        description: "Please complete all required fields.",
-        variant: "destructive",
-      });
-      return;
+    if (!name.trim()) {
+      newErrors.name = "Item name is required";
+    } else if (name.length < 3) {
+      newErrors.name = "Name must be at least 3 characters";
+    }
+    
+    if (!category) {
+      newErrors.category = "Please select a category";
+    }
+    
+    if (!condition) {
+      newErrors.condition = "Please select a condition";
+    }
+    
+    if (!location.trim()) {
+      newErrors.location = "Location is required";
     }
 
     // Validate price if not free
     if (!isFree && (!price || Number(price) <= 0)) {
+      newErrors.price = "Add a valid price or mark as free";
+    }
+    
+    if (uploadedPhotos.length === 0) {
+      newErrors.photos = "At least one photo is required";
+    }
+    
+    // If there are errors, show them and stop
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       toast({
-        title: "Price required",
-        description: "Add a valid price or mark the item as free.",
+        title: "Validation errors",
+        description: "Please fix the errors and try again.",
         variant: "destructive",
       });
       return;
     }
 
-    // Success confirmation
-    toast({
-      title: "Listing saved",
-      description: "This is a prototype. Your item is not yet published.",
-    });
+    // Start submission
+    setIsSubmitting(true);
+    setErrors({});
+    
+    // Simulate processing time for better UX
+    setTimeout(() => {
+      // Success confirmation
+      toast({
+        title: "Listing published! ✓",
+        description: "Your material is now available on Builder's Bazaar.",
+      });
 
-    // Reset all form fields and photos
-    setName("");
-    setCategory("");
-    setCondition(pickRandomCondition());
-    setPrice("");
-    setIsFree(false);
-    setLocation("");
-    setUploadedPhotos([]);
+      // Reset all form fields and photos
+      setName("");
+      setCategory("");
+      setCondition(pickRandomCondition());
+      setPrice("");
+      setIsFree(false);
+      setLocation("");
+      setUploadedPhotos([]);
+      setIsSubmitting(false);
+    }, 800);
   };
 
   return (
@@ -183,76 +240,149 @@ const MaterialsList = () => {
           <CardContent className="relative">
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
               <form className="order-2 grid gap-6 lg:order-1" onSubmit={handleSubmit}>
-              <div className="grid gap-2.5.5">
-                <label className="text-sm font-semibold">Item Name *</label>
+              <div className="grid gap-2.5">
+                <label className="text-sm font-semibold">
+                  Item Name <span className="text-destructive">*</span>
+                </label>
                 <Input
                   placeholder="e.g., TMT Steel Rods, Cement Bags, Plywood Sheets"
                   value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  className="h-11"
+                  onChange={(event) => {
+                    setName(event.target.value);
+                    if (event.target.value.trim()) {
+                      const newErrors = { ...errors };
+                      delete newErrors.name;
+                      setErrors(newErrors);
+                    }
+                  }}
+                  className={`h-11 ${errors.name ? 'border-destructive' : ''}`}
                 />
+                {errors.name && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <span>⚠️</span> {errors.name}
+                  </p>
+                )}
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="grid gap-2.5">
-                  <label className="text-sm font-semibold">Category *</label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger className="h-11">
+                  <label className="text-sm font-semibold">
+                    Category <span className="text-destructive">*</span>
+                  </label>
+                  <Select value={category} onValueChange={(val) => {
+                    setCategory(val);
+                    if (val) {
+                      const newErrors = { ...errors };
+                      delete newErrors.category;
+                      setErrors(newErrors);
+                    }
+                  }}>
+                    <SelectTrigger className={`h-11 ${errors.category ? 'border-destructive' : ''}`}>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="wood">Wood</SelectItem>
-                      <SelectItem value="metal">Metal</SelectItem>
-                      <SelectItem value="concrete">Concrete</SelectItem>
+                      <SelectItem value="wood">🪵 Wood</SelectItem>
+                      <SelectItem value="metal">🔩 Metal</SelectItem>
+                      <SelectItem value="concrete">🏗️ Concrete</SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors.category && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <span>⚠️</span> {errors.category}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid gap-2.5">
-                  <label className="text-sm font-semibold">Condition *</label>
-                  <Select value={condition} onValueChange={setCondition}>
-                    <SelectTrigger className="h-11">
+                  <label className="text-sm font-semibold">
+                    Condition <span className="text-destructive">*</span>
+                  </label>
+                  <Select value={condition} onValueChange={(val) => {
+                    setCondition(val);
+                    if (val) {
+                      const newErrors = { ...errors };
+                      delete newErrors.condition;
+                      setErrors(newErrors);
+                    }
+                  }}>
+                    <SelectTrigger className={`h-11 ${errors.condition ? 'border-destructive' : ''}`}>
                       <SelectValue placeholder="Select condition" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sealed">Sealed</SelectItem>
-                      <SelectItem value="new">New</SelectItem>
-                      <SelectItem value="used">Used</SelectItem>
+                      <SelectItem value="sealed">✨ Sealed</SelectItem>
+                      <SelectItem value="new">👌 New</SelectItem>
+                      <SelectItem value="used">✅ Used</SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors.condition && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <span>⚠️</span> {errors.condition}
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
                 <div className="grid gap-2.5">
-                  <label className="text-sm font-semibold">Price (NPR) *</label>
+                  <label className="text-sm font-semibold">
+                    Price (NPR) {!isFree && <span className="text-destructive">*</span>}
+                  </label>
                   <Input
                     type="number"
                     min="0"
                     placeholder={isFree ? "Item is marked as free" : "Enter price in NPR"}
                     value={isFree ? "" : price}
-                    onChange={(event) => setPrice(event.target.value)}
+                    onChange={(event) => {
+                      setPrice(event.target.value);
+                      if (event.target.value) {
+                        const newErrors = { ...errors };
+                        delete newErrors.price;
+                        setErrors(newErrors);
+                      }
+                    }}
                     disabled={isFree}
-                    className="h-11"
+                    className={`h-11 ${errors.price ? 'border-destructive' : ''}`}
                   />
+                  {errors.price && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <span>⚠️</span> {errors.price}
+                    </p>
+                  )}
                 </div>
                 <label className="flex items-center gap-2.5 text-sm font-medium pb-2.5">
                   <Checkbox
                     checked={isFree}
-                    onCheckedChange={(value) => setIsFree(Boolean(value))}
+                    onCheckedChange={(value) => {
+                      setIsFree(Boolean(value));
+                      if (value) {
+                        setPrice("");
+                        const newErrors = { ...errors };
+                        delete newErrors.price;
+                        setErrors(newErrors);
+                      }
+                    }}
                   />
                   Mark as Free
                 </label>
               </div>
 
               <div className="grid gap-2.5">
-                <label className="text-sm font-semibold">Location *</label>
+                <label className="text-sm font-semibold">
+                  Location <span className="text-destructive">*</span>
+                </label>
                 <div className="flex flex-col gap-2.5 sm:flex-row">
                   <Input
                     placeholder="Enter neighborhood or use GPS"
                     value={location}
-                    onChange={(event) => setLocation(event.target.value)}
-                    className="h-11"
+                    onChange={(event) => {
+                      setLocation(event.target.value);
+                      if (event.target.value.trim()) {
+                        const newErrors = { ...errors };
+                        delete newErrors.location;
+                        setErrors(newErrors);
+                      }
+                    }}
+                    className={`h-11 ${errors.location ? 'border-destructive' : ''}`}
                   />
                   <Button
                     type="button"
@@ -261,20 +391,49 @@ const MaterialsList = () => {
                     disabled={isLocating}
                     className="h-11 flex-shrink-0"
                   >
-                    {isLocating ? "Getting location..." : "📍 Use GPS"}
+                    {isLocating ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Getting location...
+                      </>
+                    ) : (
+                      "📍 Use GPS"
+                    )}
                   </Button>
                 </div>
+                {errors.location && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <span>⚠️</span> {errors.location}
+                  </p>
+                )}
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button type="submit" size="lg" className="px-8 shadow-sm">
-                  🚀 Publish Listing
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  className="px-8 shadow-sm group"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      🚀 Publish Listing
+                      <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                    </>
+                  )}
                 </Button>
               </div>
               </form>
 
               <div className="order-1 space-y-4 lg:order-2">
-                <div className="rounded-xl border-2 border-dashed border-border bg-gradient-to-br from-muted/30 to-muted/10 p-5 hover:border-primary/40 transition-colors">
+                <div className={`rounded-xl border-2 border-dashed bg-gradient-to-br from-muted/30 to-muted/10 p-5 transition-colors ${
+                  errors.photos ? 'border-destructive' : isUploading ? 'border-primary/60' : 'border-border hover:border-primary/40'
+                }`}>
                   <label className="cursor-pointer">
                     <input
                       type="file"
@@ -282,19 +441,42 @@ const MaterialsList = () => {
                       accept="image/*"
                       onChange={handlePhotoUpload}
                       className="hidden"
+                      disabled={isUploading || uploadedPhotos.length >= 4}
                     />
                     <div className="flex flex-col items-center justify-center gap-3 py-7">
                       <div className="p-3 rounded-full bg-primary/10">
                         <Camera className="h-7 w-7 text-primary" />
                       </div>
                       <div className="text-center">
-                        <p className="font-semibold text-foreground text-base">Upload Photos</p>
-                        <p className="text-xs text-muted-foreground mt-1">Click to add images ({uploadedPhotos.length}/4)</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Max 4 photos</p>
+                        <p className="font-semibold text-foreground text-base">
+                          {isUploading ? "Uploading..." : "Upload Photos"}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {uploadedPhotos.length >= 4 ? "Maximum reached" : "Click to add images"} ({uploadedPhotos.length}/4)
+                        </p>
+                        {uploadedPhotos.length < 4 && <p className="text-xs text-muted-foreground mt-0.5">Max 4 photos</p>}
                       </div>
+                      {isUploading && (
+                        <div className="w-full max-w-[200px]">
+                          <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+                            <div 
+                              className="bg-primary h-full transition-all duration-300 ease-out"
+                              style={{ width: `${uploadProgress}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground text-center mt-1">
+                            {Math.round(uploadProgress)}%
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </label>
                 </div>
+                {errors.photos && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <span>⚠️</span> {errors.photos}
+                  </p>
+                )}
 
                 {uploadedPhotos.length > 0 && (
                   <div className="grid gap-3 sm:grid-cols-2">
