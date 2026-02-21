@@ -171,7 +171,7 @@ const BrowseEquipment = () => {
   }, [allEquipment, userCoords]);
 
   const filteredAndSortedEquipment = useMemo(() => {
-    let result = allEquipment.filter((equipment) => {
+    const result = allEquipment.filter((equipment) => {
       const matchesSearch =
         equipment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         equipment.description.toLowerCase().includes(searchQuery.toLowerCase());

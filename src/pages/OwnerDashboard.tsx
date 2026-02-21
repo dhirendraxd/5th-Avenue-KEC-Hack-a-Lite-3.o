@@ -93,6 +93,14 @@ import {
 } from "lucide-react";
 import { format, isToday, isTomorrow, differenceInDays } from "date-fns";
 
+interface DashboardNotification {
+  id: string;
+  title: string;
+  message: string;
+  read?: boolean;
+  createdAt: string;
+}
+
 const OwnerDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -108,7 +116,7 @@ const OwnerDashboard = () => {
   const [myEquipment, setMyEquipment] = useState<Equipment[]>([]);
   const [myMaterials, setMyMaterials] = useState<MaterialListing[]>([]);
   const [materialRequests, setMaterialRequests] = useState<MaterialRequest[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
   const [materialEditor, setMaterialEditor] = useState<{
     open: boolean;
     material: MaterialListing | null;
@@ -195,8 +203,7 @@ const OwnerDashboard = () => {
     const unsubscribeNotifications = subscribeDocuments(
       "notifications",
       (docs) => {
-        // docs are already objects with id and fields
-        setNotifications(docs as any[]);
+        setNotifications(docs as DashboardNotification[]);
       },
       [where("recipientId", "==", user.id), orderBy("createdAt", "desc")],
       (error) => {
@@ -632,7 +639,7 @@ const OwnerDashboard = () => {
                   <p className="text-sm text-muted-foreground">No notifications</p>
                 ) : (
                   <div className="space-y-2">
-                    {notifications.slice(0, 6).map((n: any) => (
+                    {notifications.slice(0, 6).map((n) => (
                       <div key={n.id} className={`flex items-start justify-between gap-3 p-3 rounded-lg ${n.read ? 'bg-card/50' : 'bg-primary/5'}`}>
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{n.title}</p>

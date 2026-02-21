@@ -20,7 +20,6 @@ import {
   DollarSign,
   Package,
   Clock,
-  CheckCircle2,
   UserRound,
   Hammer,
   ArrowUpRight,
