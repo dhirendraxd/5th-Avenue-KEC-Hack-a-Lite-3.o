@@ -6,6 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import PickupReturnChecklist from "@/components/rental/PickupReturnChecklist";
@@ -81,6 +90,9 @@ const RentalOperations = () => {
   const [reviewRating, setReviewRating] = useState<number>(0);
   const [reviewFeedback, setReviewFeedback] = useState("");
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [extensionPaymentDialogOpen, setExtensionPaymentDialogOpen] = useState(false);
+  const [extensionPaymentId, setExtensionPaymentId] = useState("");
+  const [isProcessingExtensionPayment, setIsProcessingExtensionPayment] = useState(false);
   
   const conditionLogs = useLogsForRental(id || '');
 
@@ -97,7 +109,20 @@ const RentalOperations = () => {
         : createDefaultChecklist(defaultReturnChecklist),
     );
     setExtensionRequest(rental.extensionRequest);
-  }, [rental?.id]);
+    
+    // Open payment dialog if extension is approved but not paid
+    const isRenterCheck =
+      (user?.id && rental.renter.id === user.id) ||
+      (user?.name && rental.renter.name === user.name);
+    
+    if (
+      rental.extensionRequest?.status === "approved" &&
+      rental.extensionRequest?.paymentStatus === "pending" &&
+      isRenterCheck
+    ) {
+      setExtensionPaymentDialogOpen(true);
+    }
+  }, [rental?.id, user]);
 
   useEffect(() => {
     if (!rental?.id) return;
@@ -153,7 +178,7 @@ const RentalOperations = () => {
     (user?.id && rental.renter.id === user.id) ||
     (user?.name && rental.renter.name === user.name);
   const effectiveEndDate =
-    extensionRequest?.status === "approved"
+    extensionRequest?.status === "approved" && extensionRequest?.paymentStatus === "paid"
       ? extensionRequest.newEndDate
       : rental.endDate;
   const hasReachedReturnDate = today.getTime() >= effectiveEndDate.getTime();
@@ -242,6 +267,63 @@ const RentalOperations = () => {
       title: "Review submitted",
       description: "Thanks for sharing your equipment feedback.",
     });
+  };
+
+  const handleConfirmExtensionPayment = async () => {
+    if (isProcessingExtensionPayment) return;
+
+    if (!extensionPaymentId.trim()) {
+      toast({
+        title: "Payment ID required",
+        description: "Please enter your eSewa payment ID as proof of payment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!rental || !extensionRequest) return;
+
+    const paymentReference = `ESEWA-EXT-${extensionPaymentId.trim()}`;
+    setIsProcessingExtensionPayment(true);
+
+    try {
+      // Update extension request with payment info and apply extension
+      const updatedExtension = {
+        ...extensionRequest,
+        paymentStatus: "paid" as const,
+        paymentReference,
+      };
+
+      setExtensionRequest(updatedExtension);
+      setRental((prev) =>
+        prev
+          ? {
+              ...prev,
+              extensionRequest: updatedExtension,
+              endDate: extensionRequest.newEndDate,
+              totalDays: prev.totalDays + extensionRequest.additionalDays,
+              totalPrice: prev.totalPrice + extensionRequest.additionalCost,
+            }
+          : prev
+      );
+
+      setExtensionPaymentDialogOpen(false);
+      setExtensionPaymentId("");
+
+      toast({
+        title: "Extension payment successful",
+        description: `Your rental has been extended to ${format(extensionRequest.newEndDate, "MMM d, yyyy")}.`,
+      });
+    } catch (error) {
+      console.error("Failed to complete extension payment:", error);
+      toast({
+        title: "Payment failed",
+        description: "Could not process extension payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingExtensionPayment(false);
+    }
   };
 
   return (
@@ -396,6 +478,14 @@ const RentalOperations = () => {
                         New end date: {format(extensionRequest.newEndDate, "MMM d, yyyy")} (+
                         {extensionRequest.additionalDays} days, NPR {extensionRequest.additionalCost})
                       </p>
+                      {extensionRequest.status === "approved" && extensionRequest.paymentStatus === "pending" && isRenter && (
+                        <Button
+                          className="mt-3 w-full"
+                          onClick={() => setExtensionPaymentDialogOpen(true)}
+                        >
+                          Pay for Extension (NPR {extensionRequest.additionalCost})
+                        </Button>
+                      )}
                     </div>
                   </>
                 )}
@@ -652,6 +742,98 @@ const RentalOperations = () => {
         serviceFeePercent={rental.equipment.serviceFeePercent}
         onSubmit={handleExtensionSubmit}
       />
+
+      {/* Extension Payment Dialog */}
+      <Dialog
+        open={extensionPaymentDialogOpen}
+        onOpenChange={(open) => {
+          if (!isProcessingExtensionPayment) {
+            setExtensionPaymentDialogOpen(open);
+            if (!open) {
+              setExtensionPaymentId("");
+            }
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pay for Extension</DialogTitle>
+            <DialogDescription>
+              Complete your payment to extend the rental period.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg border border-border/60 p-3">
+              <div className="space-y-1 text-sm">
+                <p className="font-semibold text-foreground">Extension Details</p>
+                <p className="text-muted-foreground">
+                  Additional {extensionRequest?.additionalDays} days
+                </p>
+                <p className="text-muted-foreground">
+                  New end date: {extensionRequest?.newEndDate && format(extensionRequest.newEndDate, "MMM d, yyyy")}
+                </p>
+                <p className="text-lg font-bold text-foreground mt-2">
+                  Amount: NPR {extensionRequest?.additionalCost.toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Payment Method</label>
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
+                      <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-3.86-.95-7-5.14-7-9V8.3l7-3.11 7 3.11V11c0 3.86-3.14 8.05-7 9z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-foreground">eSewa</p>
+                      <p className="text-xs text-muted-foreground">Digital wallet payment</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="extension-payment-id" className="text-sm font-medium">eSewa Payment ID</label>
+                <Input
+                  id="extension-payment-id"
+                  placeholder="Enter your eSewa payment/transaction ID"
+                  value={extensionPaymentId}
+                  onChange={(e) => setExtensionPaymentId(e.target.value)}
+                  disabled={isProcessingExtensionPayment}
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Complete payment via eSewa and enter the transaction ID as proof.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setExtensionPaymentDialogOpen(false);
+                setExtensionPaymentId("");
+              }}
+              disabled={isProcessingExtensionPayment}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmExtensionPayment} 
+              disabled={isProcessingExtensionPayment || !extensionPaymentId.trim()}
+            >
+              {isProcessingExtensionPayment ? "Processing..." : "Confirm Payment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

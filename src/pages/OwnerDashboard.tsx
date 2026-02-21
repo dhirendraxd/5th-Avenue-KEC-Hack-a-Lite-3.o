@@ -149,7 +149,7 @@ const OwnerDashboard = () => {
     rental?: RentalRequest;
     materialRequest?: MaterialRequest;
   }>({ open: false, type: "equipment" });
-  const [paymentMethodMode, setPaymentMethodMode] = useState<"card" | "wallet" | "bank">("card");
+  const [paymentId, setPaymentId] = useState("");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   useEffect(() => {
@@ -539,17 +539,15 @@ const OwnerDashboard = () => {
           ? {
               ...r,
               extensionRequest: r.extensionRequest
-                ? { ...r.extensionRequest, status: "approved" }
+                ? { ...r.extensionRequest, status: "approved", paymentStatus: "pending" }
                 : undefined,
-              endDate: r.extensionRequest?.newEndDate || r.endDate,
-              totalDays: r.totalDays + (r.extensionRequest?.additionalDays || 0),
             }
           : r
       )
     );
     toast({
       title: "Extension approved",
-      description: "The rental has been extended and the renter notified.",
+      description: "The renter will be prompted to pay for the extension.",
     });
   };
 
@@ -594,7 +592,7 @@ const OwnerDashboard = () => {
       );
       toast({
         title: "Payment successful",
-        description: "Your rental is now active. You can continue in rental operations.",
+        description: "Redirecting to rental operations to complete pickup checklist...",
       });
     } catch (error) {
       console.error("Failed to complete payment:", error);
@@ -630,7 +628,7 @@ const OwnerDashboard = () => {
       );
       toast({
         title: "Payment successful",
-        description: "Your material purchase is confirmed and marked completed.",
+        description: "Redirecting to material verification page...",
       });
     } catch (error) {
       console.error("Failed to complete material payment:", error);
@@ -648,19 +646,42 @@ const OwnerDashboard = () => {
   const handleConfirmPayment = async () => {
     if (isProcessingPayment) return;
 
-    const paymentReference = `${paymentMethodMode.toUpperCase()}-${Date.now()}`;
+    if (!paymentId.trim()) {
+      toast({
+        title: "Payment ID required",
+        description: "Please enter your eSewa payment ID as proof of payment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const paymentReference = `ESEWA-${paymentId.trim()}`;
     setIsProcessingPayment(true);
+    
+    let rentalId: string | null = null;
+    let materialRequestId: string | null = null;
+    
     try {
       if (paymentDialog.type === "equipment" && paymentDialog.rental) {
-        await handlePayForApprovedRequest(paymentDialog.rental.id, paymentReference);
+        rentalId = paymentDialog.rental.id;
+        await handlePayForApprovedRequest(rentalId, paymentReference);
       }
       if (paymentDialog.type === "material" && paymentDialog.materialRequest) {
+        materialRequestId = paymentDialog.materialRequest.id;
         await handlePayForApprovedMaterialRequest(
-          paymentDialog.materialRequest.id,
+          materialRequestId,
           paymentReference,
         );
       }
       setPaymentDialog({ open: false, type: "equipment" });
+      setPaymentId("");
+      
+      // Navigate to rental operations page to view pickup/return checklists
+      if (rentalId) {
+        navigate(`/rental/${rentalId}`);
+      } else if (materialRequestId) {
+        navigate(`/materials/verify`);
+      }
     } finally {
       setIsProcessingPayment(false);
     }
@@ -1767,6 +1788,9 @@ const OwnerDashboard = () => {
         onOpenChange={(open) => {
           if (!isProcessingPayment) {
             setPaymentDialog((prev) => ({ ...prev, open }));
+            if (!open) {
+              setPaymentId("");
+            }
           }
         }}
       >
@@ -1794,28 +1818,54 @@ const OwnerDashboard = () => {
               )}
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Payment Method</label>
-              <Tabs value={paymentMethodMode} onValueChange={(v) => setPaymentMethodMode(v as "card" | "wallet" | "bank")}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="card" className="flex-1">Card</TabsTrigger>
-                  <TabsTrigger value="wallet" className="flex-1">Wallet</TabsTrigger>
-                  <TabsTrigger value="bank" className="flex-1">Bank</TabsTrigger>
-                </TabsList>
-              </Tabs>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Payment Method</label>
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
+                      <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-3.86-.95-7-5.14-7-9V8.3l7-3.11 7 3.11V11c0 3.86-3.14 8.05-7 9z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-foreground">eSewa</p>
+                      <p className="text-xs text-muted-foreground">Digital wallet payment</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="payment-id" className="text-sm font-medium">eSewa Payment ID</label>
+                <Input
+                  id="payment-id"
+                  placeholder="Enter your eSewa payment/transaction ID"
+                  value={paymentId}
+                  onChange={(e) => setPaymentId(e.target.value)}
+                  disabled={isProcessingPayment}
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Complete payment via eSewa and enter the transaction ID as proof.
+                </p>
+              </div>
             </div>
           </div>
 
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setPaymentDialog({ open: false, type: "equipment" })}
+              onClick={() => {
+                setPaymentDialog({ open: false, type: "equipment" });
+                setPaymentId("");
+              }}
               disabled={isProcessingPayment}
             >
               Cancel
             </Button>
-            <Button onClick={handleConfirmPayment} disabled={isProcessingPayment}>
-              {isProcessingPayment ? "Processing..." : "Pay Securely"}
+            <Button onClick={handleConfirmPayment} disabled={isProcessingPayment || !paymentId.trim()}>
+              {isProcessingPayment ? "Processing..." : "Confirm Payment"}
             </Button>
           </DialogFooter>
         </DialogContent>

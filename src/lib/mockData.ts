@@ -118,6 +118,8 @@ export interface RentalRequest {
     additionalDays: number;
     additionalCost: number;
     status: "pending" | "approved" | "declined";
+    paymentStatus?: "pending" | "paid";
+    paymentReference?: string;
   };
   paymentStatus?: "pending" | "paid";
   paymentPaidAt?: Date;
