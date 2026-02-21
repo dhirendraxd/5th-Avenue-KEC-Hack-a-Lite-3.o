@@ -715,13 +715,13 @@ const OwnerDashboard = () => {
                           </span>
                           <span className="text-sm text-muted-foreground">/day</span>
                         </div>
-                        <div className="flex gap-1.5">
+                        <div className="flex flex-col sm:flex-row gap-1.5 items-center">
                           <Sheet>
                             <SheetTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 sm:w-auto sm:h-auto w-full sm:w-auto"
                               >
                                 <Settings2 className="h-4 w-4" />
                               </Button>
@@ -744,7 +744,7 @@ const OwnerDashboard = () => {
                               </div>
                             </SheetContent>
                           </Sheet>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" className="w-full sm:w-auto">
                             Edit
                           </Button>
                         </div>

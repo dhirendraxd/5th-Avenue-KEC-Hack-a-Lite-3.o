@@ -513,7 +513,7 @@ const EquipmentDetail = () => {
 
           {/* Booking Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-24 card-shadow">
+            <Card className="lg:sticky lg:top-24 card-shadow">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-baseline justify-between">
                   <span>

@@ -708,7 +708,7 @@ const AddEquipmentDialog = ({
 
       <form onSubmit={handleSubmit} noValidate>
         <Tabs value={currentTab} onValueChange={handleTabChange} className="px-6">
-          <TabsList className={`grid w-full ${standalone ? "grid-cols-4" : "grid-cols-2 sm:grid-cols-4"}`}>
+          <TabsList className={`grid w-full grid-cols-2 sm:grid-cols-4`}>
             <TabsTrigger value="basic" className="gap-1">
               <Info className="h-4 w-4" />
               <span className="hidden sm:inline">Basic</span>
