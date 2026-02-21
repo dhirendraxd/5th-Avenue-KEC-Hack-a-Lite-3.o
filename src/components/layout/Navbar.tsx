@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { roleLabels } from "@/lib/constants";
 import { subscribeBusinessProfile } from "@/lib/firebase/businessProfile";
-import { Package, Home, LayoutDashboard, Search, Menu, X, User, DollarSign, Hammer } from "lucide-react";
+import { Package, Home, LayoutDashboard, Search, Menu, X, User, DollarSign, Hammer, BarChart3 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const Navbar = () => {
@@ -23,6 +23,7 @@ const Navbar = () => {
   const privateNavLinks = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/finance", label: "Finance", icon: DollarSign },
+    { href: "/analytics", label: "Analytics", icon: BarChart3 },
   ];
 
   const navLinks = isAuthenticated

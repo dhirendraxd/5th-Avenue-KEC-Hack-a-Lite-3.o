@@ -88,6 +88,8 @@ import {
   Hammer,
   MapPin,
   Pencil,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
 import { format, isToday, isTomorrow, differenceInDays } from "date-fns";
 
@@ -222,6 +224,29 @@ const OwnerDashboard = () => {
   const pendingMaterialRequests = materialRequests.filter(
     (request) => request.status === "requested",
   );
+  const completedMaterialRequests = materialRequests.filter(
+    (request) => request.status === "approved" || request.status === "completed",
+  );
+
+  const rentalEarnings = requests
+    .filter(
+      (request) =>
+        request.status === "approved" ||
+        request.status === "active" ||
+        request.status === "completed",
+    )
+    .reduce((sum, request) => sum + (request.rentalFee ?? request.totalPrice ?? 0), 0);
+
+  const materialPriceById = new Map(myMaterials.map((material) => [material.id, material.price]));
+
+  const materialSalesValue = completedMaterialRequests.reduce(
+    (sum, request) => sum + (materialPriceById.get(request.materialId) ?? 0),
+    0,
+  );
+
+  const totalEarnings = rentalEarnings + materialSalesValue;
+  const materialInCount = myMaterials.length;
+  const materialOutCount = completedMaterialRequests.length;
 
   // Categorize by urgency
   const urgentRequests = pendingRequests.filter((r) => {
@@ -465,6 +490,10 @@ const OwnerDashboard = () => {
                 <Plus className="h-4 w-4 mr-2" />
                 Add Equipment
               </Button>
+              <Button variant="outline" onClick={() => navigate("/analytics")} className="w-full sm:w-auto">
+                <TrendingUp className="mr-2 h-4 w-4" />
+                Analytics
+              </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" className="w-full sm:w-auto">
@@ -490,7 +519,7 @@ const OwnerDashboard = () => {
         />
 
         {/* Stats Grid - Modern cards with better visual weight */}
-        <div className="mb-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+        <div className="mb-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5 lg:gap-6">
           <StatCard
             label="Active Listings"
             value={myEquipment.length + myMaterials.length}
@@ -515,12 +544,48 @@ const OwnerDashboard = () => {
           />
           <StatCard
             label="Total Earnings"
-            value="NPR 12,450"
+            value={`NPR ${totalEarnings.toLocaleString()}`}
             icon={DollarSign}
             iconColor="text-accent"
-            trend={{ value: 12, isPositive: true }}
-            subtitle="This month"
+            subtitle="Rental + material sales"
           />
+          <StatCard
+            label="Material Sales"
+            value={`NPR ${materialSalesValue.toLocaleString()}`}
+            icon={Hammer}
+            iconColor="text-primary"
+            subtitle={`In ${materialInCount} • Out ${materialOutCount}`}
+          />
+        </div>
+
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Card>
+            <CardContent className="flex items-center justify-between p-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Material In</p>
+                <p className="text-2xl font-bold text-foreground">{materialInCount}</p>
+                <p className="text-xs text-muted-foreground">Total listed materials</p>
+              </div>
+              <ArrowUpRight className="h-5 w-5 text-success" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center justify-between p-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Material Out</p>
+                <p className="text-2xl font-bold text-foreground">{materialOutCount}</p>
+                <p className="text-xs text-muted-foreground">Approved/completed sales</p>
+              </div>
+              <ArrowDownRight className="h-5 w-5 text-primary" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground">Material Sales Value</p>
+              <p className="text-2xl font-bold text-foreground">NPR {materialSalesValue.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">From sold material requests</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Notifications - small list for owner */}
@@ -926,6 +991,21 @@ const OwnerDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
+                <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg border border-border/50 p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Sales Value</p>
+                    <p className="text-lg font-semibold text-foreground">NPR {materialSalesValue.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/50 p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">In</p>
+                    <p className="text-lg font-semibold text-foreground">{materialInCount}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/50 p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Out</p>
+                    <p className="text-lg font-semibold text-foreground">{materialOutCount}</p>
+                  </div>
+                </div>
+
                 {myMaterials.length === 0 ? (
                   <EmptyState
                     icon={Hammer}

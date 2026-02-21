@@ -9,6 +9,7 @@ import OwnerDashboard from "./pages/OwnerDashboard";
 import AddEquipment from "./pages/AddEquipment";
 import RentalOperations from "./pages/RentalOperations";
 import FinanceDashboard from "./pages/FinanceDashboard";
+import UserAnalytics from "./pages/UserAnalytics";
 import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 import MaterialsList from "./pages/MaterialsList";
@@ -27,6 +28,7 @@ const App = () => (
         <Route path="/dashboard/add-equipment" element={<AddEquipment />} />
         <Route path="/rental/:id" element={<RentalOperations />} />
         <Route path="/finance" element={<FinanceDashboard />} />
+        <Route path="/analytics" element={<UserAnalytics />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/materials/list" element={<MaterialsList />} />
         <Route path="/materials/find" element={<MaterialsFind />} />
