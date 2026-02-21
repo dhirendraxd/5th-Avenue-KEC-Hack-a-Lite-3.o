@@ -18,14 +18,21 @@ const FIRESTORE_INLINE_PHOTO_MAX_BYTES = 700_000;
 
 const AddEquipment = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, hasAcceptedTerms } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/auth");
+    } else if (!hasAcceptedTerms) {
+      toast({
+        title: "Terms Acceptance Required",
+        description: "Please accept the platform terms from the dashboard before listing equipment.",
+        variant: "destructive",
+      });
+      navigate("/dashboard");
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, hasAcceptedTerms, navigate, toast]);
 
   const withTimeout = async <T,>(promise: Promise<T>, ms: number, message: string): Promise<T> => {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;

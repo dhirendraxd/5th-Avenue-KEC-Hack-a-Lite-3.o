@@ -4,12 +4,20 @@ import { Equipment } from "@/lib/mockData";
 interface CostBreakdownProps {
   equipment: Equipment;
   totalDays: number;
+  operatorRequested?: boolean;
 }
 
-const CostBreakdown = ({ equipment, totalDays }: CostBreakdownProps) => {
+const CostBreakdown = ({ equipment, totalDays, operatorRequested = false }: CostBreakdownProps) => {
   const rentalFee = totalDays * equipment.pricePerDay;
-  const serviceFee = Math.round(rentalFee * (equipment.serviceFeePercent / 100));
-  const grandTotal = rentalFee + serviceFee;
+  
+  // Calculate operator fee
+  const operatorFee = operatorRequested && equipment.operatorAvailable
+    ? (equipment.operatorIncluded ? 0 : (equipment.operatorPricePerDay || 0) * totalDays)
+    : 0;
+  
+  const subtotal = rentalFee + operatorFee;
+  const serviceFee = Math.round(subtotal * (equipment.serviceFeePercent / 100));
+  const grandTotal = subtotal + serviceFee;
 
   if (totalDays === 0) {
     return (
@@ -30,6 +38,25 @@ const CostBreakdown = ({ equipment, totalDays }: CostBreakdownProps) => {
           </span>
           <span className="text-foreground">NPR {rentalFee.toLocaleString()}</span>
         </div>
+        
+        {operatorRequested && equipment.operatorAvailable && !equipment.operatorIncluded && operatorFee > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">
+              Operator service ({totalDays} {totalDays === 1 ? 'day' : 'days'})
+            </span>
+            <span className="text-foreground">NPR {operatorFee.toLocaleString()}</span>
+          </div>
+        )}
+
+        {operatorRequested && equipment.operatorAvailable && equipment.operatorIncluded && (
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">
+              Operator service
+            </span>
+            <span className="text-success text-sm font-medium">Included</span>
+          </div>
+        )}
+        
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground flex items-center gap-1">
             Platform fee ({equipment.serviceFeePercent}%)

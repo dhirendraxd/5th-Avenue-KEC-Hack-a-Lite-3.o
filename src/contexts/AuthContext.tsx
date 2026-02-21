@@ -16,6 +16,8 @@ interface AuthContextType {
   switchRole: (role: UserRole) => void;
   hasPermission: (permission: Permission) => boolean;
   isLoading: boolean;
+  hasAcceptedTerms: boolean;
+  acceptTerms: () => Promise<void>;
 }
 
 type Permission =
@@ -73,6 +75,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return savedUser ? JSON.parse(savedUser) : null;
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(() => {
+    const accepted = localStorage.getItem('gearshift_terms_accepted');
+    return accepted === 'true';
+  });
 
   useEffect(() => {
     try {
@@ -135,6 +141,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setUser(null);
       localStorage.removeItem('gearshift_user');
+      localStorage.removeItem('gearshift_terms_accepted');
+      setHasAcceptedTerms(false);
     }
   };
 
@@ -150,6 +158,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return rolePermissions[user.role].includes(permission);
   };
 
+  const acceptTerms = async (): Promise<void> => {
+    localStorage.setItem('gearshift_terms_accepted', 'true');
+    setHasAcceptedTerms(true);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -161,6 +174,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         switchRole,
         hasPermission,
         isLoading,
+        hasAcceptedTerms,
+        acceptTerms,
       }}
     >
       {children}

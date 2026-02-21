@@ -91,6 +91,11 @@
 - **Multi-step Form:** Intuitive wizard for creating equipment listings with validation
 - **Image Upload:** Cloudinary-powered image hosting with drag-and-drop and cropping support
 - **Pricing Configuration:** Flexible pricing models (daily/weekly/monthly rates with bulk discounts)
+- **Operator/Driver Options:** 
+  - Specify if trained operator/driver is available with equipment
+  - Choose if operator is included in base price or charged separately
+  - Set daily operator rate for additional service
+  - List operator qualifications, certifications, and experience
 - **Availability Management:** Set availability windows, blackout dates, and advance booking periods
 - **Feature Tags:** Highlight key features (electric, manual, GPS-enabled, recent maintenance, etc.)
 - **Location Management:** Multi-location support for businesses with multiple sites
@@ -104,7 +109,11 @@
 **Step 1: Request Submission (Renter)**
 - Select equipment and desired rental dates
 - Provide project purpose, destination location, and additional notes
-- Review cost breakdown (rental fee + service fee + security deposit)
+- **Operator Selection:** Choose whether to request operator/driver service (if available)
+  - See if operator is included in base price or requires additional fee
+  - View operator qualifications and certifications
+  - Total cost automatically updates with operator fees
+- Review cost breakdown (rental fee + operator fee + service fee + security deposit)
 - Submit request for owner approval
 
 **Step 2: Request Review (Owner)**
@@ -358,6 +367,28 @@
 
 ### H. Trust & Safety Features
 
+#### Platform Terms & Agreement
+- **Mandatory Acceptance:** All users must accept comprehensive platform terms before listing or renting equipment
+- **First-Time Dashboard Gate:** Terms agreement dialog automatically appears on first dashboard visit after login
+- **Non-Dismissible Dialog:** Users cannot bypass the agreement - must accept all terms to continue
+- **Three-Part Acceptance:**
+  1. **Terms of Service:** Platform rules, obligations, payment terms, and account policies
+  2. **Safety & Compliance Requirements:** Equipment standards, operator certifications, maintenance obligations
+  3. **Liability & Insurance:** Damage responsibility, injury coverage, dispute resolution processes
+- **Comprehensive Coverage:** Terms include:
+  - Accurate information requirements
+  - Safe equipment operation obligations
+  - Equipment return condition expectations
+  - Platform fee transparency
+  - Prohibited activities (fraud, harassment, illegal use)
+  - Privacy and data protection policies
+- **Protected Features:** Users who haven't accepted terms are:
+  - Redirected to dashboard from equipment listing page
+  - Blocked from submitting rental requests
+  - Shown explanatory toast messages
+- **Persistent Storage:** Agreement acceptance stored in localStorage and tracked in AuthContext
+- **Logout Reset:** Terms acceptance cleared on logout, requiring re-acceptance on next login
+
 #### Verification System
 - **Business Verification:** Verified checkmarks for confirmed businesses
 - **Document Verification:** Upload and verify business registration, tax documents
@@ -480,6 +511,10 @@
   locationId?: string;
   locationName?: string;
   createdAt: Timestamp;
+  operatorAvailable?: boolean;
+  operatorIncluded?: boolean;
+  operatorPricePerDay?: number;
+  operatorQualifications?: string;
 }
 ```
 
@@ -523,6 +558,8 @@
     comment: string;
     createdAt: Timestamp;
   };
+  operatorRequested?: boolean;
+  operatorFee?: number;
   createdAt: Timestamp;
   approvedAt?: Timestamp;
   completedAt?: Timestamp;
@@ -884,6 +921,8 @@ The technical implementation demonstrates modern best practices with React 18, T
 **Key Differentiators:**
 ✅ Payment-first workflow reduces no-shows  
 ✅ Transparent inspection checklists prevent disputes  
+✅ Mandatory terms agreement prevents policy violations  
+✅ Operator/driver service options for specialized equipment  
 ✅ Dual marketplace (equipment + materials) maximizes platform value  
 ✅ AI equipment advisor helps users find right tools  
 ✅ Comprehensive analytics and financial tracking  

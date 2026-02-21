@@ -56,6 +56,10 @@ export interface AddEquipmentFormData {
   insuranceProtected: boolean;
   cancellationPolicy: '24hours' | '48hours' | '72hours' | '1week' | 'strict';
   photos: string[];
+  operatorAvailable?: boolean;
+  operatorIncluded?: boolean;
+  operatorPricePerDay?: number;
+  operatorQualifications?: string;
 }
 
 interface AddEquipmentDialogProps {
@@ -169,6 +173,12 @@ const AddEquipmentDialog = ({
   const [frontViewPhotoIndex, setFrontViewPhotoIndex] = useState<number | null>(null);
   const [leftViewPhotoIndex, setLeftViewPhotoIndex] = useState<number | null>(null);
   const [rightViewPhotoIndex, setRightViewPhotoIndex] = useState<number | null>(null);
+  
+  // Operator/Driver state
+  const [operatorAvailable, setOperatorAvailable] = useState(false);
+  const [operatorIncluded, setOperatorIncluded] = useState(false);
+  const [operatorPricePerDay, setOperatorPricePerDay] = useState("");
+  const [operatorQualifications, setOperatorQualifications] = useState("");
 
   useEffect(() => {
     try {
@@ -204,6 +214,10 @@ const AddEquipmentDialog = ({
       setLeftViewPhotoIndex(draft.leftViewPhotoIndex ?? null);
       setRightViewPhotoIndex(draft.rightViewPhotoIndex ?? null);
       setCurrentTab(draft.currentTab ?? "basic");
+      setOperatorAvailable(draft.operatorAvailable ?? false);
+      setOperatorIncluded(draft.operatorIncluded ?? false);
+      setOperatorPricePerDay(draft.operatorPricePerDay ? String(draft.operatorPricePerDay) : "");
+      setOperatorQualifications(draft.operatorQualifications ?? "");
     } catch (error) {
       console.warn("Failed to load add-equipment draft", error);
     }
@@ -233,6 +247,10 @@ const AddEquipmentDialog = ({
           leftViewPhotoIndex,
           rightViewPhotoIndex,
           currentTab,
+          operatorAvailable,
+          operatorIncluded,
+          operatorPricePerDay: operatorPricePerDay ? Number(operatorPricePerDay) : undefined,
+          operatorQualifications,
         };
         localStorage.setItem(ADD_EQUIPMENT_DRAFT_KEY, JSON.stringify(draft));
       } catch (error) {
@@ -262,6 +280,10 @@ const AddEquipmentDialog = ({
     leftViewPhotoIndex,
     rightViewPhotoIndex,
     currentTab,
+    operatorAvailable,
+    operatorIncluded,
+    operatorPricePerDay,
+    operatorQualifications,
   ]);
 
   const handleAddFeature = (feature: string) => {
@@ -529,6 +551,9 @@ const AddEquipmentDialog = ({
     if (features.length === 0) missing.push('Features');
     if (!usageNotes?.trim()) missing.push('Usage Notes');
     if (photos.length === 0) missing.push('Photos');
+    if (operatorAvailable && !operatorIncluded && !operatorPricePerDay?.trim()) {
+      missing.push('Operator Daily Rate');
+    }
 
     if (missing.length > 0) {
       // Choose a tab to focus based on the first missing field
@@ -573,6 +598,10 @@ const AddEquipmentDialog = ({
         insuranceProtected,
         cancellationPolicy: cancellationPolicy as AddEquipmentFormData['cancellationPolicy'],
         photos,
+        operatorAvailable,
+        operatorIncluded,
+        operatorPricePerDay: operatorPricePerDay ? Number(operatorPricePerDay) : undefined,
+        operatorQualifications: operatorQualifications.trim() || undefined,
       });
       resetForm();
     } catch (error) {
@@ -620,6 +649,10 @@ const AddEquipmentDialog = ({
     setRightViewPhotoIndex(null);
     setCurrentTab("basic");
     setActiveViewUpload(null);
+    setOperatorAvailable(false);
+    setOperatorIncluded(false);
+    setOperatorPricePerDay("");
+    setOperatorQualifications("");
   };
 
   const suggestedFeatures = category ? featureSuggestions[category] : [];
@@ -1005,6 +1038,102 @@ const AddEquipmentDialog = ({
                     Coverage up to NPR 50,000 for equipment damage during rentals
                   </p>
                 </div>
+              </div>
+
+              <Separator />
+
+              {/* Operator/Driver Options */}
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-base font-semibold">Operator/Driver Availability</Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Offer an experienced operator with this equipment
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3 p-4 rounded-lg border border-border bg-muted/30">
+                  <Checkbox
+                    id="operatorAvailable"
+                    checked={operatorAvailable}
+                    onCheckedChange={(checked) => {
+                      setOperatorAvailable(checked as boolean);
+                      if (!checked) {
+                        setOperatorIncluded(false);
+                        setOperatorPricePerDay("");
+                        setOperatorQualifications("");
+                      }
+                    }}
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="operatorAvailable" className="font-medium text-foreground cursor-pointer">
+                      Operator/Driver Available
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      I can provide a trained operator with this equipment
+                    </p>
+                  </div>
+                </div>
+
+                {operatorAvailable && (
+                  <div className="space-y-4 pl-4 border-l-2 border-primary/30">
+                    <div className="flex items-start gap-3 p-4 rounded-lg border border-border">
+                      <Checkbox
+                        id="operatorIncluded"
+                        checked={operatorIncluded}
+                        onCheckedChange={(checked) => {
+                          setOperatorIncluded(checked as boolean);
+                          if (checked) {
+                            setOperatorPricePerDay("");
+                          }
+                        }}
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor="operatorIncluded" className="font-medium text-foreground cursor-pointer">
+                          Operator Included in Base Price
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Operator cost is already included in the daily rental rate
+                        </p>
+                      </div>
+                    </div>
+
+                    {!operatorIncluded && (
+                      <div className="space-y-2">
+                        <Label htmlFor="operatorPrice">Operator Daily Rate <span className="text-destructive ml-1">*</span></Label>
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="operatorPrice"
+                            type="number"
+                            min="1"
+                            value={operatorPricePerDay}
+                            onChange={(e) => setOperatorPricePerDay(e.target.value)}
+                            placeholder="150"
+                            className="pl-9"
+                            required={operatorAvailable && !operatorIncluded}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Additional cost per day for operator service
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="operatorQualifications">Operator Qualifications (Optional)</Label>
+                      <Textarea
+                        id="operatorQualifications"
+                        value={operatorQualifications}
+                        onChange={(e) => setOperatorQualifications(e.target.value)}
+                        placeholder="e.g., 10+ years experience, Heavy Equipment License, Safety certified..."
+                        rows={3}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Operator's certifications, experience, and qualifications
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
 

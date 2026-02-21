@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import {
   Accordion,
@@ -48,7 +49,7 @@ import { cn } from "@/lib/utils";
 const EquipmentDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, hasAcceptedTerms } = useAuth();
   const { toast } = useToast();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -60,6 +61,7 @@ const EquipmentDetail = () => {
   const [purpose, setPurpose] = useState("");
   const [destination, setDestination] = useState("");
   const [notes, setNotes] = useState("");
+  const [operatorRequested, setOperatorRequested] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -210,6 +212,16 @@ const EquipmentDetail = () => {
       return;
     }
 
+    if (!hasAcceptedTerms) {
+      toast({
+        title: "Terms Acceptance Required",
+        description: "Please accept the platform terms from the dashboard before renting equipment.",
+        variant: "destructive",
+      });
+      navigate("/dashboard");
+      return;
+    }
+
     const kycProfile = await getBusinessProfileFromFirebase(user.id);
     if (!kycProfile || !isBusinessKycComplete(kycProfile)) {
       toast({
@@ -241,6 +253,11 @@ const EquipmentDetail = () => {
 
     setIsRequesting(true);
     try {
+      // Calculate operator fee if requested
+      const operatorFee = operatorRequested && equipment.operatorAvailable
+        ? (equipment.operatorIncluded ? 0 : (equipment.operatorPricePerDay || 0) * totalDays)
+        : 0;
+
       const rental = await createFirebaseRentalRequest({
         equipment,
         renterId: user.id,
@@ -251,6 +268,8 @@ const EquipmentDetail = () => {
         purpose,
         destination,
         notes,
+        operatorRequested,
+        operatorFee,
       });
 
       // Try to notify the owner via a notifications document
@@ -580,7 +599,7 @@ const EquipmentDetail = () => {
                 </div>
 
                 {/* Cost Breakdown */}
-                <CostBreakdown equipment={equipment} totalDays={totalDays} />
+                <CostBreakdown equipment={equipment} totalDays={totalDays} operatorRequested={operatorRequested} />
 
                 {/* Additional Info Fields */}
                 <div className="space-y-3">
@@ -605,6 +624,42 @@ const EquipmentDetail = () => {
                     onChange={e => setNotes(e.target.value)}
                     placeholder="Any special instructions or info for the owner"
                   />
+
+                  {/* Operator Selection */}
+                  {equipment.operatorAvailable && (
+                    <div className="p-4 rounded-lg border border-border bg-muted/30 space-y-2">
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          id="requestOperator"
+                          checked={operatorRequested}
+                          onCheckedChange={(checked) => setOperatorRequested(checked as boolean)}
+                        />
+                        <div className="flex-1">
+                          <label htmlFor="requestOperator" className="text-sm font-medium cursor-pointer">
+                            Request Operator/Driver
+                            {equipment.operatorIncluded && (
+                              <Badge variant="success" className="ml-2">Included</Badge>
+                            )}
+                          </label>
+                          {!equipment.operatorIncluded && equipment.operatorPricePerDay && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              +NPR {equipment.operatorPricePerDay}/day ({totalDays} days = NPR {equipment.operatorPricePerDay * totalDays})
+                            </p>
+                          )}
+                          {equipment.operatorIncluded && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Operator service included in base price
+                            </p>
+                          )}
+                          {equipment.operatorQualifications && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              <strong>Qualifications:</strong> {equipment.operatorQualifications}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Request Button */}

@@ -45,6 +45,7 @@ import RenterProfileCard from "@/components/dashboard/RenterProfileCard";
 import AvailabilityControls from "@/components/dashboard/AvailabilityControls";
 import ApproveWithConditionsDialog from "@/components/dashboard/ApproveWithConditionsDialog";
 import BusinessProfileSection from "@/components/dashboard/BusinessProfileSection";
+import TermsAgreementDialog from "@/components/dashboard/TermsAgreementDialog";
 import EarningsChart from "@/components/finance/EarningsChart";
 import TransactionHistory from "@/components/finance/TransactionHistory";
 import PayoutSummary from "@/components/finance/PayoutSummary";
@@ -115,7 +116,7 @@ interface DashboardNotification {
 const OwnerDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, logout } = useAuth();
+  const { user, logout, hasAcceptedTerms, acceptTerms } = useAuth();
   const [requests, setRequests] = useState<RentalRequest[]>([]);
   const [myRentalRequests, setMyRentalRequests] = useState<RentalRequest[]>([]);
   const [activeTab, setActiveTab] = useState("timeline");
@@ -1881,6 +1882,18 @@ const OwnerDashboard = () => {
           onApprove={(notes) => handleApprove(approveDialog.request!.id, notes)}
         />
       )}
+
+      {/* Terms Agreement Dialog */}
+      <TermsAgreementDialog
+        open={!hasAcceptedTerms}
+        onAccept={async () => {
+          await acceptTerms();
+          toast({
+            title: "Welcome to 5th Avenue!",
+            description: "You can now list equipment and rent from other users.",
+          });
+        }}
+      />
     </div>
   );
 };

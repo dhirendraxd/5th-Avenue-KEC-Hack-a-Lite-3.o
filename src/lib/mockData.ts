@@ -96,6 +96,10 @@ export interface Equipment {
   locationName?: string;
   locationMapUrl?: string;
   createdAt?: string;
+  operatorAvailable?: boolean; // Whether operator/driver is available
+  operatorIncluded?: boolean; // Whether operator is included in base price
+  operatorPricePerDay?: number; // Additional cost per day if operator not included
+  operatorQualifications?: string; // Operator certifications/experience
 }
 
 export interface RentalRequest {
@@ -127,6 +131,8 @@ export interface RentalRequest {
   purpose?: string;
   destination?: string;
   notes?: string;
+  operatorRequested?: boolean; // Whether renter wants an operator
+  operatorFee?: number; // Total operator fee for rental period
 }
 
 export interface ChecklistItem {
