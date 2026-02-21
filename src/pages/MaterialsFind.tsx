@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import BackgroundIllustrations from "@/components/layout/BackgroundIllustrations";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -41,7 +43,6 @@ import { createFirebaseMaterialRequest } from "@/lib/firebase/materialRequests";
 import { isCloudinaryConfigured, uploadImagesToCloudinary } from "@/lib/cloudinary";
 import {
   Camera,
-  ChevronRight,
   MapPin,
   Phone,
   Search,
@@ -53,6 +54,23 @@ import {
 } from "lucide-react";
 
 const DEFAULT_COORDINATES = { latitude: 27.7172, longitude: 85.324 };
+
+const materialLocationSuggestions = [
+  "Baneshwor, Kathmandu",
+  "Thamel, Kathmandu",
+  "Koteshwor, Kathmandu",
+  "Kalanki, Kathmandu",
+  "Maitighar, Kathmandu",
+  "New Baneshwor, Kathmandu",
+  "Tripureshwor, Kathmandu",
+  "Lazimpat, Kathmandu",
+  "Pulchowk, Lalitpur",
+  "Jawalakhel, Lalitpur",
+  "Satdobato, Lalitpur",
+  "Balkumari, Lalitpur",
+  "Suryabinayak, Bhaktapur",
+  "Madhyapur Thimi, Bhaktapur",
+];
 
 type TabMode = "browse" | "list";
 type MaterialSortOption = "closest" | "price_low" | "price_high" | "newest";
@@ -97,6 +115,7 @@ const MaterialsFind = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<MaterialSortOption>("closest");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [priceRange, setPriceRange] = useState([0, 50000]);
   const [location, setLocation] = useState({ ...DEFAULT_COORDINATES, label: "Current location" });
 
   const [selectedListing, setSelectedListing] = useState<ListingWithDistance | null>(null);
@@ -111,6 +130,8 @@ const MaterialsFind = () => {
   const [price, setPrice] = useState("");
   const [isFree, setIsFree] = useState(false);
   const [listLocation, setListLocation] = useState("");
+  const [locationMapUrl, setLocationMapUrl] = useState("");
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
   const [listCoordinates, setListCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -145,6 +166,15 @@ const MaterialsFind = () => {
     );
   }, []);
 
+  const maxPriceLimit = useMemo(() => {
+    const maxPrice = allListings.reduce((max, listing) => Math.max(max, listing.price), 0);
+    return Math.max(50000, Math.ceil(maxPrice / 1000) * 1000);
+  }, [allListings]);
+
+  useEffect(() => {
+    setPriceRange((current) => [Math.min(current[0], maxPriceLimit), maxPriceLimit]);
+  }, [maxPriceLimit]);
+
   const filteredListings = useMemo<ListingWithDistance[]>(() => {
     const maxDistance = Number(radius);
     return allListings
@@ -159,6 +189,7 @@ const MaterialsFind = () => {
       }))
       .filter((listing) => listing.distance <= maxDistance)
       .filter((listing) => categoryFilter === "all" || listing.category === categoryFilter)
+      .filter((listing) => listing.price >= priceRange[0] && listing.price <= priceRange[1])
       .filter((listing) => {
         if (!searchQuery.trim()) return true;
         const query = searchQuery.toLowerCase();
@@ -168,7 +199,7 @@ const MaterialsFind = () => {
           listing.notes?.toLowerCase().includes(query)
         );
       });
-  }, [allListings, radius, categoryFilter, searchQuery, location]);
+  }, [allListings, radius, categoryFilter, searchQuery, location, priceRange]);
 
   const listings = useMemo<ListingWithDistance[]>(() => {
     const result = [...filteredListings];
@@ -191,19 +222,37 @@ const MaterialsFind = () => {
     return result;
   }, [filteredListings, sortBy]);
 
-  const hasActiveFilters = searchQuery || categoryFilter !== "all" || radius !== "10";
+  const hasActiveFilters =
+    searchQuery || categoryFilter !== "all" || radius !== "10" || priceRange[0] > 0 || priceRange[1] < maxPriceLimit;
 
   const clearFilters = () => {
     setSearchQuery("");
     setCategoryFilter("all");
     setRadius("10");
     setSortBy("closest");
+    setPriceRange([0, maxPriceLimit]);
   };
 
   const switchTab = (value: string) => {
     const next = value === "list" ? "list" : "browse";
     setActiveTab(next);
     setSearchParams(next === "list" ? { tab: "list" } : {});
+  };
+
+  const filteredLocationSuggestions = listLocation.trim()
+    ? materialLocationSuggestions
+        .filter((entry) => entry.toLowerCase().includes(listLocation.toLowerCase()))
+        .slice(0, 6)
+    : [];
+
+  const handleLocationInputChange = (value: string) => {
+    setListLocation(value);
+    setShowLocationSuggestions(value.trim().length > 0);
+  };
+
+  const handleLocationSuggestionSelect = (value: string) => {
+    setListLocation(value);
+    setShowLocationSuggestions(false);
   };
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -231,7 +280,9 @@ const MaterialsFind = () => {
       (pos) => {
         const { latitude, longitude } = pos.coords;
         setListCoordinates({ latitude, longitude });
-        setListLocation(`GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        setListLocation(`Current GPS (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
+        setLocationMapUrl(`https://maps.google.com/?q=${latitude},${longitude}`);
+        setShowLocationSuggestions(false);
       },
       () => undefined,
       { enableHighAccuracy: true, timeout: 8000 },
@@ -275,6 +326,7 @@ const MaterialsFind = () => {
         price: isFree ? 0 : Number(price),
         isFree,
         locationName: listLocation.trim(),
+        locationMapUrl: locationMapUrl.trim() || undefined,
         latitude: listCoordinates?.latitude ?? DEFAULT_COORDINATES.latitude,
         longitude: listCoordinates?.longitude ?? DEFAULT_COORDINATES.longitude,
         contactName: user?.name || "Builder",
@@ -293,6 +345,8 @@ const MaterialsFind = () => {
       setPrice("");
       setIsFree(false);
       setListLocation("");
+      setLocationMapUrl("");
+      setShowLocationSuggestions(false);
       setUploadedPhotos([]);
       setListCoordinates(null);
       switchTab("browse");
@@ -352,19 +406,9 @@ const MaterialsFind = () => {
       <BackgroundIllustrations variant="marketplace" />
       <Navbar />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 relative z-10">
-        <nav aria-label="Breadcrumb" className="mb-4 flex items-center text-sm text-muted-foreground">
-          <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
-          <ChevronRight className="mx-2 h-4 w-4" />
-          <Link to="/materials/find" className="hover:text-foreground transition-colors">Browse Materials</Link>
-          <ChevronRight className="mx-2 h-4 w-4" />
-          <span className="text-foreground">
-            {activeTab === "browse" ? "Browse Materials" : "List Material"}
-          </span>
-        </nav>
-
         <PageHeader
           title="Browse Materials"
-          description="Find construction materials and scrap inventory near your site."
+          description="Find construction materials and scrap listings near your site."
           actions={
             activeTab === "browse" ? (
               <Button variant="outline" onClick={() => switchTab("list")}>
@@ -378,26 +422,6 @@ const MaterialsFind = () => {
           }
         />
 
-        <Card className="mb-6">
-          <CardContent className="py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-muted-foreground">
-              {isLoadingListings
-                ? "Loading marketplace data"
-                : `${allListings.length} total material listings available`}
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{activeTab === "browse" ? "Browse" : "List"}</Badge>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => switchTab(activeTab === "browse" ? "list" : "browse")}
-              >
-                {activeTab === "browse" ? "Go to Listing Form" : "Go to Marketplace"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
         <Tabs value={activeTab} onValueChange={switchTab} className="space-y-6">
           <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="browse">Browse Materials</TabsTrigger>
@@ -405,83 +429,100 @@ const MaterialsFind = () => {
           </TabsList>
 
           <TabsContent value="browse" className="space-y-6">
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <div className="flex flex-col gap-3 lg:flex-row">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Search materials, scrap, or location..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-full lg:w-[190px]">
-                      <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All categories</SelectItem>
-                      <SelectItem value="wood">Wood & Timber</SelectItem>
-                      <SelectItem value="metal">Metal & Scrap</SelectItem>
-                      <SelectItem value="concrete">Concrete & Blocks</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as MaterialSortOption)}>
-                    <SelectTrigger className="w-full lg:w-[180px]">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="closest">Closest</SelectItem>
-                      <SelectItem value="newest">Newest</SelectItem>
-                      <SelectItem value="price_low">Price: Low to High</SelectItem>
-                      <SelectItem value="price_high">Price: High to Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Button
-                    variant={showFilters ? "secondary" : "outline"}
-                    onClick={() => setShowFilters((prev) => !prev)}
-                    className="gap-2 w-full lg:w-auto"
-                  >
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Filters
-                    {hasActiveFilters && (
-                      <Badge variant="info" className="ml-1">Active</Badge>
-                    )}
-                  </Button>
+            <div className="space-y-5">
+              <div className="flex flex-col gap-3 lg:flex-row">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search materials or scrap..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
 
-                {showFilters && (
-                  <div className="rounded-lg border border-border bg-card p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm text-muted-foreground">Distance from your location</div>
-                      {hasActiveFilters && (
-                        <Button variant="ghost" size="sm" onClick={clearFilters}>
-                          <X className="mr-1 h-3 w-3" />
-                          Clear All
-                        </Button>
-                      )}
-                    </div>
-                    <div className="mt-3">
-                      <Select value={radius} onValueChange={setRadius}>
-                        <SelectTrigger className="w-full sm:w-[220px]">
-                          <SelectValue placeholder="Radius" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="5">Within 5 miles</SelectItem>
-                          <SelectItem value="10">Within 10 miles</SelectItem>
-                          <SelectItem value="15">Within 15 miles</SelectItem>
-                        </SelectContent>
-                      </Select>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-full sm:w-[260px] lg:w-[200px]">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="wood">Wood & Timber</SelectItem>
+                    <SelectItem value="metal">Metal & Scrap</SelectItem>
+                    <SelectItem value="concrete">Concrete & Blocks</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={sortBy} onValueChange={(v) => setSortBy(v as MaterialSortOption)}>
+                  <SelectTrigger className="w-full sm:w-[220px] lg:w-[180px]">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="closest">Closest</SelectItem>
+                    <SelectItem value="newest">Newest</SelectItem>
+                    <SelectItem value="price_low">Price: Low to High</SelectItem>
+                    <SelectItem value="price_high">Price: High to Low</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  variant={showFilters ? "secondary" : "outline"}
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="gap-2 w-full lg:w-auto"
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Filters
+                  {hasActiveFilters && (
+                    <Badge variant="info" className="ml-1">
+                      Active
+                    </Badge>
+                  )}
+                </Button>
+              </div>
+
+              {showFilters && (
+                <div className="space-y-6 rounded-lg border border-border bg-card p-6">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <h3 className="font-semibold text-foreground">Filters</h3>
+                    {hasActiveFilters && (
+                      <Button variant="ghost" size="sm" onClick={clearFilters}>
+                        <X className="mr-1 h-3 w-3" />
+                        Clear All
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-foreground">Distance</h4>
+                    <Select value={radius} onValueChange={setRadius}>
+                      <SelectTrigger className="w-full sm:w-[220px]">
+                        <SelectValue placeholder="Radius" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">Within 5 miles</SelectItem>
+                        <SelectItem value="10">Within 10 miles</SelectItem>
+                        <SelectItem value="15">Within 15 miles</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium text-foreground">Price Range</h4>
+                    <Slider
+                      value={priceRange}
+                      onValueChange={(v) => setPriceRange(v as [number, number])}
+                      min={0}
+                      max={maxPriceLimit}
+                      step={500}
+                    />
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>NPR {priceRange[0]}</span>
+                      <span>NPR {priceRange[1]}</span>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+              )}
+            </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">
@@ -506,18 +547,40 @@ const MaterialsFind = () => {
             </div>
 
             {isLoadingListings ? (
-              <Card>
-                <CardContent className="py-10 text-sm text-muted-foreground">Loading listings...</CardContent>
-              </Card>
+              <div
+                className={
+                  viewMode === "grid"
+                    ? "grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
+                    : "flex flex-col gap-6"
+                }
+              >
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div key={`material-skeleton-${index}`} className="rounded-xl border border-border bg-card p-4 space-y-4">
+                    <Skeleton className="aspect-[4/3] w-full rounded-lg" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                      <Skeleton className="h-6 w-28" />
+                      <Skeleton className="h-9 w-32" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : listings.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Package className="mx-auto h-10 w-10 text-muted-foreground/60 mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    No construction material or scrap listings match your filters.
-                  </p>
-                </CardContent>
-              </Card>
+              <EmptyState
+                icon={Package}
+                title="No materials found"
+                description="Try adjusting your filters or search query"
+                action={
+                  <Button onClick={clearFilters} variant="outline">
+                    Clear Filters
+                  </Button>
+                }
+                className="py-16 rounded-lg border border-border bg-card"
+              />
             ) : (
               <div className={viewMode === "grid" ? "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" : "space-y-4"}>
                 {listings.map((listing) => (
@@ -563,14 +626,20 @@ const MaterialsFind = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Publish a Material Listing</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Add clear location details so buyers can find pickup points faster.
+                </p>
               </CardHeader>
               <CardContent>
                 <form className="grid gap-5" onSubmit={handlePublish}>
-                  <Input
-                    placeholder="Material name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Material name</label>
+                    <Input
+                      placeholder="e.g., TMT steel bars 12mm, cement bags, copper scrap"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Select value={category} onValueChange={setCategory}>
@@ -611,15 +680,49 @@ const MaterialsFind = () => {
                     </label>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                    <Input
-                      placeholder="Location"
-                      value={listLocation}
-                      onChange={(e) => setListLocation(e.target.value)}
-                    />
-                    <Button type="button" variant="outline" onClick={handleUseListingLocation}>
-                      Use Current Location
-                    </Button>
+                  <div className="space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                      <div className="relative">
+                        <label className="mb-2 block text-sm font-medium">Address name</label>
+                        <Input
+                          placeholder="Start typing area or locality (e.g., Baneshwor, Pulchowk)"
+                          value={listLocation}
+                          onChange={(e) => handleLocationInputChange(e.target.value)}
+                          onFocus={() => setShowLocationSuggestions(listLocation.trim().length > 0)}
+                          onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 120)}
+                        />
+                        {showLocationSuggestions && filteredLocationSuggestions.length > 0 && (
+                          <div className="absolute z-20 mt-1 max-h-44 w-full overflow-auto rounded-md border border-border bg-popover p-1 shadow-md">
+                            {filteredLocationSuggestions.map((place) => (
+                              <button
+                                key={place}
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => handleLocationSuggestionSelect(place)}
+                                className="w-full rounded-sm px-3 py-2 text-left text-sm hover:bg-muted"
+                              >
+                                {place}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <Button type="button" variant="outline" onClick={handleUseListingLocation}>
+                        Use Live GPS
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Location map link (optional)</label>
+                      <Input
+                        placeholder="Paste Google Maps link (e.g., https://maps.google.com/?q=...)"
+                        value={locationMapUrl}
+                        onChange={(e) => setLocationMapUrl(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Add a map URL to help buyers open exact pickup directions.
+                      </p>
+                    </div>
                   </div>
 
                   <div className="space-y-3">
@@ -661,7 +764,6 @@ const MaterialsFind = () => {
           </TabsContent>
         </Tabs>
       </main>
-      <Footer />
 
       <Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
         <DialogContent>

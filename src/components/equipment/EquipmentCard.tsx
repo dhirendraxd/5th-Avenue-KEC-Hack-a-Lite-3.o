@@ -12,9 +12,10 @@ import { format } from "date-fns";
 interface EquipmentCardProps {
   equipment: Equipment;
   nextAvailableAt?: Date;
+  distanceMiles?: number;
 }
 
-const EquipmentCard = ({ equipment, nextAvailableAt }: EquipmentCardProps) => {
+const EquipmentCard = ({ equipment, nextAvailableAt, distanceMiles }: EquipmentCardProps) => {
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const favorite = isFavorite(equipment.id);
   const listingLocation = equipment.locationName?.trim() || equipment.owner.location || "Location not specified";
@@ -126,8 +127,8 @@ const EquipmentCard = ({ equipment, nextAvailableAt }: EquipmentCardProps) => {
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <MapPin className="h-3.5 w-3.5" />
               <span>Owner: {equipment.owner.location}</span>
-              {equipment.owner.distance && (
-                <span className="text-xs">({equipment.owner.distance} mi)</span>
+              {(distanceMiles ?? equipment.owner.distance) && (
+                <span className="text-xs">({(distanceMiles ?? equipment.owner.distance)?.toFixed(1)} mi)</span>
               )}
             </div>
             <Badge

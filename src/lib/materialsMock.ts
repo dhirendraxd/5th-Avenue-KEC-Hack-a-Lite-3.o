@@ -30,6 +30,7 @@ export interface MaterialListing {
   price: number;
   isFree: boolean;
   locationName: string;
+  locationMapUrl?: string;
   latitude: number;
   longitude: number;
   contactName: string;

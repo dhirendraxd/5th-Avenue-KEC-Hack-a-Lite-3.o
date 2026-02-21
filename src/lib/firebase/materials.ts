@@ -19,6 +19,7 @@ interface FirestoreMaterialDocument {
   price: number;
   isFree: boolean;
   locationName: string;
+  locationMapUrl?: string;
   latitude: number;
   longitude: number;
   contactName: string;
@@ -36,6 +37,7 @@ export interface MaterialCreateInput {
   price: number;
   isFree: boolean;
   locationName: string;
+  locationMapUrl?: string;
   latitude: number;
   longitude: number;
   contactName: string;
@@ -56,6 +58,7 @@ const toMaterialListing = (
   price: document.price,
   isFree: document.isFree,
   locationName: document.locationName,
+  locationMapUrl: document.locationMapUrl,
   latitude: document.latitude,
   longitude: document.longitude,
   contactName: document.contactName,
@@ -70,6 +73,7 @@ export interface MaterialUpdateInput {
   price?: number;
   isFree?: boolean;
   locationName?: string;
+  locationMapUrl?: string;
   contactPhone?: string;
   notes?: string;
 }
@@ -87,6 +91,7 @@ export const createFirebaseMaterial = async (
     price: input.isFree ? 0 : input.price,
     isFree: input.isFree,
     locationName: input.locationName,
+    locationMapUrl: input.locationMapUrl,
     latitude: input.latitude,
     longitude: input.longitude,
     contactName: input.contactName,
@@ -127,6 +132,8 @@ export const updateFirebaseMaterial = async (
   if (input.price !== undefined) payload.price = input.price;
   if (input.locationName !== undefined)
     payload.locationName = input.locationName;
+  if (input.locationMapUrl !== undefined)
+    payload.locationMapUrl = input.locationMapUrl;
   if (input.contactPhone !== undefined)
     payload.contactPhone = input.contactPhone;
   if (input.notes !== undefined) payload.notes = input.notes;

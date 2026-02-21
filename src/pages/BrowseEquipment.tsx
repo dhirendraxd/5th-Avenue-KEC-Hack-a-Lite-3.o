@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import BackgroundIllustrations from "@/components/layout/BackgroundIllustrations";
 import EquipmentCard from "@/components/equipment/EquipmentCard";
@@ -24,6 +25,50 @@ import { subscribeFirebaseRentals } from "@/lib/firebase/rentals";
 import { Search, SlidersHorizontal, X, Heart, Grid3X3, LayoutList, Package } from "lucide-react";
 import { addDays } from "date-fns";
 
+const toRadians = (value: number) => (value * Math.PI) / 180;
+
+const distanceInMiles = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+) => {
+  const earthRadius = 3958.8;
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) *
+      Math.cos(toRadians(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadius * c;
+};
+
+const parseLatLngFromMapUrl = (value?: string): { lat: number; lng: number } | null => {
+  if (!value) return null;
+
+  const decoded = decodeURIComponent(value);
+  const patterns = [
+    /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+    /[?&]q=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+    /[?&]ll=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = decoded.match(pattern);
+    if (!match) continue;
+    const lat = Number(match[1]);
+    const lng = Number(match[2]);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return { lat, lng };
+    }
+  }
+
+  return null;
+};
+
 const BrowseEquipment = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -35,6 +80,8 @@ const BrowseEquipment = () => {
   const [allEquipment, setAllEquipment] = useState<Equipment[]>([]);
   const [allRentals, setAllRentals] = useState<RentalRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationStatus, setLocationStatus] = useState<"idle" | "loading" | "active" | "error">("idle");
 
   const { favorites } = useFavoritesStore();
   const categories = Object.keys(categoryLabels) as EquipmentCategory[];
@@ -63,6 +110,26 @@ const BrowseEquipment = () => {
     return () => unsubscribe();
   }, []);
 
+  const handleUseLiveLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus("error");
+      return;
+    }
+
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setLocationStatus("active");
+        setSortBy("closest");
+      },
+      () => {
+        setLocationStatus("error");
+      },
+      { enableHighAccuracy: true, timeout: 8000 },
+    );
+  };
+
   const nextAvailableByEquipment = useMemo(() => {
     const now = new Date();
     const equipmentById = new Map(allEquipment.map((equipment) => [equipment.id, equipment]));
@@ -86,6 +153,22 @@ const BrowseEquipment = () => {
 
     return byEquipment;
   }, [allEquipment, allRentals]);
+
+  const liveDistanceByEquipment = useMemo(() => {
+    const byEquipment = new Map<string, number>();
+    if (!userCoords) return byEquipment;
+
+    allEquipment.forEach((equipment) => {
+      const coords = parseLatLngFromMapUrl(equipment.locationMapUrl);
+      if (!coords) return;
+      byEquipment.set(
+        equipment.id,
+        distanceInMiles(userCoords.lat, userCoords.lng, coords.lat, coords.lng),
+      );
+    });
+
+    return byEquipment;
+  }, [allEquipment, userCoords]);
 
   const filteredAndSortedEquipment = useMemo(() => {
     let result = allEquipment.filter((equipment) => {
@@ -113,7 +196,11 @@ const BrowseEquipment = () => {
         });
         break;
       case "closest":
-        result.sort((a, b) => (a.owner.distance || 999) - (b.owner.distance || 999));
+        result.sort((a, b) => {
+          const distanceA = liveDistanceByEquipment.get(a.id) ?? a.owner.distance ?? 999;
+          const distanceB = liveDistanceByEquipment.get(b.id) ?? b.owner.distance ?? 999;
+          return distanceA - distanceB;
+        });
         break;
       case "price_low":
         result.sort((a, b) => a.pricePerDay - b.pricePerDay);
@@ -124,7 +211,7 @@ const BrowseEquipment = () => {
     }
 
     return result;
-  }, [allEquipment, searchQuery, selectedCategory, priceRange, sortBy, showFavoritesOnly, favorites]);
+  }, [allEquipment, searchQuery, selectedCategory, priceRange, sortBy, showFavoritesOnly, favorites, liveDistanceByEquipment]);
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -144,6 +231,11 @@ const BrowseEquipment = () => {
         <PageHeader
           title="Browse Equipment"
           description="Find specialized equipment from verified businesses near you"
+          actions={
+            <Button asChild variant="outline">
+              <Link to="/dashboard/add-equipment">Add Equipment</Link>
+            </Button>
+          }
           className="mb-10"
         />
 
@@ -251,6 +343,23 @@ const BrowseEquipment = () => {
                   {favorites.length} Saved
                 </Button>
               </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h4 className="text-sm font-medium text-foreground">Live Location</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Use GPS to improve closest sorting for listings with map coordinates.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleUseLiveLocation}
+                  disabled={locationStatus === "loading"}
+                >
+                  {locationStatus === "loading" ? "Locating..." : "Use Live Location"}
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -321,6 +430,7 @@ const BrowseEquipment = () => {
                 <EquipmentCard
                   equipment={equipment}
                   nextAvailableAt={nextAvailableByEquipment.get(equipment.id)}
+                  distanceMiles={liveDistanceByEquipment.get(equipment.id)}
                 />
               </div>
             ))}
