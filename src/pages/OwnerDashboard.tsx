@@ -55,6 +55,11 @@ import {
   subscribeFirebaseMaterials,
   updateFirebaseMaterial,
 } from "@/lib/firebase/materials";
+import {
+  MaterialRequest,
+  subscribeFirebaseMaterialRequests,
+  updateFirebaseMaterialRequestStatus,
+} from "@/lib/firebase/materialRequests";
 import { RentalRequest, Equipment } from "@/lib/mockData";
 import {
   MaterialListing,
@@ -100,6 +105,7 @@ const OwnerDashboard = () => {
 
   const [myEquipment, setMyEquipment] = useState<Equipment[]>([]);
   const [myMaterials, setMyMaterials] = useState<MaterialListing[]>([]);
+  const [materialRequests, setMaterialRequests] = useState<MaterialRequest[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [materialEditor, setMaterialEditor] = useState<{
     open: boolean;
@@ -170,6 +176,19 @@ const OwnerDashboard = () => {
       },
     );
 
+    const unsubscribeMaterialRequests = subscribeFirebaseMaterialRequests(
+      (allRequests) => {
+        const sellerRequests = allRequests.filter(
+          (request) =>
+            request.sellerId === user.id || request.sellerName === user.name,
+        );
+        setMaterialRequests(sellerRequests);
+      },
+      (error) => {
+        console.error("Failed to load builder bazaar requests:", error);
+      },
+    );
+
     // Subscribe to owner notifications (latest first)
     const unsubscribeNotifications = subscribeDocuments(
       "notifications",
@@ -189,6 +208,7 @@ const OwnerDashboard = () => {
       unsubscribeBusinessProfile();
       unsubscribeNotifications();
       unsubscribeMaterials();
+      unsubscribeMaterialRequests();
     };
   }, [user]);
 
@@ -198,6 +218,9 @@ const OwnerDashboard = () => {
   );
   const extensionRequests = requests.filter(
     (r) => r.extensionRequest?.status === "pending"
+  );
+  const pendingMaterialRequests = materialRequests.filter(
+    (request) => request.status === "requested",
   );
 
   // Categorize by urgency
@@ -371,6 +394,54 @@ const OwnerDashboard = () => {
     }
   };
 
+  const handleApproveMaterialRequest = async (requestId: string) => {
+    try {
+      await updateFirebaseMaterialRequestStatus(requestId, "approved");
+      setMaterialRequests((prev) =>
+        prev.map((request) =>
+          request.id === requestId
+            ? { ...request, status: "approved" }
+            : request,
+        ),
+      );
+      toast({
+        title: "Bazaar request approved",
+        description: "Buyer can proceed with pickup and payment.",
+      });
+    } catch (error) {
+      console.error("Failed to approve bazaar request:", error);
+      toast({
+        title: "Approval failed",
+        description: "Could not update this request.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeclineMaterialRequest = async (requestId: string) => {
+    try {
+      await updateFirebaseMaterialRequestStatus(requestId, "declined");
+      setMaterialRequests((prev) =>
+        prev.map((request) =>
+          request.id === requestId
+            ? { ...request, status: "declined" }
+            : request,
+        ),
+      );
+      toast({
+        title: "Bazaar request declined",
+        description: "The buyer has been notified.",
+      });
+    } catch (error) {
+      console.error("Failed to decline bazaar request:", error);
+      toast({
+        title: "Decline failed",
+        description: "Could not update this request.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background relative">
       <BackgroundIllustrations variant="dashboard" />
@@ -429,11 +500,11 @@ const OwnerDashboard = () => {
           />
           <StatCard
             label="Pending Requests"
-            value={pendingRequests.length}
+            value={pendingRequests.length + pendingMaterialRequests.length}
             icon={Clock}
             iconColor="text-warning"
-            variant={pendingRequests.length > 0 ? "highlight" : "default"}
-            subtitle={pendingRequests.length > 0 ? "Needs review" : "All caught up"}
+            variant={pendingRequests.length + pendingMaterialRequests.length > 0 ? "highlight" : "default"}
+            subtitle={pendingRequests.length + pendingMaterialRequests.length > 0 ? "Needs review" : "All caught up"}
           />
           <StatCard
             label="Active Rentals"
@@ -655,7 +726,7 @@ const OwnerDashboard = () => {
 
           {/* Requests Tab */}
           <TabsContent value="requests" className="space-y-4">
-            {requests.length === 0 ? (
+            {requests.length === 0 && materialRequests.length === 0 ? (
               <Card className="border-border/50">
                 <CardContent className="py-8">
                   <EmptyState
@@ -666,112 +737,182 @@ const OwnerDashboard = () => {
                 </CardContent>
               </Card>
             ) : (
-              requests.map((request) => (
-                <Card 
-                  key={request.id} 
-                  className="overflow-hidden border-border/50 hover:border-border transition-colors"
-                >
-                  <CardContent className="p-5">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="flex gap-4">
-                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
-                          <img
-                            src={request.equipment.images[0]}
-                            alt={request.equipment.name}
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                        <div className="space-y-2 min-w-0">
-                          <div>
-                            <h3 className="font-semibold text-foreground truncate">
-                              {request.equipment.name}
-                            </h3>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
-                              <Calendar className="h-3.5 w-3.5 shrink-0" />
-                              <span>
-                                {getDateLabel(request.startDate)} – {getDateLabel(request.endDate)}
-                              </span>
-                              <span className="text-muted-foreground/40">·</span>
-                              <span>{request.totalDays} days</span>
+              <>
+                {materialRequests.length > 0 && (
+                  <Card className="border-border/50">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                        <Hammer className="h-5 w-5 text-primary" />
+                        Builder's Bazaar Requests
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {materialRequests.map((request) => (
+                        <div key={request.id} className="rounded-lg border border-border/60 p-4">
+                          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="flex gap-3 min-w-0">
+                              <div className="h-14 w-14 overflow-hidden rounded-lg bg-muted shrink-0">
+                                <img
+                                  src={request.materialImageUrl}
+                                  alt={request.materialName}
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-foreground truncate">{request.materialName}</p>
+                                <p className="text-sm text-muted-foreground truncate">
+                                  Buyer: {request.requesterName} • Pickup: {request.pickupLocation}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {format(request.createdAt, "MMM d, p")} • {request.paymentMethod.toUpperCase()}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <StatusIndicator
+                                status={
+                                  request.status === "requested"
+                                    ? "pending"
+                                    : request.status === "approved"
+                                      ? "success"
+                                      : request.status === "completed"
+                                        ? "info"
+                                        : "error"
+                                }
+                                pulse={request.status === "requested"}
+                              >
+                                {request.status}
+                              </StatusIndicator>
+                              {request.status === "requested" && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeclineMaterialRequest(request.id)}
+                                  >
+                                    Decline
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleApproveMaterialRequest(request.id)}
+                                  >
+                                    Approve
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           </div>
-                          <StatusIndicator
-                            status={
-                              request.status === "requested"
-                                ? "pending"
-                                : request.status === "approved" || request.status === "active"
-                                ? "success"
-                                : request.status === "completed"
-                                ? "info"
-                                : "error"
-                            }
-                            pulse={request.status === "requested"}
-                          >
-                            {statusColors[request.status].label}
-                          </StatusIndicator>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {requests.map((request) => (
+                  <Card 
+                    key={request.id} 
+                    className="overflow-hidden border-border/50 hover:border-border transition-colors"
+                  >
+                    <CardContent className="p-5">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex gap-4">
+                          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+                            <img
+                              src={request.equipment.images[0]}
+                              alt={request.equipment.name}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <div className="space-y-2 min-w-0">
+                            <div>
+                              <h3 className="font-semibold text-foreground truncate">
+                                {request.equipment.name}
+                              </h3>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
+                                <Calendar className="h-3.5 w-3.5 shrink-0" />
+                                <span>
+                                  {getDateLabel(request.startDate)} – {getDateLabel(request.endDate)}
+                                </span>
+                                <span className="text-muted-foreground/40">·</span>
+                                <span>{request.totalDays} days</span>
+                              </div>
+                            </div>
+                            <StatusIndicator
+                              status={
+                                request.status === "requested"
+                                  ? "pending"
+                                  : request.status === "approved" || request.status === "active"
+                                  ? "success"
+                                  : request.status === "completed"
+                                  ? "info"
+                                  : "error"
+                              }
+                              pulse={request.status === "requested"}
+                            >
+                              {statusColors[request.status].label}
+                            </StatusIndicator>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-3 lg:items-end">
+                          <p className="text-xl font-bold text-foreground tabular-nums">
+                            NPR {request.totalPrice}
+                          </p>
+                          <div className="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRentalClick(request)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            {request.status === "requested" && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDecline(request.id)}
+                                >
+                                  Decline
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    setApproveDialog({ open: true, request })
+                                  }
+                                >
+                                  Approve
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-3 lg:items-end">
-                        <p className="text-xl font-bold text-foreground tabular-nums">
-                          NPR {request.totalPrice}
-                        </p>
-                        <div className="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRentalClick(request)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                          {request.status === "requested" && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDecline(request.id)}
-                              >
-                                Decline
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  setApproveDialog({ open: true, request })
-                                }
-                              >
-                                Approve
-                              </Button>
-                            </>
-                          )}
+                      {request.status === "requested" && (
+                        <div className="mt-4 pt-4 border-t border-border/50">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+                            About the renter
+                          </p>
+                          <RenterProfileCard renter={request.renter} />
                         </div>
-                      </div>
-                    </div>
+                      )}
 
-                    {/* Renter Profile - Collapsible feel */}
-                    {request.status === "requested" && (
-                      <div className="mt-4 pt-4 border-t border-border/50">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-                          About the renter
-                        </p>
-                        <RenterProfileCard renter={request.renter} />
-                      </div>
-                    )}
-
-                    {/* Owner notes */}
-                    {request.ownerNotes && request.status !== "requested" && (
-                      <div className="mt-4 pt-4 border-t border-border/50">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-                          Your notes
-                        </p>
-                        <p className="text-sm text-foreground">
-                          {request.ownerNotes}
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
+                      {request.ownerNotes && request.status !== "requested" && (
+                        <div className="mt-4 pt-4 border-t border-border/50">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                            Your notes
+                          </p>
+                          <p className="text-sm text-foreground">
+                            {request.ownerNotes}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
             )}
           </TabsContent>
 
