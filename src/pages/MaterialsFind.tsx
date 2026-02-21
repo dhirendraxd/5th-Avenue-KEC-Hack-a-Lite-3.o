@@ -1,14 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BackgroundIllustrations from "@/components/layout/BackgroundIllustrations";
-import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/ui/page-header";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -17,43 +25,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { MapPin, Phone, CircleDollarSign, Lightbulb, TrendingUp, Users, Upload, History, CheckCircle, Lock, Package, Shield } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   materialCategoryLabels,
   materialConditionLabels,
-  mockMaterialListings,
+  pickRandomCondition,
   type MaterialListing,
 } from "@/lib/materialsMock";
+import {
+  createFirebaseMaterial,
+  subscribeFirebaseMaterials,
+} from "@/lib/firebase/materials";
+import { createFirebaseMaterialRequest } from "@/lib/firebase/materialRequests";
+import { isCloudinaryConfigured, uploadImagesToCloudinary } from "@/lib/cloudinary";
+import { Camera, ChevronRight, MapPin, Phone } from "lucide-react";
 
-const DEFAULT_LOCATION = {
-  latitude: 27.7172,
-  longitude: 85.324,
-  label: "Kathmandu",
-};
+const DEFAULT_COORDINATES = { latitude: 27.7172, longitude: 85.324 };
 
-const kathmandu_locations = [
-  { label: "Thamel", lat: 27.7164, lng: 85.3277 },
-  { label: "Koteshwor", lat: 27.7089, lng: 85.3574 },
-  { label: "Patan", lat: 27.6737, lng: 85.3199 },
-  { label: "Kalanki", lat: 27.7345, lng: 85.2708 },
-];
+type TabMode = "browse" | "list";
+
+type ListingWithDistance = MaterialListing & { distance: number };
 
 const toRadians = (value: number) => (value * Math.PI) / 180;
 
-/**
- * Calculate distance between two geographic coordinates using Haversine formula
- * This determines how far a listing is from the user's current location
- * @param lat1, lon1 - User's current coordinates
- * @param lat2, lon2 - Material listing coordinates
- * @returns Distance in miles
- */
 const distanceInMiles = (
   lat1: number,
   lon1: number,
@@ -75,63 +70,69 @@ const distanceInMiles = (
 
 const MaterialsFind = () => {
   const { toast } = useToast();
-  const [radius, setRadius] = useState("10");
-  const [category, setCategory] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [location, setLocation] = useState(DEFAULT_LOCATION);
-  const [locationStatus, setLocationStatus] = useState<"idle" | "loading" | "error">("idle");
-  const [selected, setSelected] = useState<MaterialListing | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedPickupLocation, setSelectedPickupLocation] = useState("Thamel");
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "advance">("cod");
-  const [selectedGateway, setSelectedGateway] = useState<"khalti" | "esewa" | "bank" | null>(null);
-  const [showOfferMode, setShowOfferMode] = useState(false);
-  const [offerAmount, setOfferAmount] = useState("");
-  const [offerStatus, setOfferStatus] = useState<"idle" | "sent" | "accepted" | "rejected" | "counter">("idle");
-  const [counterOfferAmount, setCounterOfferAmount] = useState<number | null>(null);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [isPurchasing, setIsPurchasing] = useState(false);
-  const [verificationCode, setVerificationCode] = useState<string | null>(null);
-  const [showVerificationCode, setShowVerificationCode] = useState(false);
+  const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Simulate initial data loading
+  const initialTab = searchParams.get("tab") === "list" ? "list" : "browse";
+  const [activeTab, setActiveTab] = useState<TabMode>(initialTab);
+
+  const [allListings, setAllListings] = useState<MaterialListing[]>([]);
+  const [isLoadingListings, setIsLoadingListings] = useState(true);
+
+  const [radius, setRadius] = useState("10");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [location, setLocation] = useState({ ...DEFAULT_COORDINATES, label: "Current location" });
+
+  const [selectedListing, setSelectedListing] = useState<ListingWithDistance | null>(null);
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [pickupLocation, setPickupLocation] = useState("Thamel");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "advance">("cod");
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState<string>("");
+  const [condition, setCondition] = useState<string>(() => pickRandomCondition());
+  const [price, setPrice] = useState("");
+  const [isFree, setIsFree] = useState(false);
+  const [listLocation, setListLocation] = useState("");
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
+  const [listCoordinates, setListCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsInitialLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    const unsubscribe = subscribeFirebaseMaterials(
+      (materials) => {
+        setAllListings(materials);
+        setIsLoadingListings(false);
+      },
+      () => {
+        setIsLoadingListings(false);
+      },
+    );
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
 
-    setLocationStatus("loading");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocation({
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
-          label: "Your location",
+          label: "Current location",
         });
-        setLocationStatus("idle");
       },
-      () => {
-        setLocationStatus("error");
-      },
+      () => undefined,
       { enableHighAccuracy: true, timeout: 8000 },
     );
   }, []);
 
-  /**
-   * Filter and sort listings based on:
-   * - Distance from user's current location (within selected radius)
-   * - Material category (or "all")
-   * - Calculates distance for each listing using Haversine formula
-   * - Returns listings sorted by distance (closest first)
-   */
-  const listings = useMemo(() => {
+  const listings = useMemo<ListingWithDistance[]>(() => {
     const maxDistance = Number(radius);
-    return mockMaterialListings
+    return allListings
       .map((listing) => ({
         ...listing,
         distance: distanceInMiles(
@@ -142,7 +143,7 @@ const MaterialsFind = () => {
         ),
       }))
       .filter((listing) => listing.distance <= maxDistance)
-      .filter((listing) => category === "all" || listing.category === category)
+      .filter((listing) => categoryFilter === "all" || listing.category === categoryFilter)
       .filter((listing) => {
         if (!searchQuery.trim()) return true;
         const query = searchQuery.toLowerCase();
@@ -153,249 +154,223 @@ const MaterialsFind = () => {
         );
       })
       .sort((a, b) => a.distance - b.distance);
-  }, [radius, category, location, searchQuery]);
+  }, [allListings, radius, categoryFilter, searchQuery, location]);
 
-  /**
-   * Calculate area insights for sidebar
-   * Shows top 3 locations with most material listings
-   * Used to display "Top Areas" in the insights card
-   */
-  const areaInsights = useMemo(() => {
-    const counts = listings.reduce<Record<string, number>>((acc, listing) => {
-      acc[listing.locationName] = (acc[listing.locationName] || 0) + 1;
-      return acc;
-    }, {});
+  const switchTab = (value: string) => {
+    const next = value === "list" ? "list" : "browse";
+    setActiveTab(next);
+    setSearchParams(next === "list" ? { tab: "list" } : {});
+  };
 
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3);
-  }, [listings]);
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
 
-  /**
-   * Calculate category insights for sidebar
-   * Groups available materials by category and counts occurrences
-   * Shows category distribution as badges in insights card
-   */
-  const categoryInsights = useMemo(() => {
-    const counts = listings.reduce<Record<string, number>>((acc, listing) => {
-      const label = materialCategoryLabels[listing.category];
-      acc[label] = (acc[label] || 0) + 1;
-      return acc;
-    }, {});
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith("image/")) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        if (!result) return;
+        setUploadedPhotos((prev) => (prev.length < 4 ? [...prev, result] : prev));
+      };
+      reader.readAsDataURL(file);
+    });
 
-    return Object.entries(counts);
-  }, [listings]);
+    event.target.value = "";
+  };
 
-  /**
-   * Open purchase dialog for selected material
-   * Resets all offer/payment states to initial values
-   * Prepares UI for buyer interaction (offer or direct payment)
-   */
-  const handleOpenDialog = (listing: MaterialListing) => {
-    setSelected(listing);
-    setSelectedPickupLocation("Thamel");
+  const handleUseListingLocation = () => {
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setListCoordinates({ latitude, longitude });
+        setListLocation(`GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+      },
+      () => undefined,
+      { enableHighAccuracy: true, timeout: 8000 },
+    );
+  };
+
+  const handlePublish = async (event: FormEvent) => {
+    event.preventDefault();
+
+    if (!name.trim() || !category || !condition || !listLocation.trim() || uploadedPhotos.length === 0) {
+      toast({
+        title: "Missing fields",
+        description: "Complete all required fields before publishing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isFree && Number(price) <= 0) {
+      toast({
+        title: "Invalid price",
+        description: "Set a valid price or mark as free.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      let imageUrl = uploadedPhotos[0];
+      if (isCloudinaryConfigured()) {
+        const [cloudinaryUrl] = await uploadImagesToCloudinary([uploadedPhotos[0]]);
+        imageUrl = cloudinaryUrl;
+      }
+
+      await createFirebaseMaterial({
+        name: name.trim(),
+        category: category as "wood" | "metal" | "concrete",
+        condition: condition as "sealed" | "new" | "used",
+        imageUrl,
+        price: isFree ? 0 : Number(price),
+        isFree,
+        locationName: listLocation.trim(),
+        latitude: listCoordinates?.latitude ?? DEFAULT_COORDINATES.latitude,
+        longitude: listCoordinates?.longitude ?? DEFAULT_COORDINATES.longitude,
+        contactName: user?.name || "Builder",
+        contactPhone: "+977 9800000000",
+        sellerId: user?.id,
+      });
+
+      toast({
+        title: "Listing published",
+        description: "Your material listing is stored successfully.",
+      });
+
+      setName("");
+      setCategory("");
+      setCondition(pickRandomCondition());
+      setPrice("");
+      setIsFree(false);
+      setListLocation("");
+      setUploadedPhotos([]);
+      setListCoordinates(null);
+      switchTab("browse");
+    } catch {
+      toast({
+        title: "Publish failed",
+        description: "Could not save listing. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const openRequestDialog = (listing: ListingWithDistance) => {
+    setSelectedListing(listing);
+    setPickupLocation("Thamel");
     setPaymentMethod("cod");
-    setSelectedGateway(null);
-    setShowOfferMode(false);
-    setOfferAmount("");
-    setOfferStatus("idle");
-    setCounterOfferAmount(null);
-    setVerificationCode(null);
-    setShowVerificationCode(false);
-    setDialogOpen(true);
+    setRequestDialogOpen(true);
   };
 
-  /**
-   * Generate a random 4-digit verification code
-   * Used to verify pickup between buyer and seller
-   */
-  const generateVerificationCode = () => {
-    return Math.floor(1000 + Math.random() * 9000).toString();
-  };
+  const handleCreateRequest = async () => {
+    if (!selectedListing) return;
 
-  const handlePurchase = () => {
-    if (!selected) return;
-    
-    setIsPurchasing(true);
-    
-    // Simulate processing time for better UX
-    setTimeout(() => {
-      if (paymentMethod === "cod") {
-        // Generate verification code for pickup
-        const code = generateVerificationCode();
-        setVerificationCode(code);
-        setShowVerificationCode(true);
-        
-        toast({
-          title: "Order Confirmed! ✓",
-          description: `${selected.name}\nPickup at ${selectedPickupLocation}\n\nShow your verification code to seller during pickup.`,
-          duration: 5000,
-        });
-        setIsPurchasing(false);
-      } else {
-        if (!selectedGateway) {
-          toast({
-            title: "Select Payment Gateway",
-            description: "Please choose a payment method below to proceed.",
-            variant: "destructive",
-          });
-          setIsPurchasing(false);
-          return;
-        }
-        // Generate verification code for advance payment too
-        const code = generateVerificationCode();
-        setVerificationCode(code);
-        setShowVerificationCode(true);
-        
-        toast({
-          title: "Payment Confirmed! ✓",
-          description: `${selected.name}\nPickup at ${selectedPickupLocation}\n\nShow your verification code to seller.`,
-          duration: 5000,
-        });
-        setIsPurchasing(false);
-      }
-    }, 600);
-  };
-
-  const handlePaymentGateway = (gateway: "khalti" | "esewa" | "bank") => {
-    if (!selected) return;
-    
-    setSelectedGateway(gateway);
-    
-    let gatewayName = "";
-    if (gateway === "khalti") gatewayName = "Khalti";
-    else if (gateway === "esewa") gatewayName = "eSewa";
-    else gatewayName = "Bank Transfer";
-    
-    toast({
-      title: `Redirecting to ${gatewayName}...`,
-      description: `Amount: NPR ${selected.price}\nItem: ${selected.name}`,
-      duration: 3000,
-    });
-    
-    setTimeout(() => {
-      toast({
-        title: "Payment Processing",
-        description: `Your payment of NPR ${selected.price} is being processed...`,
-        duration: 4000,
+    setIsSubmittingRequest(true);
+    try {
+      await createFirebaseMaterialRequest({
+        materialId: selectedListing.id,
+        materialName: selectedListing.name,
+        materialImageUrl: selectedListing.imageUrl,
+        sellerId: selectedListing.sellerId,
+        sellerName: selectedListing.contactName,
+        requesterId: user?.id,
+        requesterName: user?.name || "Guest Buyer",
+        pickupLocation,
+        paymentMethod,
       });
-      setDialogOpen(false);
-    }, 2000);
-  };
 
-  /**
-   * Send offer to seller (OLX-style negotiation)
-   * Validates offer amount and simulates seller response
-   * Seller randomly accepts, rejects, or counter-offers
-   */
-  const handleSendOffer = () => {
-    if (!selected || !offerAmount) {
       toast({
-        title: "Enter an offer amount",
+        title: "Request sent",
+        description: "Your request has been submitted to the seller.",
+      });
+      setRequestDialogOpen(false);
+    } catch {
+      toast({
+        title: "Request failed",
+        description: "Could not submit request. Please try again.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsSubmittingRequest(false);
     }
-
-    const offer = Number(offerAmount);
-    if (offer <= 0 || offer >= selected.price) {
-      toast({
-        title: "Invalid offer",
-        description: "Offer must be less than asking price",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Update status and notify buyer
-    setOfferStatus("sent");
-    toast({
-      title: "Offer sent! 📤",
-      description: `NPR ${offer} offer sent to ${selected.contactName}. Waiting for response...`,
-    });
-
-    // Simulate seller response with 2-second delay
-    setTimeout(() => {
-      const responses = ["accepted", "counter", "rejected"] as const;
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      
-      if (randomResponse === "accepted") {
-        setOfferStatus("accepted");
-        toast({
-          title: "Offer accepted! ✓",
-          description: `Great! ${selected.contactName} accepted your NPR ${offer} offer.`,
-        });
-      } else if (randomResponse === "counter") {
-        // Seller suggests ~85% of original price as counter
-        const counterPrice = Math.round(selected.price * 0.85);
-        setCounterOfferAmount(counterPrice);
-        setOfferStatus("counter");
-        toast({
-          title: "Counter offer received 🎯",
-          description: `${selected.contactName} countered with NPR ${counterPrice}`,
-        });
-      } else {
-        setOfferStatus("rejected");
-        toast({
-          title: "Offer declined",
-          description: `Sorry, ${selected.contactName} rejected your offer.`,
-          variant: "destructive",
-        });
-      }
-    }, 2000);
-  };
-
-  /**
-   * Accept seller's counter offer
-   * Updates status and allows buyer to proceed to payment
-   */
-  const handleAcceptCounter = () => {
-    if (!counterOfferAmount) return;
-    
-    toast({
-      title: "Counter offer accepted! ✓",
-      description: `You agreed to NPR ${counterOfferAmount}. Call ${selected?.contactName} to finalize.`,
-    });
-    setOfferStatus("accepted");
-  };
-
-  /**
-   * Reject seller's counter offer and return to initial offer state
-   * Buyer can send a new offer or try different amount
-   */
-  const handleRejectCounter = () => {
-    setOfferStatus("idle");
-    setCounterOfferAmount(null);
-    setOfferAmount("");
-    toast({
-      title: "Counter offer rejected",
-      description: "You can send a new offer.",
-    });
   };
 
   return (
     <div className="min-h-screen bg-background relative">
       <BackgroundIllustrations variant="marketplace" />
       <Navbar />
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 relative materials-shell">
-        <div className="materials-ambient" aria-hidden="true" />
-        <div className="relative z-10">
-          <PageHeader
-            title="Builder's Bazaar - Find Materials"
-            description="Discover construction materials available nearby. Buy directly from local suppliers and builders."
-            actions={
-              <div className="flex flex-wrap gap-3">
-                <Button asChild variant="default" size="default">
-                  <Link to="/materials/list">+ List Materials</Link>
-                </Button>
-                <Button asChild variant="outline" size="default" className="border-green-600 text-green-700 hover:bg-green-50 dark:border-green-500 dark:text-green-400">
-                  <Link to="/materials/verify">
-                    <Shield className="mr-2 h-4 w-4" />
-                    Verify Pickup
-                  </Link>
-                </Button>
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 relative z-10">
+        <nav aria-label="Breadcrumb" className="mb-4 flex items-center text-sm text-muted-foreground">
+          <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+          <ChevronRight className="mx-2 h-4 w-4" />
+          <Link to="/materials/find" className="hover:text-foreground transition-colors">Builder&apos;s Bazaar</Link>
+          <ChevronRight className="mx-2 h-4 w-4" />
+          <span className="text-foreground">
+            {activeTab === "browse" ? "Browse Materials" : "List Material"}
+          </span>
+        </nav>
+
+        <PageHeader
+          title="Builder's Bazaar"
+          description="Browse nearby materials and publish listings from one place."
+          actions={
+            activeTab === "browse" ? (
+              <Button variant="outline" onClick={() => switchTab("list")}>
+                List Material
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => switchTab("browse")}>
+                Browse Materials
+              </Button>
+            )
+          }
+        />
+
+        <Card className="mb-6">
+          <CardContent className="py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-muted-foreground">
+              {isLoadingListings
+                ? "Loading marketplace data"
+                : `${allListings.length} total listings available`}
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{activeTab === "browse" ? "Browse" : "List"}</Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => switchTab(activeTab === "browse" ? "list" : "browse")}
+              >
+                {activeTab === "browse" ? "Go to Listing Form" : "Go to Marketplace"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Tabs value={activeTab} onValueChange={switchTab} className="space-y-6">
+          <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="browse">Browse Materials</TabsTrigger>
+            <TabsTrigger value="list">List Material</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="browse" className="space-y-6">
+            <Card>
+              <CardContent className="pt-6 grid gap-4 md:grid-cols-4">
+                <Input
+                  placeholder="Search by name or location"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="md:col-span-2"
+                />
                 <Select value={radius} onValueChange={setRadius}>
-                  <SelectTrigger className="w-[150px]">
+                  <SelectTrigger>
                     <SelectValue placeholder="Radius" />
                   </SelectTrigger>
                   <SelectContent>
@@ -404,650 +379,220 @@ const MaterialsFind = () => {
                     <SelectItem value="15">Within 15 miles</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="w-[170px]">
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger>
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All categories</SelectItem>
-                    <SelectItem value="wood">🪵 Wood</SelectItem>
-                    <SelectItem value="metal">🔩 Metal</SelectItem>
-                    <SelectItem value="concrete">🏗️ Concrete</SelectItem>
+                    <SelectItem value="wood">Wood</SelectItem>
+                    <SelectItem value="metal">Metal</SelectItem>
+                    <SelectItem value="concrete">Concrete</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            }
-          />
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setCategoryFilter("all");
+                    setRadius("10");
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </CardContent>
+            </Card>
 
-          {/* Search Bar */}
-          <div className="mb-6 max-w-2xl">
-            <Input
-              placeholder="🔍 Search materials by name or location..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-12 text-base"
-            />
-            {searchQuery && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Found {listings.length} {listings.length === 1 ? 'result' : 'results'} matching "{searchQuery}"
-              </p>
-            )}
-          </div>
-
-          <div className="grid gap-6 lg:gap-8 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
-            <div className="space-y-5">
-              <Card className="overflow-hidden card-shadow border-primary/20">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <MapPin className="h-5 w-5 text-primary" />
-                    Your Location
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="rounded-xl border border-border bg-gradient-to-br from-primary/5 via-background to-muted/30 p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Current location</p>
-                        <p className="text-base font-semibold text-foreground mt-1">{location.label}</p>
-                      </div>
-                      <Badge variant={locationStatus === "error" ? "destructive" : "secondary"} className="flex-shrink-0">
-                        {locationStatus === "loading"
-                          ? "Locating..."
-                          : locationStatus === "error"
-                            ? "GPS Error"
-                            : "Active"}
-                      </Badge>
-                    </div>
-                    <div className="mt-4 grid gap-3 grid-cols-2">
-                      <div className="rounded-lg bg-card/90 backdrop-blur-sm p-3.5 border border-border/50">
-                        <p className="text-xs font-medium text-muted-foreground">Materials Found</p>
-                        <p className="text-2xl font-bold text-foreground mt-1">{listings.length}</p>
-                      </div>
-                      <div className="rounded-lg bg-card/90 backdrop-blur-sm p-3.5 border border-border/50">
-                        <p className="text-xs font-medium text-muted-foreground">Search Radius</p>
-                        <p className="text-2xl font-bold text-foreground mt-1">{radius} mi</p>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    📍 Listings sorted by proximity • Move to refresh GPS
-                  </p>
+            {isLoadingListings ? (
+              <Card>
+                <CardContent className="py-10 text-sm text-muted-foreground">Loading listings...</CardContent>
+              </Card>
+            ) : listings.length === 0 ? (
+              <Card>
+                <CardContent className="py-10 text-sm text-muted-foreground">
+                  No materials match your filters. Adjust filters or switch to List Material.
                 </CardContent>
               </Card>
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {listings.map((listing) => (
+                  <Card key={listing.id} className="overflow-hidden">
+                    <div className="aspect-[16/10] overflow-hidden bg-muted">
+                      <img src={listing.imageUrl} alt={listing.name} className="h-full w-full object-cover" loading="lazy" />
+                    </div>
+                    <CardHeader>
+                      <CardTitle className="text-base">{listing.name}</CardTitle>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="secondary">{materialCategoryLabels[listing.category]}</Badge>
+                        <Badge variant="outline">{materialConditionLabels[listing.condition]}</Badge>
+                        <Badge variant="outline">{listing.distance.toFixed(1)} mi</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="text-sm text-muted-foreground flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        {listing.locationName}
+                      </div>
+                      <div className="text-sm text-muted-foreground flex items-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        {listing.contactPhone}
+                      </div>
+                      <p className="font-semibold text-foreground">
+                        {listing.isFree ? "Free" : `NPR ${listing.price}`}
+                      </p>
+                      <Button className="w-full" onClick={() => openRequestDialog(listing)}>
+                        Request Material
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
-              <Card className="card-shadow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold">Material Insights</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    {categoryInsights.length > 0 ? (
-                      categoryInsights.map(([label, count]) => (
-                        <Badge key={label} variant="secondary" className="px-3 py-1">
-                          {label} · {count}
-                        </Badge>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No materials available in range.</p>
-                    )}
+          <TabsContent value="list">
+            <Card>
+              <CardHeader>
+                <CardTitle>Publish a Material Listing</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form className="grid gap-5" onSubmit={handlePublish}>
+                  <Input
+                    placeholder="Material name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Select value={category} onValueChange={setCategory}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="wood">Wood</SelectItem>
+                        <SelectItem value="metal">Metal</SelectItem>
+                        <SelectItem value="concrete">Concrete</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={condition} onValueChange={setCondition}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Condition" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sealed">Sealed</SelectItem>
+                        <SelectItem value="new">New</SelectItem>
+                        <SelectItem value="used">Used</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="space-y-2.5 pt-2">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Top Areas</p>
-                    {areaInsights.length > 0 ? (
-                      <div className="grid gap-2.5">
-                        {areaInsights.map(([area, count]) => (
-                          <div key={area} className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-muted/50 transition-colors">
-                            <span className="font-medium text-foreground">{area}</span>
-                            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">{count}</span>
+
+                  <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder={isFree ? "Free" : "Price (NPR)"}
+                      value={isFree ? "" : price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      disabled={isFree}
+                    />
+                    <label className="flex items-center gap-2 text-sm">
+                      <Checkbox checked={isFree} onCheckedChange={(v) => setIsFree(Boolean(v))} />
+                      Free
+                    </label>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                    <Input
+                      placeholder="Location"
+                      value={listLocation}
+                      onChange={(e) => setListLocation(e.target.value)}
+                    />
+                    <Button type="button" variant="outline" onClick={handleUseListingLocation}>
+                      Use Current Location
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium">Images (max 4)</label>
+                    <div className="rounded-lg border border-dashed border-border p-4">
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                        />
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Camera className="h-4 w-4" />
+                          Upload images
+                        </div>
+                      </label>
+                    </div>
+                    {uploadedPhotos.length > 0 && (
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                        {uploadedPhotos.map((photo, idx) => (
+                          <div key={idx} className="overflow-hidden rounded-lg border border-border bg-muted/40">
+                            <img src={photo} alt={`Uploaded ${idx + 1}`} className="h-24 w-full object-cover" />
                           </div>
                         ))}
                       </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No locations found.</p>
                     )}
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card className="card-shadow border-accent/20">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                    <TrendingUp className="h-4 w-4 text-accent" />
-                    Trending Now
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2.5">
-                  <div className="grid gap-2.5">
-                    <div className="rounded-lg border border-border bg-gradient-to-br from-accent/5 to-muted/40 p-3">
-                      <p className="text-xs font-medium text-muted-foreground">Most Searched</p>
-                      <p className="font-semibold text-foreground mt-0.5">TMT Steel Rods</p>
-                    </div>
-                    <div className="rounded-lg border border-border bg-gradient-to-br from-primary/5 to-muted/40 p-3">
-                      <p className="text-xs font-medium text-muted-foreground">Best Deals</p>
-                      <p className="font-semibold text-foreground mt-0.5">Free Materials</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="card-shadow bg-gradient-to-br from-yellow-50/50 to-background border-yellow-200/40">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                    <Lightbulb className="h-4 w-4 text-yellow-600" />
-                    Pro Tips
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2.5 text-sm text-muted-foreground">
-                    <li className="flex gap-2.5 items-start">
-                      <span className="text-primary text-lg leading-none mt-0.5">•</span>
-                      <span>Increase radius to see more materials</span>
-                    </li>
-                    <li className="flex gap-2.5 items-start">
-                      <span className="text-primary text-lg leading-none mt-0.5">•</span>
-                      <span>Use category filters for specific items</span>
-                    </li>
-                    <li className="flex gap-2.5 items-start">
-                      <span className="text-primary text-lg leading-none mt-0.5">•</span>
-                      <span>Contact sellers during business hours</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card className="card-shadow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                    <Users className="h-4 w-4 text-blue-600" />
-                    Market Stats
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-2.5">
-                  <div className="rounded-lg border border-border bg-gradient-to-br from-blue-50/50 to-muted/40 p-3.5">
-                    <p className="text-xs font-medium text-muted-foreground">Total Listings</p>
-                    <p className="text-2xl font-bold text-foreground mt-1">{listings.length}</p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-gradient-to-br from-green-50/50 to-muted/40 p-3.5">
-                    <p className="text-xs font-medium text-muted-foreground">Active Locations</p>
-                    <p className="text-2xl font-bold text-foreground mt-1">{new Set(listings.map((l) => l.locationName)).size}</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="card-shadow bg-gradient-to-br from-primary/10 via-accent/5 to-muted border-primary/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                    <Upload className="h-5 w-5 text-primary" />
-                    Sell Your Materials
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Got surplus construction materials? List them and connect with local builders.
-                  </p>
-                  <Button asChild className="w-full shadow-sm" size="lg">
-                    <Link to="/materials/list">
-                      <Upload className="mr-2 h-4 w-4" />
-                      Start Listing
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-          <div className="space-y-5">
-            {isInitialLoading ? (
-              // Skeleton loader for initial load
-              Array.from({ length: 3 }).map((_, index) => (
-                <Card key={index} className="card-shadow animate-pulse">
-                  <CardHeader className="space-y-3 pb-4">
-                    <div className="h-56 bg-muted rounded-xl" />
-                    <div className="flex justify-between">
-                      <div className="h-6 bg-muted rounded w-1/2" />
-                      <div className="h-5 bg-muted rounded w-20" />
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="h-6 bg-muted rounded w-20" />
-                      <div className="h-6 bg-muted rounded w-24" />
-                      <div className="h-6 bg-muted rounded w-24" />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3 pt-0">
-                    <div className="h-10 bg-muted rounded" />
-                    <div className="h-12 bg-muted rounded" />
-                  </CardContent>
-                </Card>
-              ))
-            ) : listings.length === 0 ? (
-              <Card className="card-shadow border-dashed">
-                <CardContent className="py-16 text-center">
-                  <Package className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-base font-medium text-foreground mb-2">
-                    {searchQuery ? 'No materials match your search' : 'No materials found'}
-                  </p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {searchQuery 
-                      ? 'Try different keywords or clear the search' 
-                      : 'Try increasing your search radius or changing the category filter.'}
-                  </p>
-                  {searchQuery && (
-                    <Button variant="outline" onClick={() => setSearchQuery("")}>
-                      Clear Search
+                  <div className="flex justify-end">
+                    <Button type="submit" disabled={isPublishing}>
+                      {isPublishing ? "Publishing..." : "Publish Listing"}
                     </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              listings.map((listing, index) => (
-              <Card 
-                key={listing.id} 
-                className="card-shadow hover:card-shadow-hover transition-all duration-200 border-border/70 animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <CardHeader className="space-y-3 pb-4">
-                    <div className="overflow-hidden rounded-xl border border-border bg-muted/40">
-                    <img
-                      src={listing.imageUrl}
-                      alt={listing.name}
-                        className="block h-56 w-full object-cover transition-transform duration-300 hover:scale-105"
-                      loading="lazy"
-                    />
                   </div>
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <CardTitle className="text-lg font-bold leading-tight">{listing.name}</CardTitle>
-                    <Badge variant="outline" className="flex-shrink-0">
-                      📍 {listing.distance.toFixed(1)} mi
-                    </Badge>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary" className="px-3 py-1">
-                      {materialCategoryLabels[listing.category]}
-                    </Badge>
-                    <Badge variant="secondary" className="px-3 py-1">
-                      {materialConditionLabels[listing.condition]}
-                    </Badge>
-                    {listing.isFree ? (
-                      <Badge className="bg-green-600 hover:bg-green-700 px-3 py-1">🎁 Free</Badge>
-                    ) : (
-                      <Badge variant="outline" className="gap-1.5 px-3 py-1 border-primary/30">
-                        <CircleDollarSign className="h-3.5 w-3.5" />
-                        <span className="text-sm font-bold">NPR {listing.price}</span>
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4 pt-0">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 rounded-lg p-2.5">
-                    <MapPin className="h-4 w-4 flex-shrink-0" />
-                    <span className="font-medium">{listing.locationName}</span>
-                  </div>
-                  {listing.notes && (
-                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{listing.notes}</p>
-                  )}
-                  <Button 
-                    className="w-full shadow-sm group" 
-                    size="lg" 
-                    onClick={() => handleOpenDialog(listing)}
-                  >
-                    View & Purchase
-                    <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))
-            )}
-          </div>
-          </div>
-        </div>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
       <Footer />
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Purchase Material</DialogTitle>
-            <DialogDescription className="text-sm">
-              Coordinate pickup details and payment with the seller below.
+            <DialogTitle>Submit Request</DialogTitle>
+            <DialogDescription>
+              Confirm pickup and payment method to send your request.
             </DialogDescription>
           </DialogHeader>
-          {selected && (
-            <div className="space-y-5">
-              <div className="overflow-hidden rounded-xl border border-border bg-muted/40 shadow-sm">
-                <img
-                  src={selected.imageUrl}
-                  alt={selected.name}
-                  className="block w-full max-h-72 object-contain py-4"
-                  loading="lazy"
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Item</p>
-                  <p className="font-semibold text-foreground text-base">{selected.name}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Contact</p>
-                  <p className="font-semibold text-foreground text-base">{selected.contactName}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-sm bg-muted/40 rounded-lg p-3">
-                <Phone className="h-4 w-4 text-primary flex-shrink-0" />
-                <span className="font-medium">{selected.contactPhone}</span>
-              </div>
-              
-              {/* Item History Timeline */}
-              {selected.history && selected.history.length > 0 && (
-                <div className="border-t border-border pt-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <History className="h-4 w-4 text-primary" />
-                    <p className="text-sm font-semibold text-foreground">Item History</p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {selected.history
-                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                      .map((event, index) => {
-                        const getEventIcon = () => {
-                          switch (event.type) {
-                            case "listed":
-                              return <Upload className="h-4 w-4 text-blue-500" />;
-                            case "reserved":
-                              return <Lock className="h-4 w-4 text-yellow-500" />;
-                            case "sold":
-                              return <CheckCircle className="h-4 w-4 text-green-500" />;
-                            case "condition_change":
-                              return <Package className="h-4 w-4 text-orange-500" />;
-                            default:
-                              return null;
-                          }
-                        };
-                        
-                        const getEventColor = () => {
-                          switch (event.type) {
-                            case "listed":
-                              return "bg-blue-50 border-blue-200";
-                            case "reserved":
-                              return "bg-yellow-50 border-yellow-200";
-                            case "sold":
-                              return "bg-green-50 border-green-200";
-                            case "condition_change":
-                              return "bg-orange-50 border-orange-200";
-                            default:
-                              return "bg-muted border-border";
-                          }
-                        };
-                        
-                        return (
-                          <div key={index} className={`flex gap-3 p-3 rounded-lg border ${getEventColor()}`}>
-                            <div className="flex-shrink-0 mt-1">
-                              {getEventIcon()}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground">
-                                {event.description}
-                              </p>
-                              {event.owner && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Owner: {event.owner}
-                                </p>
-                              )}
-                              {event.condition && (
-                                <p className="text-xs text-muted-foreground">
-                                  Condition: {materialConditionLabels[event.condition]}
-                                </p>
-                              )}
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {new Date(event.date).toLocaleDateString("en-US", {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                })}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              )}
-              
-              <div className="border-t border-border pt-5\">
-                <div className="flex items-center justify-between mb-4\">
-                  <label className="text-sm font-semibold text-foreground\">Pricing</label>
-                  <span className="text-2xl font-bold text-primary\">NPR {selected.price}</span>
-                </div>
-                
-                {!showOfferMode ? (
-                  <div className="grid gap-3">
-                    <Button 
-                      variant="default" 
-                      className="w-full shadow-sm"
-                      size="lg"
-                      onClick={() => setShowOfferMode(true)}
-                    >
-                      💰 Make an Offer
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center">Or proceed with listed price</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {offerStatus === "idle" && (
-                      <>
-                        <Input
-                          type="number"
-                          placeholder="Enter your offer amount"
-                          value={offerAmount}
-                          onChange={(e) => setOfferAmount(e.target.value)}
-                          min="1"
-                          max={selected.price - 1}
-                        />
-                        <Button 
-                          className="w-full"
-                          onClick={handleSendOffer}
-                        >
-                          Send Offer
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => setShowOfferMode(false)}
-                        >
-                          Cancel
-                        </Button>
-                      </>
-                    )}
-                    
-                    {offerStatus === "sent" && (
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded text-center">
-                        <p className="text-sm font-medium text-blue-900">Waiting for seller response...</p>
-                      </div>
-                    )}
-                    
-                    {offerStatus === "accepted" && (
-                      <div className="p-3 bg-green-50 border border-green-200 rounded text-center">
-                        <p className="text-sm font-bold text-green-900">✓ Offer Accepted!</p>
-                        <p className="text-xs text-green-800">Proceed to payment below</p>
-                      </div>
-                    )}
-                    
-                    {offerStatus === "rejected" && (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded text-center">
-                        <p className="text-sm font-medium text-red-900">Offer declined</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="w-full mt-2"
-                          onClick={() => {
-                            setOfferStatus("idle");
-                            setOfferAmount("");
-                          }}
-                        >
-                          Try Again
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {offerStatus === "counter" && counterOfferAmount && (
-                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded space-y-2">
-                        <p className="text-sm font-medium text-yellow-900">Counter Offer: NPR {counterOfferAmount}</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button 
-                            size="sm"
-                            className="w-full"
-                            onClick={handleAcceptCounter}
-                          >
-                            Accept
-                          </Button>
-                          <Button 
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            onClick={handleRejectCounter}
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+          {selectedListing && (
+            <div className="space-y-4">
+              <div className="text-sm">
+                <p className="font-medium text-foreground">{selectedListing.name}</p>
+                <p className="text-muted-foreground">Seller: {selectedListing.contactName}</p>
               </div>
 
-              <div className="border-t border-border pt-5">
-                <label className="text-sm font-semibold text-foreground block mb-3">Pickup Location</label>
-                <Select value={selectedPickupLocation} onValueChange={setSelectedPickupLocation}>
-                  <SelectTrigger className="h-11">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Pickup location</label>
+                <Input value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Payment method</label>
+                <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as "cod" | "advance")}>
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {kathmandu_locations.map((loc) => (
-                      <SelectItem key={loc.label} value={loc.label}>
-                        📍 {loc.label}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="cod">Cash on delivery</SelectItem>
+                    <SelectItem value="advance">Advance payment</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-3">
-                <label className="text-sm font-semibold text-foreground block">Payment Method</label>
-                <Select value={paymentMethod} onValueChange={(val) => setPaymentMethod(val as "cod" | "advance")}>
-                  <SelectTrigger className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cod">💵 Cash on Delivery (COD)</SelectItem>
-                    <SelectItem value="advance">💳 Advance Payment</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {paymentMethod === "advance" && (
-                <div className="border-t border-border pt-5 space-y-4">
-                  <p className="text-sm font-semibold text-foreground">Choose Payment Gateway</p>
-                  <div className="space-y-2.5">
-                    <Button variant="outline" className="w-full justify-start h-12 hover:border-purple-400" onClick={() => handlePaymentGateway("khalti")}>
-                      <span className="text-lg font-bold text-purple-600 mr-3">₭</span>
-                      <span className="font-medium">Pay with Khalti</span>
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start h-12 hover:border-green-400" onClick={() => handlePaymentGateway("esewa")}>
-                      <span className="text-lg font-bold text-green-600 mr-3">e</span>
-                      <span className="font-medium">Pay with eSewa</span>
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start h-12 hover:border-blue-400" onClick={() => handlePaymentGateway("bank")}>
-                      <span className="text-lg mr-3">🏦</span>
-                      <span className="font-medium">Bank Transfer</span>
-                    </Button>
-                  </div>
-                  <div className="mt-4 p-4 bg-muted/60 rounded-lg border border-border">
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      <span className="font-semibold text-foreground">Bank:</span> Nepal Builder's Bank, Thamel Branch
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      <span className="font-semibold text-foreground">Account:</span> 123456789
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           )}
-          <DialogFooter className="gap-2">
-            {showVerificationCode && verificationCode ? (
-              <div className="w-full space-y-4">
-                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-2 border-green-500 rounded-xl p-6 text-center">
-                  <div className="flex items-center justify-center gap-2 mb-3">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                    <p className="text-lg font-bold text-green-900 dark:text-green-100">
-                      Order Confirmed!
-                    </p>
-                  </div>
-                  <p className="text-sm text-green-800 dark:text-green-200 mb-4">
-                    Show this code to the seller during pickup:
-                  </p>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border-2 border-green-400 shadow-lg">
-                    <p className="text-5xl font-bold text-green-600 dark:text-green-400 tracking-widest font-mono">
-                      {verificationCode}
-                    </p>
-                  </div>
-                  <div className="mt-4 space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-green-800 dark:text-green-200">
-                      <Lock className="h-4 w-4" />
-                      <span>Seller will enter this code to confirm pickup</span>
-                    </div>
-                    {selected && (
-                      <p className="text-sm text-green-900 dark:text-green-100 font-medium">
-                        📍 Pickup Location: {selectedPickupLocation}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  {selected && (
-                    <Button variant="outline" asChild size="lg" className="flex-1">
-                      <a href={`tel:${selected.contactPhone.replace(/\s+/g, "")}`}>
-                        <Phone className="mr-2 h-4 w-4" />
-                        Call Seller
-                      </a>
-                    </Button>
-                  )}
-                  <Button 
-                    onClick={() => setDialogOpen(false)} 
-                    size="lg"
-                    className="flex-1"
-                  >
-                    Done
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                {selected && (
-                  <Button variant="outline" asChild size="lg">
-                    <a href={`tel:${selected.contactPhone.replace(/\s+/g, "")}`}>
-                      <Phone className="mr-2 h-4 w-4" />
-                      Call Seller
-                    </a>
-                  </Button>
-                )}
-                <Button 
-                  onClick={handlePurchase} 
-                  size="lg" 
-                  className="shadow-sm"
-                  disabled={isPurchasing || (paymentMethod === "advance" && !selectedGateway)}
-                >
-                  {isPurchasing ? (
-                    <>
-                      <span className="animate-spin mr-2">⏳</span>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      ✓ Confirm Purchase
-                    </>
-                  )}
-                </Button>
-              </>
-            )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRequestDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateRequest} disabled={isSubmittingRequest}>
+              {isSubmittingRequest ? "Submitting..." : "Send Request"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
