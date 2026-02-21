@@ -6,6 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +51,16 @@ import { subscribeFirebaseRentals, updateFirebaseRentalStatus } from "@/lib/fire
 import { subscribeDocuments, updateDocument } from "@/lib/firebase/firestore";
 import { where, orderBy } from "firebase/firestore";
 import { subscribeBusinessProfile } from "@/lib/firebase/businessProfile";
+import {
+  subscribeFirebaseMaterials,
+  updateFirebaseMaterial,
+} from "@/lib/firebase/materials";
 import { RentalRequest, Equipment } from "@/lib/mockData";
+import {
+  MaterialListing,
+  materialCategoryLabels,
+  materialConditionLabels,
+} from "@/lib/materialsMock";
 import { categoryLabels, statusColors } from "@/lib/constants";
 import {
   Plus,
@@ -61,6 +80,9 @@ import {
   ClipboardCheck,
   TrendingUp,
   Building2,
+  Hammer,
+  MapPin,
+  Pencil,
 } from "lucide-react";
 import { format, isToday, isTomorrow, differenceInDays } from "date-fns";
 
@@ -77,7 +99,21 @@ const OwnerDashboard = () => {
   const [businessProfile, setBusinessProfile] = useState<{ isProfileComplete: boolean } | null>(null);
 
   const [myEquipment, setMyEquipment] = useState<Equipment[]>([]);
+  const [myMaterials, setMyMaterials] = useState<MaterialListing[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [materialEditor, setMaterialEditor] = useState<{
+    open: boolean;
+    material: MaterialListing | null;
+  }>({ open: false, material: null });
+  const [materialDraft, setMaterialDraft] = useState({
+    name: "",
+    price: "",
+    isFree: false,
+    locationName: "",
+    contactPhone: "",
+    notes: "",
+  });
+  const [isSavingMaterial, setIsSavingMaterial] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -121,6 +157,19 @@ const OwnerDashboard = () => {
       }
     );
 
+    const unsubscribeMaterials = subscribeFirebaseMaterials(
+      (materials) => {
+        const owned = materials.filter(
+          (material) =>
+            material.sellerId === user.id || material.contactName === user.name,
+        );
+        setMyMaterials(owned);
+      },
+      (error) => {
+        console.error("Failed to load builder bazaar listings:", error);
+      },
+    );
+
     // Subscribe to owner notifications (latest first)
     const unsubscribeNotifications = subscribeDocuments(
       "notifications",
@@ -139,6 +188,7 @@ const OwnerDashboard = () => {
       unsubscribeRentals();
       unsubscribeBusinessProfile();
       unsubscribeNotifications();
+      unsubscribeMaterials();
     };
   }, [user]);
 
@@ -259,6 +309,68 @@ const OwnerDashboard = () => {
     return format(date, "MMM d");
   };
 
+  const openMaterialEditor = (material: MaterialListing) => {
+    setMaterialEditor({ open: true, material });
+    setMaterialDraft({
+      name: material.name,
+      price: material.price.toString(),
+      isFree: material.isFree,
+      locationName: material.locationName,
+      contactPhone: material.contactPhone,
+      notes: material.notes || "",
+    });
+  };
+
+  const handleSaveMaterial = async () => {
+    const material = materialEditor.material;
+    if (!material) return;
+
+    if (!materialDraft.name.trim() || !materialDraft.locationName.trim()) {
+      toast({
+        title: "Missing fields",
+        description: "Name and location are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!materialDraft.isFree && Number(materialDraft.price) <= 0) {
+      toast({
+        title: "Invalid price",
+        description: "Set a valid price or mark this listing as free.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingMaterial(true);
+    try {
+      await updateFirebaseMaterial(material.id, {
+        name: materialDraft.name.trim(),
+        isFree: materialDraft.isFree,
+        price: materialDraft.isFree ? 0 : Number(materialDraft.price),
+        locationName: materialDraft.locationName.trim(),
+        contactPhone: materialDraft.contactPhone.trim(),
+        notes: materialDraft.notes.trim(),
+      });
+
+      toast({
+        title: "Builder's Bazaar updated",
+        description: "Your material listing details were saved.",
+      });
+      setMaterialEditor({ open: false, material: null });
+    } catch (error) {
+      console.error("Failed to update material listing:", error);
+      toast({
+        title: "Update failed",
+        description: "Could not update this listing. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingMaterial(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background relative">
       <BackgroundIllustrations variant="dashboard" />
@@ -310,10 +422,10 @@ const OwnerDashboard = () => {
         <div className="mb-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
           <StatCard
             label="Active Listings"
-            value={myEquipment.length}
+            value={myEquipment.length + myMaterials.length}
             icon={Package}
             iconColor="text-primary"
-            subtitle="Equipment available"
+            subtitle="Equipment + Bazaar"
           />
           <StatCard
             label="Pending Requests"
@@ -664,7 +776,64 @@ const OwnerDashboard = () => {
           </TabsContent>
 
           {/* Listings Tab */}
-          <TabsContent value="listings">
+          <TabsContent value="listings" className="space-y-8">
+            <Card className="border-border/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                  <Hammer className="h-5 w-5 text-primary" />
+                  Builder's Bazaar Listings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                {myMaterials.length === 0 ? (
+                  <EmptyState
+                    icon={Hammer}
+                    title="No materials listed"
+                    description="Create material listings in Builder's Bazaar and manage details from this dashboard."
+                    action={
+                      <Button onClick={() => navigate("/materials/list")}>Go to Materials Listing</Button>
+                    }
+                  />
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {myMaterials.map((material) => (
+                      <Card key={material.id} className="overflow-hidden border-border/50">
+                        <div className="aspect-[16/10] overflow-hidden bg-muted">
+                          <img
+                            src={material.imageUrl}
+                            alt={material.name}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <CardContent className="p-4 space-y-3">
+                          <div>
+                            <h3 className="font-semibold text-foreground line-clamp-1">{material.name}</h3>
+                            <div className="mt-1 flex flex-wrap gap-2">
+                              <Badge variant="secondary">{materialCategoryLabels[material.category]}</Badge>
+                              <Badge variant="outline">{materialConditionLabels[material.condition]}</Badge>
+                            </div>
+                          </div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                            <MapPin className="h-3.5 w-3.5" />
+                            {material.locationName}
+                          </div>
+                          <div className="flex items-center justify-between border-t border-border/50 pt-2">
+                            <p className="font-semibold text-foreground">
+                              {material.isFree ? "Free" : `NPR ${material.price}`}
+                            </p>
+                            <Button size="sm" variant="outline" onClick={() => openMaterialEditor(material)}>
+                              <Pencil className="mr-1 h-3.5 w-3.5" />
+                              Edit
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {myEquipment.length === 0 ? (
               <Card className="border-border/50">
                 <CardContent className="py-8">
@@ -772,6 +941,98 @@ const OwnerDashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <Dialog
+        open={materialEditor.open}
+        onOpenChange={(open) =>
+          setMaterialEditor({ open, material: open ? materialEditor.material : null })
+        }
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Builder's Bazaar Listing</DialogTitle>
+            <DialogDescription>
+              Update your material details directly from dashboard.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Material Name</label>
+              <Input
+                value={materialDraft.name}
+                onChange={(e) =>
+                  setMaterialDraft((prev) => ({ ...prev, name: e.target.value }))
+                }
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Price (NPR)</label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={materialDraft.isFree ? "0" : materialDraft.price}
+                  onChange={(e) =>
+                    setMaterialDraft((prev) => ({ ...prev, price: e.target.value }))
+                  }
+                  disabled={materialDraft.isFree}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Contact Phone</label>
+                <Input
+                  value={materialDraft.contactPhone}
+                  onChange={(e) =>
+                    setMaterialDraft((prev) => ({ ...prev, contactPhone: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Location</label>
+              <Input
+                value={materialDraft.locationName}
+                onChange={(e) =>
+                  setMaterialDraft((prev) => ({ ...prev, locationName: e.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Notes</label>
+              <Textarea
+                value={materialDraft.notes}
+                onChange={(e) =>
+                  setMaterialDraft((prev) => ({ ...prev, notes: e.target.value }))
+                }
+                placeholder="Optional details"
+              />
+            </div>
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={materialDraft.isFree}
+                onChange={(e) =>
+                  setMaterialDraft((prev) => ({ ...prev, isFree: e.target.checked }))
+                }
+              />
+              Mark as free
+            </label>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setMaterialEditor({ open: false, material: null })}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSaveMaterial} disabled={isSavingMaterial}>
+              {isSavingMaterial ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Approve Dialog */}
       {approveDialog.request && (

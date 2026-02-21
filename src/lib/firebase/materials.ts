@@ -1,4 +1,8 @@
-import { createDocument, subscribeDocuments } from "./firestore";
+import {
+  createDocument,
+  subscribeDocuments,
+  updateDocument,
+} from "./firestore";
 import {
   MaterialCategory,
   MaterialCondition,
@@ -56,8 +60,19 @@ const toMaterialListing = (
   longitude: document.longitude,
   contactName: document.contactName,
   contactPhone: document.contactPhone,
+  sellerId: document.sellerId,
+  createdAt: document.createdAt,
   notes: document.notes,
 });
+
+export interface MaterialUpdateInput {
+  name?: string;
+  price?: number;
+  isFree?: boolean;
+  locationName?: string;
+  contactPhone?: string;
+  notes?: string;
+}
 
 export const createFirebaseMaterial = async (
   input: MaterialCreateInput,
@@ -98,5 +113,27 @@ export const subscribeFirebaseMaterials = (
     },
     [],
     onError,
+  );
+};
+
+export const updateFirebaseMaterial = async (
+  materialId: string,
+  input: MaterialUpdateInput,
+) => {
+  const payload: Partial<FirestoreMaterialDocument> = {};
+
+  if (input.name !== undefined) payload.name = input.name;
+  if (input.isFree !== undefined) payload.isFree = input.isFree;
+  if (input.price !== undefined) payload.price = input.price;
+  if (input.locationName !== undefined)
+    payload.locationName = input.locationName;
+  if (input.contactPhone !== undefined)
+    payload.contactPhone = input.contactPhone;
+  if (input.notes !== undefined) payload.notes = input.notes;
+
+  await updateDocument<FirestoreMaterialDocument>(
+    MATERIALS_COLLECTION,
+    materialId,
+    payload,
   );
 };

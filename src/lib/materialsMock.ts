@@ -34,6 +34,8 @@ export interface MaterialListing {
   longitude: number;
   contactName: string;
   contactPhone: string;
+  sellerId?: string;
+  createdAt?: string;
   notes?: string;
   history?: HistoryEvent[];
 }
