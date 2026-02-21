@@ -39,11 +39,23 @@ import {
 } from "@/lib/firebase/materials";
 import { createFirebaseMaterialRequest } from "@/lib/firebase/materialRequests";
 import { isCloudinaryConfigured, uploadImagesToCloudinary } from "@/lib/cloudinary";
-import { Camera, ChevronRight, MapPin, Phone } from "lucide-react";
+import {
+  Camera,
+  ChevronRight,
+  MapPin,
+  Phone,
+  Search,
+  SlidersHorizontal,
+  X,
+  Grid3X3,
+  LayoutList,
+  Package,
+} from "lucide-react";
 
 const DEFAULT_COORDINATES = { latitude: 27.7172, longitude: 85.324 };
 
 type TabMode = "browse" | "list";
+type MaterialSortOption = "closest" | "price_low" | "price_high" | "newest";
 
 type ListingWithDistance = MaterialListing & { distance: number };
 
@@ -82,6 +94,9 @@ const MaterialsFind = () => {
   const [radius, setRadius] = useState("10");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState<MaterialSortOption>("closest");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [location, setLocation] = useState({ ...DEFAULT_COORDINATES, label: "Current location" });
 
   const [selectedListing, setSelectedListing] = useState<ListingWithDistance | null>(null);
@@ -130,7 +145,7 @@ const MaterialsFind = () => {
     );
   }, []);
 
-  const listings = useMemo<ListingWithDistance[]>(() => {
+  const filteredListings = useMemo<ListingWithDistance[]>(() => {
     const maxDistance = Number(radius);
     return allListings
       .map((listing) => ({
@@ -152,9 +167,38 @@ const MaterialsFind = () => {
           listing.locationName.toLowerCase().includes(query) ||
           listing.notes?.toLowerCase().includes(query)
         );
-      })
-      .sort((a, b) => a.distance - b.distance);
+      });
   }, [allListings, radius, categoryFilter, searchQuery, location]);
+
+  const listings = useMemo<ListingWithDistance[]>(() => {
+    const result = [...filteredListings];
+    switch (sortBy) {
+      case "price_low":
+        result.sort((a, b) => a.price - b.price);
+        break;
+      case "price_high":
+        result.sort((a, b) => b.price - a.price);
+        break;
+      case "newest":
+        result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        break;
+      case "closest":
+      default:
+        result.sort((a, b) => a.distance - b.distance);
+        break;
+    }
+
+    return result;
+  }, [filteredListings, sortBy]);
+
+  const hasActiveFilters = searchQuery || categoryFilter !== "all" || radius !== "10";
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setCategoryFilter("all");
+    setRadius("10");
+    setSortBy("closest");
+  };
 
   const switchTab = (value: string) => {
     const next = value === "list" ? "list" : "browse";
@@ -311,7 +355,7 @@ const MaterialsFind = () => {
         <nav aria-label="Breadcrumb" className="mb-4 flex items-center text-sm text-muted-foreground">
           <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
           <ChevronRight className="mx-2 h-4 w-4" />
-          <Link to="/materials/find" className="hover:text-foreground transition-colors">Builder&apos;s Bazaar</Link>
+          <Link to="/materials/find" className="hover:text-foreground transition-colors">Browse Materials</Link>
           <ChevronRight className="mx-2 h-4 w-4" />
           <span className="text-foreground">
             {activeTab === "browse" ? "Browse Materials" : "List Material"}
@@ -319,8 +363,8 @@ const MaterialsFind = () => {
         </nav>
 
         <PageHeader
-          title="Builder's Bazaar"
-          description="Browse nearby materials and publish listings from one place."
+          title="Browse Materials"
+          description="Find construction materials and scrap inventory near your site."
           actions={
             activeTab === "browse" ? (
               <Button variant="outline" onClick={() => switchTab("list")}>
@@ -339,7 +383,7 @@ const MaterialsFind = () => {
             <div className="text-sm text-muted-foreground">
               {isLoadingListings
                 ? "Loading marketplace data"
-                : `${allListings.length} total listings available`}
+                : `${allListings.length} total material listings available`}
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{activeTab === "browse" ? "Browse" : "List"}</Badge>
@@ -362,46 +406,104 @@ const MaterialsFind = () => {
 
           <TabsContent value="browse" className="space-y-6">
             <Card>
-              <CardContent className="pt-6 grid gap-4 md:grid-cols-4">
-                <Input
-                  placeholder="Search by name or location"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="md:col-span-2"
-                />
-                <Select value={radius} onValueChange={setRadius}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Radius" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">Within 5 miles</SelectItem>
-                    <SelectItem value="10">Within 10 miles</SelectItem>
-                    <SelectItem value="15">Within 15 miles</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All categories</SelectItem>
-                    <SelectItem value="wood">Wood</SelectItem>
-                    <SelectItem value="metal">Metal</SelectItem>
-                    <SelectItem value="concrete">Concrete</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setCategoryFilter("all");
-                    setRadius("10");
-                  }}
-                >
-                  Clear Filters
-                </Button>
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex flex-col gap-3 lg:flex-row">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Search materials, scrap, or location..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-full lg:w-[190px]">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All categories</SelectItem>
+                      <SelectItem value="wood">Wood & Timber</SelectItem>
+                      <SelectItem value="metal">Metal & Scrap</SelectItem>
+                      <SelectItem value="concrete">Concrete & Blocks</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as MaterialSortOption)}>
+                    <SelectTrigger className="w-full lg:w-[180px]">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="closest">Closest</SelectItem>
+                      <SelectItem value="newest">Newest</SelectItem>
+                      <SelectItem value="price_low">Price: Low to High</SelectItem>
+                      <SelectItem value="price_high">Price: High to Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    variant={showFilters ? "secondary" : "outline"}
+                    onClick={() => setShowFilters((prev) => !prev)}
+                    className="gap-2 w-full lg:w-auto"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Filters
+                    {hasActiveFilters && (
+                      <Badge variant="info" className="ml-1">Active</Badge>
+                    )}
+                  </Button>
+                </div>
+
+                {showFilters && (
+                  <div className="rounded-lg border border-border bg-card p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm text-muted-foreground">Distance from your location</div>
+                      {hasActiveFilters && (
+                        <Button variant="ghost" size="sm" onClick={clearFilters}>
+                          <X className="mr-1 h-3 w-3" />
+                          Clear All
+                        </Button>
+                      )}
+                    </div>
+                    <div className="mt-3">
+                      <Select value={radius} onValueChange={setRadius}>
+                        <SelectTrigger className="w-full sm:w-[220px]">
+                          <SelectValue placeholder="Radius" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">Within 5 miles</SelectItem>
+                          <SelectItem value="10">Within 10 miles</SelectItem>
+                          <SelectItem value="15">Within 15 miles</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                {listings.length} of {allListings.length} material listings
+              </p>
+              <div className="flex items-center gap-1 rounded-lg border border-border p-1">
+                <Button
+                  variant={viewMode === "grid" ? "secondary" : "ghost"}
+                  size="xs"
+                  onClick={() => setViewMode("grid")}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "secondary" : "ghost"}
+                  size="xs"
+                  onClick={() => setViewMode("list")}
+                >
+                  <LayoutList className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
 
             {isLoadingListings ? (
               <Card>
@@ -409,41 +511,48 @@ const MaterialsFind = () => {
               </Card>
             ) : listings.length === 0 ? (
               <Card>
-                <CardContent className="py-10 text-sm text-muted-foreground">
-                  No materials match your filters. Adjust filters or switch to List Material.
+                <CardContent className="py-12 text-center">
+                  <Package className="mx-auto h-10 w-10 text-muted-foreground/60 mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    No construction material or scrap listings match your filters.
+                  </p>
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className={viewMode === "grid" ? "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" : "space-y-4"}>
                 {listings.map((listing) => (
                   <Card key={listing.id} className="overflow-hidden">
-                    <div className="aspect-[16/10] overflow-hidden bg-muted">
-                      <img src={listing.imageUrl} alt={listing.name} className="h-full w-full object-cover" loading="lazy" />
+                    <div className={viewMode === "grid" ? "" : "sm:flex"}>
+                      <div className={viewMode === "grid" ? "aspect-[16/10] overflow-hidden bg-muted" : "sm:w-64 sm:flex-shrink-0 overflow-hidden bg-muted"}>
+                        <img src={listing.imageUrl} alt={listing.name} className={viewMode === "grid" ? "h-full w-full object-cover" : "h-48 w-full object-cover sm:h-full"} loading="lazy" />
+                      </div>
+                      <div className="flex-1">
+                        <CardHeader>
+                          <CardTitle className="text-base">{listing.name}</CardTitle>
+                          <div className="flex flex-wrap gap-2">
+                            <Badge variant="secondary">{materialCategoryLabels[listing.category]}</Badge>
+                            <Badge variant="outline">{materialConditionLabels[listing.condition]}</Badge>
+                            <Badge variant="outline">{listing.distance.toFixed(1)} mi</Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            {listing.locationName}
+                          </div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            {listing.contactPhone}
+                          </div>
+                          <p className="font-semibold text-foreground">
+                            {listing.isFree ? "Free" : `NPR ${listing.price}`}
+                          </p>
+                          <Button className="w-full sm:w-auto" onClick={() => openRequestDialog(listing)}>
+                            Request Material
+                          </Button>
+                        </CardContent>
+                      </div>
                     </div>
-                    <CardHeader>
-                      <CardTitle className="text-base">{listing.name}</CardTitle>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="secondary">{materialCategoryLabels[listing.category]}</Badge>
-                        <Badge variant="outline">{materialConditionLabels[listing.condition]}</Badge>
-                        <Badge variant="outline">{listing.distance.toFixed(1)} mi</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="text-sm text-muted-foreground flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        {listing.locationName}
-                      </div>
-                      <div className="text-sm text-muted-foreground flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
-                        {listing.contactPhone}
-                      </div>
-                      <p className="font-semibold text-foreground">
-                        {listing.isFree ? "Free" : `NPR ${listing.price}`}
-                      </p>
-                      <Button className="w-full" onClick={() => openRequestDialog(listing)}>
-                        Request Material
-                      </Button>
-                    </CardContent>
                   </Card>
                 ))}
               </div>
