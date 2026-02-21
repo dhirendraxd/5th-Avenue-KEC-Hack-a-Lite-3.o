@@ -10,7 +10,6 @@ import { addFirebaseEquipment } from "@/lib/firebase/equipment";
 import { isCloudinaryConfigured, uploadImagesToCloudinary } from "@/lib/cloudinary";
 import {
   getBusinessProfileFromFirebase,
-  isBusinessKycComplete,
 } from "@/lib/firebase/businessProfile";
 import { ArrowLeft } from "lucide-react";
 
@@ -63,13 +62,6 @@ const AddEquipment = () => {
         12000,
         "Timed out while loading business profile. Please try again."
       );
-
-      if (!savedBusinessProfile || !isBusinessKycComplete(savedBusinessProfile)) {
-        navigate("/dashboard");
-        throw new Error(
-          "Please complete and save Citizenship, NID, and document images in Firebase from Dashboard > Business Info before listing equipment."
-        );
-      }
 
       const ownerDisplayName =
         savedBusinessProfile?.businessName || user.businessName || user.name;
@@ -137,7 +129,7 @@ const AddEquipment = () => {
         ownerName: ownerDisplayName,
         ownerEmail: user.email,
         ownerLocation,
-        ownerVerified: savedBusinessProfile.isProfileComplete,
+        ownerVerified: Boolean(savedBusinessProfile?.isProfileComplete),
       }),
         15000,
         "Timed out while saving equipment. Please try again."
