@@ -668,8 +668,7 @@ const MaterialsFind = () => {
                   </Button>
                 </CardContent>
               </Card>
-            ))}
-
+            ))
             )}
           </div>
           </div>
