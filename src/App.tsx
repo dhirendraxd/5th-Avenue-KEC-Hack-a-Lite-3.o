@@ -2,6 +2,7 @@ import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -21,7 +22,20 @@ const VerifyPickup = lazy(() => import("./pages/VerifyPickup"));
 const App = () => (
   <AuthProvider>
     <BrowserRouter>
-      <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-background p-6">
+            <div className="max-w-7xl mx-auto">
+              <Skeleton className="h-10 w-40 mb-6" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Skeleton className="h-64 rounded-lg" />
+                <Skeleton className="h-64 rounded-lg" />
+                <Skeleton className="h-64 rounded-lg" />
+              </div>
+            </div>
+          </div>
+        }
+      >
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />

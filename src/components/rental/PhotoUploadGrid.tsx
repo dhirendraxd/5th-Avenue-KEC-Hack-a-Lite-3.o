@@ -133,6 +133,7 @@ const PhotoUploadGrid = ({
                   src={photo.url}
                   alt={photo.caption || "Equipment photo"}
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
 
@@ -228,6 +229,7 @@ const PhotoUploadGrid = ({
                 src={previewPhoto.url}
                 alt={previewPhoto.caption || "Equipment photo"}
                 className="w-full rounded-lg"
+                loading="lazy"
               />
               <div className="flex items-center justify-between">
                 <Input

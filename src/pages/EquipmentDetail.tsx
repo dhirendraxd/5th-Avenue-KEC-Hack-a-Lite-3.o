@@ -344,6 +344,7 @@ const EquipmentDetail = () => {
                   src={equipment.images[0]}
                   alt={equipment.name}
                   className="h-full w-full object-cover"
+                  loading="lazy"
                 />
               ) : (
                 <div className="h-full w-full flex items-center justify-center text-muted-foreground">No image available</div>

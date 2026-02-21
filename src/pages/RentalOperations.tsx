@@ -170,11 +170,12 @@ const RentalOperations = () => {
         {/* Header */}
         <div className="mb-10 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex gap-4">
-            <div className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
+              <div className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
               <img
                 src={rental.equipment.images[0]}
                 alt={rental.equipment.name}
                 className="h-full w-full object-cover"
+                loading="lazy"
               />
             </div>
             <div>

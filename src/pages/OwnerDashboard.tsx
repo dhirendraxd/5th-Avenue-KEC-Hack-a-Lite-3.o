@@ -828,6 +828,7 @@ const OwnerDashboard = () => {
                                   src={request.materialImageUrl}
                                   alt={request.materialName}
                                   className="h-full w-full object-cover"
+                                  loading="lazy"
                                 />
                               </div>
                               <div className="min-w-0">
@@ -893,6 +894,7 @@ const OwnerDashboard = () => {
                               src={request.equipment.images[0]}
                               alt={request.equipment.name}
                               className="h-full w-full object-cover"
+                              loading="lazy"
                             />
                           </div>
                           <div className="space-y-2 min-w-0">

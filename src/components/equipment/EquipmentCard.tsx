@@ -39,6 +39,7 @@ const EquipmentCard = ({ equipment, nextAvailableAt, distanceMiles }: EquipmentC
             src={equipment.images[0]}
             alt={equipment.name}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
           />
           {/* Badges overlay */}
           <div className="absolute left-3 right-3 top-3 flex items-start justify-between">

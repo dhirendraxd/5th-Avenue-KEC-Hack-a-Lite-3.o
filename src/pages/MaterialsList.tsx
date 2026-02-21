@@ -494,6 +494,7 @@ const MaterialsList = () => {
                           src={photo}
                           alt={`Uploaded photo ${idx + 1}`}
                           className="block h-32 w-full object-cover"
+                          loading="lazy"
                         />
                         <button
                           type="button"

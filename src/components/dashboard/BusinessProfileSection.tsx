@@ -236,6 +236,7 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
                       src={formData.bitmojiUrl}
                       alt="Selected bitmoji"
                       className="h-full w-full object-contain"
+                      loading="lazy"
                     />
                   ) : null}
                 </div>
@@ -323,10 +324,11 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
               >
                 {formData.citizenshipDocumentImage ? (
                   <img
-                    src={formData.citizenshipDocumentImage}
-                    alt="Citizenship document"
-                    className="h-full w-full object-cover"
-                  />
+                      src={formData.citizenshipDocumentImage}
+                      alt="Citizenship document"
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
                 ) : (
                   <span className="flex items-center gap-2">
                     <ImagePlus className="h-4 w-4" />
@@ -368,6 +370,7 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
                     src={formData.nidDocumentImage}
                     alt="NID document"
                     className="h-full w-full object-cover"
+                    loading="lazy"
                   />
                 ) : (
                   <span className="flex items-center gap-2">
