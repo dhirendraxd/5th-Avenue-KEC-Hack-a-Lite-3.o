@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, X } from "lucide-react";
+import { Camera, X, Shield } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -226,9 +226,17 @@ const MaterialsList = () => {
             title="Builder's Bazaar - List Materials"
             description="Share surplus construction materials with nearby builders. List for free in minutes."
             actions={
-              <Button asChild variant="outline" size="default" size="default">
-                <Link to="/materials/find">🔍 Find Materials</Link>
-              </Button>
+              <div className="flex flex-wrap gap-3">
+                <Button asChild variant="outline" size="default">
+                  <Link to="/materials/find">🔍 Find Materials</Link>
+                </Button>
+                <Button asChild variant="outline" size="default" className="border-green-600 text-green-700 hover:bg-green-50 dark:border-green-500 dark:text-green-400">
+                  <Link to="/materials/verify">
+                    <Shield className="mr-2 h-4 w-4" />
+                    Verify Pickup
+                  </Link>
+                </Button>
+              </div>
             }
           />
 

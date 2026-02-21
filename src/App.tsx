@@ -13,6 +13,7 @@ import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 import MaterialsList from "./pages/MaterialsList";
 import MaterialsFind from "./pages/MaterialsFind";
+import VerifyPickup from "./pages/VerifyPickup";
 
 const App = () => (
   <AuthProvider>
@@ -29,6 +30,7 @@ const App = () => (
         <Route path="/chat" element={<Chat />} />
         <Route path="/materials/list" element={<MaterialsList />} />
         <Route path="/materials/find" element={<MaterialsFind />} />
+        <Route path="/materials/verify" element={<VerifyPickup />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />

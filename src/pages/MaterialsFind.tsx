@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MapPin, Phone, CircleDollarSign, Lightbulb, TrendingUp, Users, Upload, History, CheckCircle, Lock, Package } from "lucide-react";
+import { MapPin, Phone, CircleDollarSign, Lightbulb, TrendingUp, Users, Upload, History, CheckCircle, Lock, Package, Shield } from "lucide-react";
 import {
   materialCategoryLabels,
   materialConditionLabels,
@@ -91,6 +91,8 @@ const MaterialsFind = () => {
   const [counterOfferAmount, setCounterOfferAmount] = useState<number | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [verificationCode, setVerificationCode] = useState<string | null>(null);
+  const [showVerificationCode, setShowVerificationCode] = useState(false);
 
   // Simulate initial data loading
   useEffect(() => {
@@ -198,7 +200,17 @@ const MaterialsFind = () => {
     setOfferAmount("");
     setOfferStatus("idle");
     setCounterOfferAmount(null);
+    setVerificationCode(null);
+    setShowVerificationCode(false);
     setDialogOpen(true);
+  };
+
+  /**
+   * Generate a random 4-digit verification code
+   * Used to verify pickup between buyer and seller
+   */
+  const generateVerificationCode = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
   };
 
   const handlePurchase = () => {
@@ -209,13 +221,17 @@ const MaterialsFind = () => {
     // Simulate processing time for better UX
     setTimeout(() => {
       if (paymentMethod === "cod") {
+        // Generate verification code for pickup
+        const code = generateVerificationCode();
+        setVerificationCode(code);
+        setShowVerificationCode(true);
+        
         toast({
           title: "Order Confirmed! ✓",
-          description: `${selected.name} - Pickup at ${selectedPickupLocation}\nPayment: Cash on Delivery\n\nCalling ${selected.contactName}...`,
+          description: `${selected.name}\nPickup at ${selectedPickupLocation}\n\nShow your verification code to seller during pickup.`,
           duration: 5000,
         });
         setIsPurchasing(false);
-        setDialogOpen(false);
       } else {
         if (!selectedGateway) {
           toast({
@@ -226,13 +242,17 @@ const MaterialsFind = () => {
           setIsPurchasing(false);
           return;
         }
+        // Generate verification code for advance payment too
+        const code = generateVerificationCode();
+        setVerificationCode(code);
+        setShowVerificationCode(true);
+        
         toast({
-          title: "Processing Payment",
-          description: `Redirecting to payment gateway...`,
-          duration: 3000,
+          title: "Payment Confirmed! ✓",
+          description: `${selected.name}\nPickup at ${selectedPickupLocation}\n\nShow your verification code to seller.`,
+          duration: 5000,
         });
         setIsPurchasing(false);
-        setDialogOpen(false);
       }
     }, 600);
   };
@@ -367,6 +387,12 @@ const MaterialsFind = () => {
               <div className="flex flex-wrap gap-3">
                 <Button asChild variant="default" size="default">
                   <Link to="/materials/list">+ List Materials</Link>
+                </Button>
+                <Button asChild variant="outline" size="default" className="border-green-600 text-green-700 hover:bg-green-50 dark:border-green-500 dark:text-green-400">
+                  <Link to="/materials/verify">
+                    <Shield className="mr-2 h-4 w-4" />
+                    Verify Pickup
+                  </Link>
                 </Button>
                 <Select value={radius} onValueChange={setRadius}>
                   <SelectTrigger className="w-[150px]">
@@ -946,31 +972,82 @@ const MaterialsFind = () => {
             </div>
           )}
           <DialogFooter className="gap-2">
-            {selected && (
-              <Button variant="outline" asChild size="lg">
-                <a href={`tel:${selected.contactPhone.replace(/\s+/g, "")}`}>
-                  <Phone className="mr-2 h-4 w-4" />
-                  Call Seller
-                </a>
-              </Button>
+            {showVerificationCode && verificationCode ? (
+              <div className="w-full space-y-4">
+                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-2 border-green-500 rounded-xl p-6 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <CheckCircle className="h-6 w-6 text-green-600" />
+                    <p className="text-lg font-bold text-green-900 dark:text-green-100">
+                      Order Confirmed!
+                    </p>
+                  </div>
+                  <p className="text-sm text-green-800 dark:text-green-200 mb-4">
+                    Show this code to the seller during pickup:
+                  </p>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border-2 border-green-400 shadow-lg">
+                    <p className="text-5xl font-bold text-green-600 dark:text-green-400 tracking-widest font-mono">
+                      {verificationCode}
+                    </p>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center gap-2 text-xs text-green-800 dark:text-green-200">
+                      <Lock className="h-4 w-4" />
+                      <span>Seller will enter this code to confirm pickup</span>
+                    </div>
+                    {selected && (
+                      <p className="text-sm text-green-900 dark:text-green-100 font-medium">
+                        📍 Pickup Location: {selectedPickupLocation}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {selected && (
+                    <Button variant="outline" asChild size="lg" className="flex-1">
+                      <a href={`tel:${selected.contactPhone.replace(/\s+/g, "")}`}>
+                        <Phone className="mr-2 h-4 w-4" />
+                        Call Seller
+                      </a>
+                    </Button>
+                  )}
+                  <Button 
+                    onClick={() => setDialogOpen(false)} 
+                    size="lg"
+                    className="flex-1"
+                  >
+                    Done
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {selected && (
+                  <Button variant="outline" asChild size="lg">
+                    <a href={`tel:${selected.contactPhone.replace(/\s+/g, "")}`}>
+                      <Phone className="mr-2 h-4 w-4" />
+                      Call Seller
+                    </a>
+                  </Button>
+                )}
+                <Button 
+                  onClick={handlePurchase} 
+                  size="lg" 
+                  className="shadow-sm"
+                  disabled={isPurchasing || (paymentMethod === "advance" && !selectedGateway)}
+                >
+                  {isPurchasing ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      ✓ Confirm Purchase
+                    </>
+                  )}
+                </Button>
+              </>
             )}
-            <Button 
-              onClick={handlePurchase} 
-              size="lg" 
-              className="shadow-sm"
-              disabled={isPurchasing || (paymentMethod === "advance" && !selectedGateway)}
-            >
-              {isPurchasing ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Processing...
-                </>
-              ) : (
-                <>
-                  ✓ Confirm Purchase
-                </>
-              )}
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
