@@ -10,4 +10,4 @@ Disallow: /materials/verify
 Disallow: /rental/
 
 Sitemap: https://upyog.app/sitemap.xml
-User-agent: *
+Host: upyog.app

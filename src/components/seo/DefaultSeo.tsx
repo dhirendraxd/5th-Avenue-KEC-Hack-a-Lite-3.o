@@ -44,6 +44,19 @@ const DefaultSeo = () => {
         title="Browse Construction Equipment Rentals"
         description="Compare verified construction equipment rentals by category, pricing, and location to book the right machinery for your next project."
         canonicalPath="/browse"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "Browse Construction Equipment Rentals",
+          description:
+            "Compare verified construction equipment rentals by category, pricing, and location.",
+          url: `${SITE_URL}/browse`,
+          isPartOf: {
+            "@type": "WebSite",
+            name: SITE_NAME,
+            url: SITE_URL,
+          },
+        }}
       />
     );
   }
@@ -63,6 +76,17 @@ const DefaultSeo = () => {
         title="Construction Materials Listings"
         description="Explore construction material listings, compare details, and connect with suppliers through Upyog."
         canonicalPath="/materials/list"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "Construction Materials Listings",
+          url: `${SITE_URL}/materials/list`,
+          isPartOf: {
+            "@type": "WebSite",
+            name: SITE_NAME,
+            url: SITE_URL,
+          },
+        }}
       />
     );
   }
@@ -73,6 +97,17 @@ const DefaultSeo = () => {
         title="Find Construction Materials"
         description="Search construction material availability and supplier options for your project requirements."
         canonicalPath="/materials/find"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "SearchResultsPage",
+          name: "Find Construction Materials",
+          url: `${SITE_URL}/materials/find`,
+          isPartOf: {
+            "@type": "WebSite",
+            name: SITE_NAME,
+            url: SITE_URL,
+          },
+        }}
       />
     );
   }
@@ -111,6 +146,7 @@ const DefaultSeo = () => {
       title="Page Not Found"
       description="The page you are looking for is not available on Upyog."
       robots="noindex,follow"
+      canonicalPath="/404"
     />
   );
 };

@@ -1,6 +1,6 @@
 export const SITE_NAME = "Upyog";
 export const SITE_URL = "https://upyog.app";
-export const DEFAULT_OG_IMAGE = "/favicon.ico";
+export const DEFAULT_OG_IMAGE = "/og-image.png";
 
 export const PRIMARY_KEYWORDS = [
   "construction equipment rentals",

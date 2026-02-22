@@ -41,6 +41,22 @@ const upsertCanonical = (href: string) => {
   link.setAttribute("href", href);
 };
 
+const upsertLink = (rel: string, href: string, hreflang?: string) => {
+  const selector = hreflang
+    ? `link[rel='${rel}'][hreflang='${hreflang}']`
+    : `link[rel='${rel}']:not([hreflang])`;
+  let link = document.head.querySelector(selector) as HTMLLinkElement | null;
+
+  if (!link) {
+    link = document.createElement("link");
+    link.setAttribute("rel", rel);
+    if (hreflang) link.setAttribute("hreflang", hreflang);
+    document.head.appendChild(link);
+  }
+
+  link.setAttribute("href", href);
+};
+
 const upsertJsonLd = (jsonLd?: Record<string, unknown> | Record<string, unknown>[]) => {
   const existing = document.getElementById("seo-jsonld");
   if (existing) {
@@ -91,10 +107,13 @@ const Seo = ({
     upsertMeta("property", "og:type", ogType);
     upsertMeta("property", "og:url", canonicalUrl);
     upsertMeta("property", "og:image", ogImage);
+    upsertMeta("property", "og:image:secure_url", ogImage);
     upsertMeta("property", "og:site_name", SITE_NAME);
     upsertMeta("property", "og:locale", "en_US");
 
     upsertCanonical(canonicalUrl);
+    upsertLink("alternate", canonicalUrl, "en");
+    upsertLink("alternate", canonicalUrl, "x-default");
     upsertJsonLd(jsonLd);
   }, [canonicalPath, description, image, jsonLd, keywords, ogType, robots, title]);
 
