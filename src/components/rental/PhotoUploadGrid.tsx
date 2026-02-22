@@ -131,7 +131,7 @@ const PhotoUploadGrid = ({
               <div className="aspect-square rounded-lg overflow-hidden bg-muted border border-border">
                 <img
                   src={photo.url}
-                  alt={photo.caption || "Equipment photo"}
+                  alt={photo.caption || "Equipment condition photo"}
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
@@ -227,7 +227,7 @@ const PhotoUploadGrid = ({
             <div className="space-y-4">
               <img
                 src={previewPhoto.url}
-                alt={previewPhoto.caption || "Equipment photo"}
+                alt={previewPhoto.caption || "Equipment condition photo"}
                 className="w-full rounded-lg"
                 loading="lazy"
               />

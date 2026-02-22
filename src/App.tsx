@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import DefaultSeo from "@/components/seo/DefaultSeo";
 
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -22,6 +23,7 @@ const VerifyPickup = lazy(() => import("./pages/VerifyPickup"));
 const App = () => (
   <AuthProvider>
     <BrowserRouter>
+      <DefaultSeo />
       <Suspense
         fallback={
           <div className="min-h-screen bg-background p-6">

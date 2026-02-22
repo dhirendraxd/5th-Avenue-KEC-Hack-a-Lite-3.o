@@ -1,6 +1,7 @@
 {
-  "name": "Upyog",
-  "short_name": "5thAve",
+  "name": "Upyog Construction Equipment Rentals",
+  "short_name": "Upyog",
+  "description": "Trusted construction equipment rentals marketplace with verified businesses and transparent pricing.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",

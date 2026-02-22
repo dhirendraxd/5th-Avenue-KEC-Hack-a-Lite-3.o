@@ -234,14 +234,14 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
                   {formData.bitmojiUrl ? (
                     <img
                       src={formData.bitmojiUrl}
-                      alt="Selected bitmoji"
+                      alt="Selected business profile bitmoji"
                       className="h-full w-full object-contain"
                       loading="lazy"
                     />
                   ) : null}
                 </div>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                  {DEFAULT_BITMOJI_OPTIONS.map((optionUrl) => {
+                  {DEFAULT_BITMOJI_OPTIONS.map((optionUrl, index) => {
                     const isSelected = formData.bitmojiUrl === optionUrl;
                     return (
                       <button
@@ -258,7 +258,7 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
                       >
                         <img
                           src={optionUrl}
-                          alt="Bitmoji option"
+                          alt={`Business bitmoji option ${index + 1}`}
                           className="h-full w-full object-contain"
                           loading="eager"
                           decoding="async"
@@ -325,7 +325,7 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
                 {formData.citizenshipDocumentImage ? (
                   <img
                       src={formData.citizenshipDocumentImage}
-                      alt="Citizenship document"
+                      alt="Citizenship document upload preview"
                       className="h-full w-full object-cover"
                       loading="lazy"
                     />
@@ -368,7 +368,7 @@ const BusinessProfileSection = ({ userId, businessNameFallback = "" }: BusinessP
                 {formData.nidDocumentImage ? (
                   <img
                     src={formData.nidDocumentImage}
-                    alt="NID document"
+                    alt="National ID document upload preview"
                     className="h-full w-full object-cover"
                     loading="lazy"
                   />

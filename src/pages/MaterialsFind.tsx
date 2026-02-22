@@ -758,7 +758,7 @@ const MaterialsFind = () => {
                       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                         {uploadedPhotos.map((photo, idx) => (
                           <div key={idx} className="overflow-hidden rounded-lg border border-border bg-muted/40">
-                            <img src={photo} alt={`Uploaded ${idx + 1}`} className="h-24 w-full object-cover" loading="lazy" />
+                            <img src={photo} alt={`Material listing upload preview ${idx + 1}`} className="h-24 w-full object-cover" loading="lazy" />
                           </div>
                         ))}
                       </div>

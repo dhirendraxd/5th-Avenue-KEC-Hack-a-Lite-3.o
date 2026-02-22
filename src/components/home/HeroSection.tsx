@@ -120,10 +120,10 @@ const HeroSection = () => {
       <div className="container relative z-10 mx-auto flex min-h-[calc(100vh-3.5rem)] items-center px-4 py-28 sm:px-6 lg:px-8 lg:py-32">
         <div className="mx-auto w-full max-w-5xl text-center">
           <h1 className="animate-fade-in text-6xl font-bold leading-[1.1] tracking-tight text-foreground md:text-7xl lg:text-8xl xl:text-[6.5rem]">
-            <span className="whitespace-nowrap">A simple <span className="text-primary handwritten-underline">equipment</span></span><br />rental platform.
+            <span className="whitespace-nowrap">Trusted <span className="text-primary handwritten-underline">construction equipment rentals</span></span><br />for every project.
           </h1>
           <p className="mx-auto mt-10 max-w-3xl animate-fade-in text-lg text-muted-foreground [animation-delay:150ms] md:text-xl lg:text-2xl lg:line-clamp-2">
-            Find the right equipment for your task in seconds with clear pricing and trusted business listings.
+            Find heavy machinery and construction tools in seconds with clear pricing, verified owners, and reliable rental operations.
           </p>
 
           <div className="mt-12 flex animate-fade-in items-center justify-center gap-10 [animation-delay:300ms]">

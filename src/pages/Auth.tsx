@@ -157,7 +157,7 @@ const Auth = () => {
         </div>
 
         <div className="relative hidden overflow-hidden bg-muted/20 lg:block lg:w-[56%]">
-          <img src={heroEquipment} alt="Creative equipment visual" className="h-full w-full object-cover" loading="lazy" />
+          <img src={heroEquipment} alt="Construction equipment rentals platform hero visual" className="h-full w-full object-cover" loading="lazy" />
           <div className="absolute inset-0 bg-gradient-to-b from-slate-900/35 via-emerald-900/10 to-slate-950/45" />
 
           <button

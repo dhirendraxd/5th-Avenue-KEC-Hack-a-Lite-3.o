@@ -45,6 +45,7 @@ import {
 import { addDays, differenceInDays, format, isWithinInterval, isSameDay } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
+import Seo from "@/components/seo/Seo";
 
 const EquipmentDetail = () => {
   const { id } = useParams();
@@ -326,6 +327,37 @@ const EquipmentDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title={`${equipment.name} Rental`}
+        description={`${equipment.name} is available for construction equipment rentals in ${rentalLocation}. View daily pricing, availability, and verified owner details on Upyog.`}
+        keywords={[
+          "construction equipment rentals",
+          equipment.name,
+          `${equipment.name} rental`,
+          `${categoryLabels[equipment.category]} rental`,
+          rentalLocation,
+        ]}
+        canonicalPath={`/equipment/${equipment.id}`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: equipment.name,
+          description: equipment.description,
+          image: equipment.images?.[0],
+          brand: {
+            "@type": "Brand",
+            name: "Upyog",
+          },
+          category: categoryLabels[equipment.category],
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "NPR",
+            price: equipment.pricePerDay,
+            availability: "https://schema.org/InStock",
+            url: `${window.location.origin}/equipment/${equipment.id}`,
+          },
+        }}
+      />
       <Navbar />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
         {/* Back Link */}

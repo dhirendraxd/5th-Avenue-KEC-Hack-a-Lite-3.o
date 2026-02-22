@@ -509,7 +509,7 @@ const MaterialsList = () => {
                       <div key={idx} className="relative overflow-hidden rounded-lg border border-border bg-muted/40 group">
                         <img
                           src={photo}
-                          alt={`Uploaded photo ${idx + 1}`}
+                          alt={`Material photo upload preview ${idx + 1}`}
                           className="block h-32 w-full object-cover"
                           loading="lazy"
                         />

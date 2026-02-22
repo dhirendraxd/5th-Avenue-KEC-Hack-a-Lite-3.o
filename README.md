@@ -183,6 +183,28 @@ npm run lint
 
 ---
 
+## 🚀 Deploy on Vercel (Safe Setup)
+
+1. Push your code to GitHub (without local env files).
+2. Import the repo in Vercel.
+3. In Vercel Project Settings → Environment Variables, add all `VITE_` vars from `.env.example`.
+4. Deploy using:
+  - Build Command: `npm run build`
+  - Output Directory: `dist`
+5. After first deploy, set your production domain and update:
+  - `src/lib/seo.ts` (`SITE_URL`)
+  - `public/sitemap.xml` (`<loc>` URLs)
+  - `public/robots.txt` (`Sitemap:` URL)
+
+### ✅ Pre-Push Checklist
+
+- `git status --short` (verify no unintended files)
+- Ensure `.env.local`, `.env.*.local`, `.vercel/`, `dist/`, `node_modules/` are not tracked
+- `npm run build` passes locally
+- Do not commit real secrets to GitHub
+
+---
+
 ## 🔥 Firebase Setup Guide
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)

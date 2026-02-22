@@ -229,8 +229,8 @@ const BrowseEquipment = () => {
       <Navbar />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 relative z-10">
         <PageHeader
-          title="Browse Equipment"
-          description="Find specialized equipment from verified businesses near you"
+          title="Browse Construction Equipment Rentals"
+          description="Find heavy equipment rentals from verified businesses with location-aware search and transparent pricing"
           actions={
             <Button asChild variant="outline">
               <Link to="/dashboard/add-equipment">Add Equipment</Link>
