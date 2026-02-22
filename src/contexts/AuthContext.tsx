@@ -141,8 +141,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setUser(null);
       localStorage.removeItem('gearshift_user');
-      localStorage.removeItem('gearshift_terms_accepted');
-      setHasAcceptedTerms(false);
     }
   };
 

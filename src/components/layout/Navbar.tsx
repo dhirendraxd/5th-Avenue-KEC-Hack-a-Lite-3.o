@@ -12,6 +12,7 @@ const Navbar = () => {
   const configuredBitmoji = import.meta.env.VITE_BITMOJI_URL;
   const [profileBitmoji, setProfileBitmoji] = useState<string>("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isNavHidden, setIsNavHidden] = useState(false);
 
   const publicNavLinks = [
     { href: "/", label: "Home", icon: Home },
@@ -48,11 +49,37 @@ const Navbar = () => {
     return () => unsubscribe();
   }, [user?.id]);
 
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const onScroll = () => {
+      const currentScrollY = window.scrollY;
+      const delta = currentScrollY - lastScrollY;
+
+      if (currentScrollY < 32) {
+        setIsNavHidden(false);
+      } else if (delta > 5) {
+        setIsNavHidden(true);
+      } else if (delta < -5) {
+        setIsNavHidden(false);
+      }
+
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const avatarSource = profileBitmoji || configuredBitmoji || user?.avatar || "";
 
   return (
     <>
-      <nav className="fixed left-0 right-0 top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
+      <nav
+        className={`!fixed inset-x-0 top-0 z-[100] border-0 bg-transparent shadow-none transition-transform duration-300 ${
+          isNavHidden ? "-translate-y-full" : "translate-y-0"
+        }`}
+      >
         <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -134,7 +161,7 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="py-4 md:hidden">
+          <div className="mt-2 rounded-xl border border-border/50 bg-background/75 p-3 backdrop-blur-sm md:hidden">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <Link

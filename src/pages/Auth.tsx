@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -9,6 +9,7 @@ import heroEquipment from '@/assets/hero-equipment.jpg';
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { loginWithGoogle, login, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -16,11 +17,13 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [isCreating, setIsCreating] = useState(true);
 
+  const redirectTo = searchParams.get('redirect') || '/';
+
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate(redirectTo, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, redirectTo]);
 
   const handleGoogleAuth = async () => {
     setIsLoading(true);
@@ -33,7 +36,7 @@ const Auth = () => {
         title: 'Signed in with Google',
         description: 'Welcome to Upyog.',
       });
-      navigate('/');
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Please try again.';
       toast({
@@ -57,7 +60,7 @@ const Auth = () => {
           title: isCreating ? 'Account ready' : 'Signed in',
           description: 'Welcome to Upyog.',
         });
-        navigate('/');
+        navigate(redirectTo, { replace: true });
         return;
       }
 

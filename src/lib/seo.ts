@@ -1,5 +1,5 @@
 export const SITE_NAME = "Upyog";
-export const SITE_URL = "https://upyog.app";
+export const SITE_URL = "https://5th-avenue-kec-hack-a-lite-3-o.vercel.app";
 export const DEFAULT_OG_IMAGE = "/og-image.png";
 
 export const PRIMARY_KEYWORDS = [

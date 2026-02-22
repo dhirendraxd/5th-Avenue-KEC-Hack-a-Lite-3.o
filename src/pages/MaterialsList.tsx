@@ -27,45 +27,11 @@ const MaterialsList = () => {
   const [price, setPrice] = useState<string>("");
   const [isFree, setIsFree] = useState(false);
   const [location, setLocation] = useState("");
-  const [isLocating, setIsLocating] = useState(false);
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const handleUseLocation = () => {
-    if (!navigator.geolocation) {
-      toast({
-        title: "Location unavailable",
-        description: "Your browser does not support GPS.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setLocation(`GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-        setIsLocating(false);
-        toast({
-          title: "Location acquired ✓",
-          description: "Your GPS location has been set successfully.",
-        });
-      },
-      () => {
-        toast({
-          title: "Unable to get location",
-          description: "Please allow GPS access or enter a location manually.",
-          variant: "destructive",
-        });
-        setIsLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 8000 },
-    );
-  };
 
   /**
    * Handle photo upload from file input
@@ -397,7 +363,7 @@ const MaterialsList = () => {
                 </label>
                 <div className="flex flex-col gap-2.5 sm:flex-row">
                   <Input
-                    placeholder="Enter neighborhood or use GPS"
+                    placeholder="Enter neighborhood or area"
                     value={location}
                     onChange={(event) => {
                       setLocation(event.target.value);
@@ -409,22 +375,6 @@ const MaterialsList = () => {
                     }}
                     className={`h-11 ${errors.location ? 'border-destructive' : ''}`}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleUseLocation}
-                    disabled={isLocating}
-                    className="h-11 flex-shrink-0"
-                  >
-                    {isLocating ? (
-                      <>
-                        <span className="animate-spin mr-2">⏳</span>
-                        Getting location...
-                      </>
-                    ) : (
-                      "📍 Use GPS"
-                    )}
-                  </Button>
                 </div>
                 {errors.location && (
                   <p className="text-xs text-destructive flex items-center gap-1">

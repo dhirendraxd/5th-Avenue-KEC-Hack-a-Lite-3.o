@@ -116,7 +116,7 @@ const MaterialsFind = () => {
   const [sortBy, setSortBy] = useState<MaterialSortOption>("closest");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [priceRange, setPriceRange] = useState([0, 50000]);
-  const [location, setLocation] = useState({ ...DEFAULT_COORDINATES, label: "Current location" });
+  const [location] = useState({ ...DEFAULT_COORDINATES, label: "Default location" });
 
   const [selectedListing, setSelectedListing] = useState<ListingWithDistance | null>(null);
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
@@ -148,22 +148,6 @@ const MaterialsFind = () => {
     );
 
     return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!navigator.geolocation) return;
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocation({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          label: "Current location",
-        });
-      },
-      () => undefined,
-      { enableHighAccuracy: true, timeout: 8000 },
-    );
   }, []);
 
   const maxPriceLimit = useMemo(() => {
@@ -271,22 +255,6 @@ const MaterialsFind = () => {
     });
 
     event.target.value = "";
-  };
-
-  const handleUseListingLocation = () => {
-    if (!navigator.geolocation) return;
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setListCoordinates({ latitude, longitude });
-        setListLocation(`Current GPS (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
-        setLocationMapUrl(`https://maps.google.com/?q=${latitude},${longitude}`);
-        setShowLocationSuggestions(false);
-      },
-      () => undefined,
-      { enableHighAccuracy: true, timeout: 8000 },
-    );
   };
 
   const handlePublish = async (event: FormEvent) => {
@@ -693,7 +661,7 @@ const MaterialsFind = () => {
                   </div>
 
                   <div className="space-y-3">
-                    <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                    <div className="space-y-2">
                       <div className="relative">
                         <label className="mb-2 block text-sm font-medium">Address name</label>
                         <Input
@@ -719,9 +687,6 @@ const MaterialsFind = () => {
                           </div>
                         )}
                       </div>
-                      <Button type="button" variant="outline" onClick={handleUseListingLocation}>
-                        Use Live GPS
-                      </Button>
                     </div>
 
                     <div className="space-y-2">

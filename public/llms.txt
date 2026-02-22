@@ -1,0 +1,69 @@
+# Upyog — LLM Site Descriptor
+
+Site: https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/
+Project: Upyog (Construction Equipment & Materials Marketplace)
+Type: Production web application (React + TypeScript + Vite)
+
+## Canonical Purpose
+Upyog is a B2B marketplace for construction workflows. It enables equipment owners to list machinery, and renters/contractors to discover, evaluate, and request rentals. It also supports materials discovery and materials listing for construction-related inventory.
+
+## Primary User Intents
+1. Find construction equipment rentals by category, price, and listing quality.
+2. View equipment details (pricing, deposit, availability context, owner profile).
+3. Request equipment rentals and continue operational workflow in-app.
+4. Browse construction materials and submit buy requests.
+5. List materials with condition/category/location and images.
+
+## Key Public Routes
+- / : Homepage, trust messaging, featured equipment, CTA.
+- /browse : Construction equipment discovery page.
+- /equipment/:id : Equipment listing detail and rental request flow.
+- /materials/find : Materials browse and listing tabs.
+- /materials/list : Material listing workflow.
+
+## Private / Workspace Routes (Noindex Intent)
+- /auth
+- /dashboard
+- /dashboard/add-equipment
+- /chat
+- /finance
+- /analytics
+- /materials/verify
+- /rental/:id
+
+## Functional Modules
+- Equipment marketplace (search/filter/sort/list views).
+- Equipment detail with pricing and owner trust context.
+- Rental operations workflow.
+- Materials browse/list + purchase request flow.
+- Owner dashboard and business profile management.
+- SEO metadata + schema + sitemap + robots controls.
+
+## Technology Summary
+- Frontend: React, TypeScript, Vite
+- UI: Tailwind CSS, shadcn/ui, Radix primitives
+- Data/Auth/Storage: Firebase stack
+- Image handling: Cloudinary uploads
+- Hosting: Vercel
+- Telemetry: Vercel Analytics
+
+## SEO and Crawling Notes
+- Canonical site URL points to the deployed Vercel domain.
+- Open Graph and Twitter metadata configured for sharing.
+- `robots.txt` and `sitemap.xml` available under `/public` assets.
+- OG thumbnail image is served from `/og-image.png`.
+
+## Data Quality / Safety Notes for LLM Consumers
+- Some content is user-generated (listings, descriptions, names, prices).
+- Validate business-critical values (pricing, contact, availability) before automated decisioning.
+- Treat private routes and authenticated workflows as restricted contexts.
+
+## Recommended LLM Usage
+- Summarize available equipment/material options for users.
+- Explain route-level capabilities and workflows.
+- Generate onboarding/help content based on page intent.
+- Provide SEO/content guidance aligned to construction marketplace terms.
+
+## Version Context
+- Descriptor generated for current deployment at:
+  https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/

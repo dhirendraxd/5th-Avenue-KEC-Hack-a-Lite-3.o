@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import DefaultSeo from "@/components/seo/DefaultSeo";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import GlobalTermsGate from "@/components/auth/GlobalTermsGate";
 
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -24,6 +26,7 @@ const App = () => (
   <AuthProvider>
     <BrowserRouter>
       <DefaultSeo />
+      <GlobalTermsGate />
       <Suspense
         fallback={
           <div className="min-h-screen bg-background p-6">
@@ -49,9 +52,30 @@ const App = () => (
           <Route path="/finance" element={<FinanceDashboard />} />
           <Route path="/analytics" element={<UserAnalytics />} />
           <Route path="/chat" element={<Chat />} />
-          <Route path="/materials/list" element={<MaterialsList />} />
-          <Route path="/materials/find" element={<MaterialsFind />} />
-          <Route path="/materials/verify" element={<VerifyPickup />} />
+          <Route
+            path="/materials/list"
+            element={
+              <ProtectedRoute>
+                <MaterialsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/materials/find"
+            element={
+              <ProtectedRoute>
+                <MaterialsFind />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/materials/verify"
+            element={
+              <ProtectedRoute>
+                <VerifyPickup />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

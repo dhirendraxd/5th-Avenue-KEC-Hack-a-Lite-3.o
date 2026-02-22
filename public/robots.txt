@@ -9,5 +9,5 @@ Disallow: /analytics
 Disallow: /materials/verify
 Disallow: /rental/
 
-Sitemap: https://upyog.app/sitemap.xml
-Host: upyog.app
+Sitemap: https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/sitemap.xml
+Host: 5th-avenue-kec-hack-a-lite-3-o.vercel.app
