@@ -17,7 +17,8 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [isCreating, setIsCreating] = useState(true);
 
-  const redirectTo = searchParams.get('redirect') || '/';
+  const rawRedirect = searchParams.get('redirect') || '/';
+  const redirectTo = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/';
 
   useEffect(() => {
     if (isAuthenticated) {

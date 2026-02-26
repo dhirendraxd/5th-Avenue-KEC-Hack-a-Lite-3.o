@@ -1,8 +1,14 @@
 import type { Config } from "tailwindcss";
+import tailwindAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {
@@ -74,7 +80,7 @@ export default {
         "2xl": "calc(var(--radius) + 8px)",
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ["Inter", "system-ui", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {
@@ -121,12 +127,12 @@ export default {
           from: { transform: "rotate(0deg)" },
           to: { transform: "rotate(360deg)" },
         },
-        "dash": {
+        dash: {
           "0%": { strokeDasharray: "0, 100" },
           "50%": { strokeDasharray: "50, 100" },
           "100%": { strokeDasharray: "0, 100" },
         },
-        "particle": {
+        particle: {
           "0%": { opacity: "0", transform: "translateY(0) scale(0)" },
           "20%": { opacity: "1", transform: "translateY(-20px) scale(1)" },
           "80%": { opacity: "1", transform: "translateY(-60px) scale(1)" },
@@ -136,7 +142,10 @@ export default {
           "0%": { transform: "translateX(-100px)", opacity: "0" },
           "10%": { opacity: "1" },
           "90%": { opacity: "1" },
-          "100%": { transform: "translateX(calc(100vw + 100px))", opacity: "0" },
+          "100%": {
+            transform: "translateX(calc(100vw + 100px))",
+            opacity: "0",
+          },
         },
         "silhouette-rl": {
           "0%": { transform: "translateX(calc(100vw + 100px))", opacity: "0" },
@@ -144,7 +153,7 @@ export default {
           "90%": { opacity: "1" },
           "100%": { transform: "translateX(-100px)", opacity: "0" },
         },
-        "orbit": {
+        orbit: {
           "0%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(360deg)" },
         },
@@ -170,7 +179,7 @@ export default {
           "50%": { transform: "translateY(-10px) translateX(0px)" },
           "75%": { transform: "translateY(-6px) translateX(-3px)" },
         },
-        "sway": {
+        sway: {
           "0%, 100%": { transform: "rotate(-3deg)" },
           "50%": { transform: "rotate(3deg)" },
         },
@@ -187,19 +196,19 @@ export default {
         "ping-slow": "ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite",
         "ping-slower": "ping-slower 4s cubic-bezier(0, 0, 0.2, 1) infinite",
         "spin-slow": "spin-slow 8s linear infinite",
-        "dash": "dash 3s ease-in-out infinite",
-        "particle": "particle 5s ease-in-out infinite",
+        dash: "dash 3s ease-in-out infinite",
+        particle: "particle 5s ease-in-out infinite",
         "silhouette-lr": "silhouette-lr 15s linear infinite",
         "silhouette-rl": "silhouette-rl 18s linear infinite",
-        "orbit": "orbit 8s linear infinite",
+        orbit: "orbit 8s linear infinite",
         "orbit-reverse": "orbit-reverse 10s linear infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "rotate-slow": "rotate-slow 30s linear infinite",
         "rotate-slow-reverse": "rotate-slow-reverse 25s linear infinite",
         "float-gentle": "float-gentle 8s ease-in-out infinite",
-        "sway": "sway 6s ease-in-out infinite",
+        sway: "sway 6s ease-in-out infinite",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindAnimate],
 } satisfies Config;

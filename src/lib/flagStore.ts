@@ -1,11 +1,17 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { TaskFlag } from './flaggingSystem';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { TaskFlag } from "./flaggingSystem";
 
 interface FlagStore {
   flags: TaskFlag[];
-  addFlag: (flag: Omit<TaskFlag, 'id' | 'createdAt' | 'status'>) => TaskFlag;
-  resolveFlag: (flagId: string, resolvedBy: string, resolutionNote?: string) => void;
+  addFlag: (flag: Omit<TaskFlag, "id" | "createdAt" | "status">) => TaskFlag;
+  resolveFlag: (
+    flagId: string,
+    resolvedBy: string,
+    resolutionNote?: string,
+  ) => void;
   acknowledgeFlag: (flagId: string) => void;
   getFlagsForRental: (rentalId: string) => TaskFlag[];
   getOpenFlags: () => TaskFlag[];
@@ -16,50 +22,52 @@ export const useFlagStore = create<FlagStore>()(
   persist(
     (set, get) => ({
       flags: [],
-      
+
       addFlag: (flagData) => {
         const newFlag: TaskFlag = {
           ...flagData,
           id: `flag-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           createdAt: new Date(),
-          status: 'open',
+          status: "open",
         };
         set((state) => ({ flags: [...state.flags, newFlag] }));
         return newFlag;
       },
-      
+
       resolveFlag: (flagId, resolvedBy, resolutionNote) => {
         set((state) => ({
           flags: state.flags.map((flag) =>
             flag.id === flagId
               ? {
                   ...flag,
-                  status: 'resolved' as const,
+                  status: "resolved" as const,
                   resolvedAt: new Date(),
                   resolvedBy,
                   resolutionNote,
                 }
-              : flag
+              : flag,
           ),
         }));
       },
-      
+
       acknowledgeFlag: (flagId) => {
         set((state) => ({
           flags: state.flags.map((flag) =>
-            flag.id === flagId ? { ...flag, status: 'acknowledged' as const } : flag
+            flag.id === flagId
+              ? { ...flag, status: "acknowledged" as const }
+              : flag,
           ),
         }));
       },
-      
+
       getFlagsForRental: (rentalId) => {
         return get().flags.filter((flag) => flag.rentalId === rentalId);
       },
-      
+
       getOpenFlags: () => {
-        return get().flags.filter((flag) => flag.status !== 'resolved');
+        return get().flags.filter((flag) => flag.status !== "resolved");
       },
-      
+
       deleteFlag: (flagId) => {
         set((state) => ({
           flags: state.flags.filter((flag) => flag.id !== flagId),
@@ -67,7 +75,7 @@ export const useFlagStore = create<FlagStore>()(
       },
     }),
     {
-      name: 'gearshift-flags',
+      name: "gearshift-flags",
       // Handle Date serialization
       storage: {
         getItem: (name) => {
@@ -79,7 +87,9 @@ export const useFlagStore = create<FlagStore>()(
               parsed.state.flags = parsed.state.flags.map((flag: any) => ({
                 ...flag,
                 createdAt: new Date(flag.createdAt),
-                resolvedAt: flag.resolvedAt ? new Date(flag.resolvedAt) : undefined,
+                resolvedAt: flag.resolvedAt
+                  ? new Date(flag.resolvedAt)
+                  : undefined,
               }));
             }
             return parsed;
@@ -94,6 +104,6 @@ export const useFlagStore = create<FlagStore>()(
           localStorage.removeItem(name);
         },
       },
-    }
-  )
+    },
+  ),
 );

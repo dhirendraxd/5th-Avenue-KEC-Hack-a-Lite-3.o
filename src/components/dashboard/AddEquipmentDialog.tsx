@@ -324,7 +324,7 @@ const AddEquipmentDialog = ({
     if (!file.type.startsWith("image/")) {
       toast({
         title: "Invalid file type",
-        description: `\"${file.name}\" is not an image file.`,
+        description: `"${file.name}" is not an image file.`,
         variant: "destructive",
       });
       return false;
@@ -333,7 +333,7 @@ const AddEquipmentDialog = ({
     if (file.size > MAX_PHOTO_SIZE_BYTES) {
       toast({
         title: "Image too large",
-        description: `\"${file.name}\" exceeds 8MB. Please upload a smaller image.`,
+        description: `"${file.name}" exceeds 8MB. Please upload a smaller image.`,
         variant: "destructive",
       });
       return false;
@@ -409,12 +409,11 @@ const AddEquipmentDialog = ({
         try {
           converted.push(await compressImageFile(file));
         } catch (error) {
-          toast({
-            title: "Failed to process image",
-            description:
-              error instanceof Error ? error.message : `Could not process \"${file.name}\".`,
-            variant: "destructive",
-          });
+            toast({
+              title: "Failed to process image",
+              description: error instanceof Error ? error.message : `Could not process "${file.name}".`,
+              variant: "destructive",
+            });
         }
       }
 

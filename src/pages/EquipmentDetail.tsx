@@ -594,16 +594,28 @@ const EquipmentDetail = () => {
                       Currently booked • Available from {format(nextAvailableAt, "PPP")}
                     </p>
                   )}
-                  {equipment.locationMapUrl && (
-                    <a
-                      href={equipment.locationMapUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-primary hover:underline"
-                    >
-                      Open location in map
-                    </a>
-                  )}
+                  {equipment.locationMapUrl && (() => {
+                    // basic sanitization to prevent javascript: or malformed URLs
+                    let safeUrl = "";
+                    try {
+                      const u = new URL(equipment.locationMapUrl);
+                      if (u.protocol === "http:" || u.protocol === "https:") {
+                        safeUrl = u.toString();
+                      }
+                    } catch {
+                      // invalid URL string - leave safeUrl empty
+                    }
+                    return safeUrl ? (
+                      <a
+                        href={safeUrl}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Open location in map
+                      </a>
+                    ) : null;
+                  })()}
                 </div>
 
                 <Separator />

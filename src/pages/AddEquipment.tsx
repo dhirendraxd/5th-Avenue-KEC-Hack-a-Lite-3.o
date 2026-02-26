@@ -153,7 +153,11 @@ const AddEquipment = () => {
     } catch (error) {
       console.error('Failed to list equipment:', error);
       // Clean up optimistic storage if any
-      try { localStorage.removeItem('gearshift_recently_added_equipment'); } catch {}
+      try {
+        localStorage.removeItem('gearshift_recently_added_equipment');
+      } catch (e) {
+        // ignore cleanup failure
+      }
       throw error instanceof Error
         ? error
         : new Error('Please try again. If the issue persists, check Firebase setup.');

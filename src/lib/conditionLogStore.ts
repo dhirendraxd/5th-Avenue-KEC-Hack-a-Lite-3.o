@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useMemo } from "react";

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import {
   collection,
   doc,
@@ -15,17 +17,20 @@ import {
   limit,
   DocumentData,
   DocumentSnapshot,
-} from 'firebase/firestore';
-import { db } from './config';
+} from "firebase/firestore";
+import { db } from "./config";
 
 /**
  * Get a single document by ID
  */
-export const getDocument = async <T>(collectionName: string, docId: string): Promise<T | null> => {
+export const getDocument = async <T>(
+  collectionName: string,
+  docId: string,
+): Promise<T | null> => {
   try {
     const docRef = doc(db, collectionName, docId);
     const docSnap = await getDoc(docRef);
-    
+
     if (docSnap.exists()) {
       return docSnap.data() as T;
     }
@@ -41,12 +46,12 @@ export const getDocument = async <T>(collectionName: string, docId: string): Pro
  */
 export const getDocuments = async <T>(
   collectionName: string,
-  constraints: QueryConstraint[] = []
+  constraints: QueryConstraint[] = [],
 ): Promise<T[]> => {
   try {
     const q: Query = query(collection(db, collectionName), ...constraints);
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
@@ -63,7 +68,7 @@ export const getDocuments = async <T>(
 export const createDocument = async <T>(
   collectionName: string,
   docId: string,
-  data: T
+  data: T,
 ): Promise<void> => {
   try {
     const docRef = doc(db, collectionName, docId);
@@ -80,7 +85,7 @@ export const createDocument = async <T>(
 export const updateDocument = async <T>(
   collectionName: string,
   docId: string,
-  data: Partial<T>
+  data: Partial<T>,
 ): Promise<void> => {
   try {
     const docRef = doc(db, collectionName, docId);
@@ -94,7 +99,10 @@ export const updateDocument = async <T>(
 /**
  * Delete a document
  */
-export const deleteDocument = async (collectionName: string, docId: string): Promise<void> => {
+export const deleteDocument = async (
+  collectionName: string,
+  docId: string,
+): Promise<void> => {
   try {
     const docRef = doc(db, collectionName, docId);
     await deleteDoc(docRef);
@@ -110,16 +118,16 @@ export const deleteDocument = async (collectionName: string, docId: string): Pro
 export const queryDocuments = async <T>(
   collectionName: string,
   field: string,
-  operator: '==' | '<' | '>' | '<=' | '>=' | '!=',
-  value: any
+  operator: "==" | "<" | ">" | "<=" | ">=" | "!=",
+  value: any,
 ): Promise<T[]> => {
   try {
     const q = query(
       collection(db, collectionName),
-      where(field, operator as any, value)
+      where(field, operator as any, value),
     );
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
@@ -136,24 +144,27 @@ export const queryDocuments = async <T>(
 export const getOrderedDocuments = async <T>(
   collectionName: string,
   orderByField: string,
-  direction: 'asc' | 'desc' = 'asc',
-  limitNum?: number
+  direction: "asc" | "desc" = "asc",
+  limitNum?: number,
 ): Promise<T[]> => {
   try {
     const constraints: QueryConstraint[] = [orderBy(orderByField, direction)];
     if (limitNum) {
       constraints.push(limit(limitNum));
     }
-    
+
     const q = query(collection(db, collectionName), ...constraints);
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     })) as T[];
   } catch (error) {
-    console.error(`Error getting ordered documents from ${collectionName}:`, error);
+    console.error(
+      `Error getting ordered documents from ${collectionName}:`,
+      error,
+    );
     throw error;
   }
 };
@@ -165,7 +176,7 @@ export const subscribeDocuments = <T>(
   collectionName: string,
   onNext: (docs: T[]) => void,
   constraints: QueryConstraint[] = [],
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
 ) => {
   try {
     const q: Query = query(collection(db, collectionName), ...constraints);
@@ -181,10 +192,13 @@ export const subscribeDocuments = <T>(
       (error) => {
         console.error(`Error subscribing to ${collectionName}:`, error);
         onError?.(error as Error);
-      }
+      },
     );
   } catch (error) {
-    console.error(`Error setting up subscription for ${collectionName}:`, error);
+    console.error(
+      `Error setting up subscription for ${collectionName}:`,
+      error,
+    );
     onError?.(error as Error);
     return () => undefined;
   }
@@ -197,7 +211,7 @@ export const subscribeDocument = <T>(
   collectionName: string,
   docId: string,
   onNext: (doc: (T & { id: string }) | null) => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
 ) => {
   try {
     const docRef = doc(db, collectionName, docId);
@@ -211,12 +225,18 @@ export const subscribeDocument = <T>(
         onNext({ id: snapshot.id, ...snapshot.data() } as T & { id: string });
       },
       (error) => {
-        console.error(`Error subscribing to ${collectionName}/${docId}:`, error);
+        console.error(
+          `Error subscribing to ${collectionName}/${docId}:`,
+          error,
+        );
         onError?.(error as Error);
-      }
+      },
     );
   } catch (error) {
-    console.error(`Error setting up document subscription for ${collectionName}/${docId}:`, error);
+    console.error(
+      `Error setting up document subscription for ${collectionName}/${docId}:`,
+      error,
+    );
     onError?.(error as Error);
     return () => undefined;
   }
