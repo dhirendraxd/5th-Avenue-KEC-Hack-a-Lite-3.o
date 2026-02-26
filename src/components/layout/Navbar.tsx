@@ -17,6 +17,8 @@ const Navbar = () => {
   const publicNavLinks = [
     { href: "/", label: "Home", icon: Home },
     { href: "/browse", label: "Browse Equipment", icon: Search },
+    { href: "/platform", label: "Platform", icon: Package },
+    { href: "/how-it-works", label: "How It Works", icon: Package },
     { href: "/materials/find", label: "Browse Materials", icon: Hammer },
   ];
 
@@ -133,7 +135,7 @@ const Navbar = () => {
             ) : (
               <>
                 <Link
-                  to="/dashboard"
+                  to={isAuthenticated ? "/dashboard" : `/auth?redirect=${encodeURIComponent("/dashboard")}`}
                   className="relative text-sm font-medium text-foreground after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:after:w-full"
                 >
                   List Equipment
@@ -200,7 +202,7 @@ const Navbar = () => {
                 ) : (
                   <>
                     <Link
-                      to="/dashboard"
+                      to={isAuthenticated ? "/dashboard" : `/auth?redirect=${encodeURIComponent("/dashboard")}`}
                       onClick={() => setMobileMenuOpen(false)}
                       className="px-4 py-2 text-sm font-medium text-foreground"
                     >

@@ -3,7 +3,7 @@
     xmlns:xhtml="http://www.w3.org/1999/xhtml">
     <url>
         <loc>https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/</loc>
-        <lastmod>2026-02-22</lastmod>
+        <lastmod>2026-02-26</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
         <xhtml:link rel="alternate" hreflang="en" href="https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/"/>
@@ -32,5 +32,53 @@
         <priority>0.8</priority>
         <xhtml:link rel="alternate" hreflang="en" href="https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/materials/list"/>
         <xhtml:link rel="alternate" hreflang="x-default" href="https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/materials/list"/>
+    </url>
+    <url>
+        <loc>https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/platform</loc>
+        <lastmod>2026-02-26</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/about</loc>
+        <lastmod>2026-02-26</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    <url>
+        <loc>https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/contact</loc>
+        <lastmod>2026-02-26</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    <url>
+        <loc>https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/careers</loc>
+        <lastmod>2026-02-26</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/how-it-works</loc>
+        <lastmod>2026-02-26</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    <url>
+        <loc>https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/privacy</loc>
+        <lastmod>2026-02-26</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.3</priority>
+    </url>
+    <url>
+        <loc>https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/terms</loc>
+        <lastmod>2026-02-26</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.3</priority>
+    </url>
+    <url>
+        <loc>https://5th-avenue-kec-hack-a-lite-3-o.vercel.app/insurance</loc>
+        <lastmod>2026-02-26</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.4</priority>
     </url>
 </urlset>

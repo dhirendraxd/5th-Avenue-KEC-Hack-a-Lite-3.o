@@ -25,7 +25,7 @@ const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/browse" className="hover:text-foreground">Browse Equipment</Link></li>
               <li><Link to="/dashboard" className="hover:text-foreground">List Equipment</Link></li>
-              <li><Link to="/" className="hover:text-foreground">How It Works</Link></li>
+              <li><Link to="/how-it-works" className="hover:text-foreground">How It Works</Link></li>
             </ul>
           </div>
 
@@ -33,9 +33,9 @@ const Footer = () => {
           <div className="space-y-3">
             <h4 className="font-semibold text-foreground">Company</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/" className="hover:text-foreground">About Us</Link></li>
-              <li><Link to="/" className="hover:text-foreground">Contact</Link></li>
-              <li><Link to="/" className="hover:text-foreground">Careers</Link></li>
+              <li><Link to="/about" className="hover:text-foreground">About Us</Link></li>
+              <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
+              <li><Link to="/careers" className="hover:text-foreground">Careers</Link></li>
             </ul>
           </div>
 
@@ -43,9 +43,9 @@ const Footer = () => {
           <div className="space-y-3">
             <h4 className="font-semibold text-foreground">Legal</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/" className="hover:text-foreground">Privacy Policy</Link></li>
-              <li><Link to="/" className="hover:text-foreground">Terms of Service</Link></li>
-              <li><Link to="/" className="hover:text-foreground">Insurance Coverage</Link></li>
+              <li><Link to="/privacy" className="hover:text-foreground">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-foreground">Terms of Service</Link></li>
+              <li><Link to="/insurance" className="hover:text-foreground">Insurance Coverage</Link></li>
             </ul>
           </div>
         </div>

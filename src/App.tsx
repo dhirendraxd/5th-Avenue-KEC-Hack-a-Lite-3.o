@@ -17,6 +17,14 @@ const RentalOperations = lazy(() => import("./pages/RentalOperations"));
 const FinanceDashboard = lazy(() => import("./pages/FinanceDashboard"));
 const UserAnalytics = lazy(() => import("./pages/UserAnalytics"));
 const Chat = lazy(() => import("./pages/Chat"));
+const Platform = lazy(() => import("./pages/Platform"));
+const AboutUs = lazy(() => import("./pages/AboutUs"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Careers = lazy(() => import("./pages/Careers"));
+const HowItWorksPage = lazy(() => import("./pages/HowItWorksPage"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const InsuranceCoverage = lazy(() => import("./pages/InsuranceCoverage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const MaterialsList = lazy(() => import("./pages/MaterialsList"));
 const MaterialsFind = lazy(() => import("./pages/MaterialsFind"));
@@ -45,9 +53,31 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/browse" element={<BrowseEquipment />} />
+          <Route path="/platform" element={<Platform />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/insurance" element={<InsuranceCoverage />} />
           <Route path="/equipment/:id" element={<EquipmentDetail />} />
-          <Route path="/dashboard" element={<OwnerDashboard />} />
-          <Route path="/dashboard/add-equipment" element={<AddEquipment />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <OwnerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/add-equipment"
+            element={
+              <ProtectedRoute>
+                <AddEquipment />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/rental/:id" element={<RentalOperations />} />
           <Route path="/finance" element={<FinanceDashboard />} />
           <Route path="/analytics" element={<UserAnalytics />} />
